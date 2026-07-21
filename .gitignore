@@ -1,0 +1,46 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Aa]rtifacts/
+[Aa]ssets/AssetStoreTools*
+[Cc]rash[Rr]eports/
+*.stackdump
+*.tmp
+
+# IDE generated
+.vs/
+.idea/
+.vscode/
+ExportedObj/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pid
+*.pidb.meta
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Local setup artifacts
+.tmp/
+unity-*.log
+[Tt]est[Rr]esults*.xml
