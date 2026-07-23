@@ -2,6 +2,7 @@ using LastHope.Presentation.Boot;
 using LastHope.Presentation.CameraRig;
 using LastHope.Presentation.Player;
 using LastHope.DebugTools.Overlay;
+using LastHope.DebugTools.Panel;
 using LastHope.Systems.Boot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -122,6 +123,7 @@ namespace LastHope.EditorTools
             root.AddComponent<GameBootstrapper>();
             root.AddComponent<SimulationDriver>();
             root.AddComponent<DebugOverlay>();
+            root.AddComponent<DebugPanel>();
 
             EditorSceneManager.SaveScene(scene, PersistentScenePath);
         }

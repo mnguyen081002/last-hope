@@ -45,11 +45,11 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 | BL-P1-08 | World Clock | Verify | (KAN-22) `SimulationClock` (1s thực=5s game, bank decimal chống lệch) + `GameTimeUtil` (anchor Day0 17:00). Test: 2/2 pass |
 | BL-P1-09 | Simulation Tick | Verify | (KAN-23) `TickScheduler` (Short/Long tick, threshold hook, catch-up bounded, FastForward) + `SimulationDriver` chạy thật trong scene. Test: 5/5 pass |
 | BL-P1-10 | Command Layer | Verify | (KAN-24) `IGameCommand`/`CommandProcessor`/`EventBus` + 7 command (UseItem, TransferItem đủ logic; StartSleep fast-forward; StartTask/CancelTask/BeginTravel chỉ validate+flag). Test: 2/2 pass |
-| BL-P1-11 | Save Foundation | Backlog | (KAN-25) — S4. RNG (xorshift64* named stream) đã xong ở S2 làm nền cho seed-preservation |
-| BL-P1-12 | Debug Panel v1 | Backlog | (KAN-26) — S4 |
-| BL-P1-13 | Test Foundation | In Progress | (KAN-27) "Seed ổn định" đã có 3 test RNG pass (S2). Clock/Tick/Save test còn lại ở S3/S4 |
+| BL-P1-11 | Save Foundation | Verify | (KAN-25) `SaveFile`/`SaveService`: atomic write (tmp→verify→backup→rename), checksum SHA256, autosave round-robin 3 slot + manual, reject rõ ràng khi version/checksum sai. Test: 5/5 pass |
+| BL-P1-12 | Debug Panel v1 | Verify | (KAN-26) `DebugPanel.cs` (F2): clock, pause/timescale, add item, save/load/autosave, state dump. Compile sạch + wiring scene xác nhận, chưa có test tự động (UI) |
+| BL-P1-13 | Test Foundation | Verify | (KAN-27) Toàn bộ 19 EditMode test pass: Clock (2), Tick (5), Definition (2), RNG (3), Command (2), Save (5) |
 
-**Gate M1:** chưa đạt.
+**Gate M1: PASS (2026-07-24).** 19/19 EditMode test xanh; build Windows Development thành công (0 lỗi); headless smoke test 10s: boot → load definitions → World Clock/Tick chạy ngầm không exception. Chưa xác nhận bằng mắt (môi trường AI headless) — user nên tự mở Editor/build một lần để xem Debug Panel (F2) và Debug Overlay (F1) hiển thị đúng.
 
 ## P1-C — Exploration Gameplay (M2)
 

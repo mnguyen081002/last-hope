@@ -32,7 +32,9 @@ LastHope.EditorTools (Editor-only) → Core, Data, Presentation, DebugTools, Uni
 | `Assets/Game/Core/State/InventoryOps.cs` | `InventoryOps` (static) | `RecalculateLoad(inv, defs)` (chỉ tính tổng weight/volume, KHÔNG set Overload); `AddItem(inv, defs, itemId, qty, idGen)` (merge stack theo MaxStackSize, không kiểm capacity) | ⬜ |
 | `Assets/Game/Core/Random/RngStream.cs` | `RngStream` + `RngStreamState` | xorshift64* trên state `ulong` mutable, `NextInt(min,maxExcl)`, `NextDouble()` | ✅ |
 | `Assets/Game/Core/Random/RngService.cs` | `RngService` | `GetStream(name)` — named stream derive từ `WorldState.RandomSeed ⊕ FNV1a64(name)`, state sống trong `WorldState.RngStreams` | ✅ |
-| `Assets/Game/Core/Save/WorldStateSerializer.cs` | `WorldStateSerializer` (static) | `Serialize(WorldState)` (indented), `SerializeCanonical(WorldState)` (Formatting.None, dùng cho checksum/deep-compare), `Deserialize(json)`, `Settings` (snake_case, StringEnumConverter, ObjectCreationHandling.Replace) | ⬜ (chưa có SaveRoundTripTests — chờ S4 khi SaveService tồn tại) |
+| `Assets/Game/Core/Save/WorldStateSerializer.cs` | `WorldStateSerializer` (static) | `Serialize(WorldState)` (indented), `SerializeCanonical(WorldState)` (Formatting.None, dùng cho checksum/deep-compare), `Deserialize(json)`, `Settings` (snake_case, StringEnumConverter, ObjectCreationHandling.Replace) | ✅ |
+| `Assets/Game/Core/Save/SaveFile.cs` | `SaveFile`, `SaveSlotInfo` | `SaveFile{SaveVersion,DefinitionVersion,SavedAtUtc,Checksum,SlotId,World(JRaw)}` — World embed verbatim, không re-serialize | ✅ |
+| `Assets/Game/Core/Save/SaveService.cs` | `SaveService`, `SaveResult`, `LoadResult` | `Autosave(world)` (round-robin autosave_0/1/2), `SaveToSlot(world,slotId)` (atomic: tmp→verify→backup cũ→rename), `Load(slotId)`, `ListSlots()`. Checksum SHA256 trên world payload canonical | ✅ |
 | `Assets/Game/Core/Events/EventBus.cs` | `EventBus` (+ private `EventChannel<T>`) | `Subscribe<T>/Unsubscribe<T>/Publish<T>` — struct event, copy-on-write handler array, zero-boxing | ✅ (gián tiếp qua CommandPipelineTests) |
 | `Assets/Game/Core/Events/GameEvents.cs` | `IGameEvent` + 8 struct: `WorldTimeChanged`, `DisasterPhaseChanged`, `RouteStateChanged`, `ShelterWarningRaised`, `TaskCompleted`, `EventDiscovered`, `InventoryChanged`, `NpcStateChanged` | | ⬜ |
 | `Assets/Game/Core/Time/GameTimeUtil.cs` | `GameTimeUtil` (static) | `DayIndex(m)`, `TimeOfDayMinutes(m)`, `Format(m)` — anchor Day 0 17:00 = phút 0 | ⬜ (gián tiếp qua TickSchedulerTests) |
@@ -64,7 +66,13 @@ LastHope.EditorTools (Editor-only) → Core, Data, Presentation, DebugTools, Uni
 | --- | --- | --- | --- |
 | `Assets/Game/Systems/Registry/GameServiceRegistry.cs` | `GameServiceRegistry` (static) | `Register<T>`, `Get<T>`, `TryGet<T>`, `Clear()` — service locator giới hạn, chỉ `GameBootstrapper` ghi | ⬜ |
 | `Assets/Game/Systems/Boot/GameBootstrapper.cs` | `GameBootstrapper` (MonoBehaviour, sống trong `10_GamePersistent`) | Composition root: load Definitions từ `StreamingAssets/Definitions`, fail-fast nếu lỗi (dừng boot, `enabled=false`), tạo `WorldState` mới + seed, dựng toàn bộ Core service, đăng ký vào `GameServiceRegistry` | ⬜ (verify qua headless smoke test, chưa có PlayMode test) |
-| `Assets/Game/Systems/Boot/SimulationDriver.cs` | `SimulationDriver` (MonoBehaviour) | Cầu nối Unity Time → Core: đọc service ở `Start()` (không phải `Awake()`, tránh phụ thuộc thứ tự component), `Update()` clamp delta 1s, gọi `SimulationClock.AccumulateRealSeconds` + `TickScheduler.Advance`. `DebugPaused`/`DebugTimeScale` cho tooling | ⬜ |
+| `Assets/Game/Systems/Boot/SimulationDriver.cs` | `SimulationDriver` (MonoBehaviour) | Cầu nối Unity Time → Core: đọc service ở `Start()` (không phải `Awake()`, tránh phụ thuộc thứ tự component), `Update()` clamp delta 1s, gọi `SimulationClock.AccumulateRealSeconds` + `TickScheduler.Advance`. `DebugPaused`/`DebugTimeScale` cho tooling | ⬜ (verify qua headless smoke test 10s không exception) |
+
+## LastHope.DebugTools (bổ sung S4)
+
+| File | Class | API chính | Test |
+| --- | --- | --- | --- |
+| `Assets/Game/DebugTools/Panel/DebugPanel.cs` | `DebugPanel` (MonoBehaviour, OnGUI, F2) | Xem World Time, Fast-forward clock, Pause/TimeScale (qua `SimulationDriver`), Add Item (bypass Command Layer — cheat có ghi rõ), Save/Load/Autosave (qua `SaveService`), state tree dump (`WorldStateSerializer.Serialize`). Sau Load, copy field vào `GameContext.World` hiện có (không swap reference — services khác đang giữ reference cũ) | ⬜ (chưa test tự động, chỉ verify code compile + wiring scene) |
 
 ## LastHope.Presentation
 
@@ -114,8 +122,8 @@ Chưa có class nào (asmdef trống).
 
 ## Việc CHƯA làm (để tránh giả định nhầm khi đọc code)
 
-- **Chưa có** Save (SaveFile/SaveService) và Debug Panel v1 — đó là S4. Command/EventBus/Tick/GameBootstrapper đã xong và **đang chạy thật** trong `10_GamePersistent` (verify qua headless smoke test: boot → load definitions → tạo WorldState → log seed, không exception).
-- `DebugOverlay` (F1) là overlay tối thiểu Sprint 1, KHÔNG phải Debug Panel v1 (F2, sẽ thêm state tree + save/load ở S4) — hai file khác nhau, đừng nhầm.
+- **M1 (S2-S4) đã xong và verify (Gate M1 Pass 2026-07-24):** 19/19 EditMode test pass, build Windows + headless smoke test 10s không exception. Core simulation loop (Clock/Tick/Command/Save) chạy thật trong `10_GamePersistent`.
+- `DebugOverlay` (F1, Sprint 1) và `DebugPanel` (F2, Sprint 4) là 2 file khác nhau — F1 luôn hiện (FPS/vị trí), F2 toggle riêng (World Time/Save/Add Item/state dump).
 - `InventoryOwnerResolver` chỉ nhận biết owner id = `"player"`. Gọi `TransferItemCommand`/`UseItemCommand` với owner id khác sẽ luôn fail validation `InvalidActor` — không phải bug, chỉ là NPC/Shelter storage chưa tồn tại.
 - `StartTaskCommand`/`CancelTaskCommand`/`BeginTravelCommand` chỉ validate + ghi flag/log, KHÔNG có effect thật (task không tốn resource, travel không đổi scene/tiêu thời gian) — đó là việc của S6 (Travel) và S10+ (Shelter Task).
 - `StartSleepCommand` fast-forward clock nhưng KHÔNG kiểm tra event/interrupt (Event System chưa tồn tại).

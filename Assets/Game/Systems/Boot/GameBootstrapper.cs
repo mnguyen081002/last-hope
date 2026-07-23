@@ -4,6 +4,7 @@ using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Core.Logging;
 using LastHope.Core.Random;
+using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
@@ -48,11 +49,14 @@ namespace LastHope.Systems.Boot
             var rng = new RngService(world);
             var ctx = new GameContext(world, loadResult.Registry, bus, rng, tickScheduler);
             var processor = new CommandProcessor(ctx);
+            var saveService = new SaveService(
+                Path.Combine(Application.persistentDataPath, "Saves"), loadResult.Registry.DefinitionVersion);
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
             GameServiceRegistry.Register(clock);
             GameServiceRegistry.Register(processor);
+            GameServiceRegistry.Register(saveService);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");
