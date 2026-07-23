@@ -10,6 +10,7 @@ namespace LastHope.Data
     public sealed class DefinitionRegistry
     {
         public string DefinitionVersion { get; }
+        public BalanceConfig Balance { get; }
         public IReadOnlyDictionary<string, ItemDefinition> Items { get; }
         public IReadOnlyDictionary<string, LocationDefinition> Locations { get; }
         public IReadOnlyDictionary<string, RouteDefinition> Routes { get; }
@@ -17,12 +18,14 @@ namespace LastHope.Data
 
         public DefinitionRegistry(
             string definitionVersion,
+            BalanceConfig balance,
             Dictionary<string, ItemDefinition> items,
             Dictionary<string, LocationDefinition> locations,
             Dictionary<string, RouteDefinition> routes,
             Dictionary<string, SearchPointDefinition> searchPoints)
         {
             DefinitionVersion = definitionVersion;
+            Balance = balance ?? new BalanceConfig();
             Items = items;
             Locations = locations;
             Routes = routes;

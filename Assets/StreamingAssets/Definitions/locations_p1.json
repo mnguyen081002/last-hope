@@ -1,0 +1,21 @@
+[
+  {
+    "id": "location_shelter",
+    "search_point_ids": [],
+    "connected_route_ids": ["route_shelter_store"],
+    "scene_name": "20_MainShelter"
+  },
+  {
+    "id": "location_convenience_store",
+    "search_point_ids": [
+      "searchpoint_drink_shelf_1",
+      "searchpoint_drink_shelf_2",
+      "searchpoint_dry_shelf_1",
+      "searchpoint_dry_shelf_2",
+      "searchpoint_counter",
+      "searchpoint_back_room"
+    ],
+    "connected_route_ids": ["route_shelter_store"],
+    "scene_name": "41_Location_ConvenienceStore"
+  }
+]

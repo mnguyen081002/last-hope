@@ -11,5 +11,9 @@ namespace LastHope.Data.Definitions
         public float MaxDurability { get; set; } = 100f;
         public float WaterResistance { get; set; }
         public List<string> Tags { get; set; } = new List<string>();
+
+        /// <summary>True for large objects (e.g. a 20L water container) that occupy the
+        /// CarriedObject slot instead of the backpack — mechanical, hence a typed field, not a tag.</summary>
+        public bool TwoHandCarry { get; set; }
     }
 }

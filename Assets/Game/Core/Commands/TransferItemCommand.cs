@@ -1,5 +1,6 @@
 using System;
 using LastHope.Core.Events;
+using LastHope.Core.Rules;
 using LastHope.Core.State;
 
 namespace LastHope.Core.Commands
@@ -30,7 +31,7 @@ namespace LastHope.Core.Commands
             if (!InventoryOwnerResolver.TryResolve(ctx, ActorId, out var source))
                 return CommandResult.Fail(CommandErrorCode.InvalidActor, $"Unknown owner '{ActorId}'.");
 
-            if (!InventoryOwnerResolver.TryResolve(ctx, DestinationOwnerId, out _))
+            if (!InventoryOwnerResolver.TryResolve(ctx, DestinationOwnerId, out var destination))
                 return CommandResult.Fail(CommandErrorCode.InvalidActor, $"Unknown owner '{DestinationOwnerId}'.");
 
             if (!source.Items.TryGetValue(TargetId, out var item))
@@ -38,6 +39,9 @@ namespace LastHope.Core.Commands
 
             if (Quantity <= 0 || Quantity > item.Quantity)
                 return CommandResult.Fail(CommandErrorCode.InvalidState, "Invalid transfer quantity.");
+
+            if (!InventoryRules.CanAccept(destination, ctx.Definitions, ctx.Definitions.Balance, item.ItemId, Quantity))
+                return CommandResult.Fail(CommandErrorCode.InventoryFull, $"'{DestinationOwnerId}' cannot accept {Quantity}x {item.ItemId}.");
 
             return CommandResult.Ok();
         }
@@ -75,6 +79,7 @@ namespace LastHope.Core.Commands
             InventoryOps.RecalculateLoad(destination, ctx.Definitions);
             ctx.Events.Publish(new InventoryChanged(ActorId));
             ctx.Events.Publish(new InventoryChanged(DestinationOwnerId));
+            ctx.Events.Publish(new ItemTransferred(ActorId, DestinationOwnerId, item.ItemId, Quantity));
         }
     }
 }

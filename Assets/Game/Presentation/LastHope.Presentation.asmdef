@@ -5,7 +5,9 @@
         "LastHope.Core",
         "LastHope.Data",
         "LastHope.Systems",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

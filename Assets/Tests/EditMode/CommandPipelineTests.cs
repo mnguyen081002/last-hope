@@ -29,6 +29,7 @@ namespace LastHope.Tests.EditMode
             };
             var registry = new DefinitionRegistry(
                 "test",
+                new BalanceConfig(),
                 items,
                 new Dictionary<string, LocationDefinition>(),
                 new Dictionary<string, RouteDefinition>(),

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "item_water_bottle",
+    "category": "water",
+    "base_weight_kg": 0.8,
+    "base_volume_liters": 1.0,
+    "max_stack_size": 4
+  },
+  {
+    "id": "item_canned_food",
+    "category": "food",
+    "base_weight_kg": 0.4,
+    "base_volume_liters": 0.5,
+    "max_stack_size": 8
+  },
+  {
+    "id": "item_battery",
+    "category": "material",
+    "base_weight_kg": 0.15,
+    "base_volume_liters": 0.2,
+    "max_stack_size": 10
+  },
+  {
+    "id": "item_toolbox",
+    "category": "material",
+    "base_weight_kg": 8,
+    "base_volume_liters": 12,
+    "max_stack_size": 1
+  },
+  {
+    "id": "item_water_container_20l",
+    "category": "water",
+    "base_weight_kg": 18,
+    "base_volume_liters": 30,
+    "max_stack_size": 1,
+    "two_hand_carry": true
+  }
+]

@@ -4,7 +4,10 @@
     "references": [
         "LastHope.Core",
         "LastHope.Data",
-        "LastHope.Systems"
+        "LastHope.Systems",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

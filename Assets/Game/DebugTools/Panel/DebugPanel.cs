@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using LastHope.Core.Commands;
+using LastHope.Core.Events;
 using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
@@ -101,24 +103,27 @@ namespace LastHope.DebugTools.Panel
                 SaveResult result = _saveService.SaveToSlot(_ctx.World, _saveSlotId);
                 _statusMessage = result.Success ? $"Saved to '{result.SlotId}'." : $"Save failed: {result.Error}";
             }
-            if (GUILayout.Button("Load") && _saveService != null)
-            {
-                LoadResult result = _saveService.Load(_saveSlotId);
-                if (result.Success)
-                {
-                    CopyWorldState(result.World, _ctx.World);
-                    _statusMessage = $"Loaded '{_saveSlotId}'.";
-                }
-                else
-                {
-                    _statusMessage = $"Load failed: {result.Error}";
-                }
-            }
-            GUILayout.EndHorizontal();
             if (GUILayout.Button("Autosave") && _saveService != null)
             {
                 SaveResult result = _saveService.Autosave(_ctx.World);
                 _statusMessage = result.Success ? $"Autosaved to '{result.SlotId}'." : $"Autosave failed: {result.Error}";
+            }
+            if (GUILayout.Button("Load (typed id)")) LoadSlot(_saveSlotId);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Label("Load a slot:");
+            IReadOnlyList<SaveSlotInfo> slots = _saveService?.ListSlots();
+            if (slots == null || slots.Count == 0)
+            {
+                GUILayout.Label("(no saves found)");
+            }
+            else
+            {
+                foreach (SaveSlotInfo slot in slots)
+                {
+                    if (GUILayout.Button($"Load '{slot.SlotId}' — {slot.SavedAtUtc}"))
+                        LoadSlot(slot.SlotId);
+                }
             }
 
             if (!string.IsNullOrEmpty(_statusMessage))
@@ -131,6 +136,23 @@ namespace LastHope.DebugTools.Panel
             GUILayout.EndScrollView();
 
             GUILayout.EndArea();
+        }
+
+        private void LoadSlot(string slotId)
+        {
+            if (_saveService == null) return;
+
+            LoadResult result = _saveService.Load(slotId);
+            if (result.Success)
+            {
+                CopyWorldState(result.World, _ctx.World);
+                _ctx.Events.Publish(new WorldStateReloaded());
+                _statusMessage = $"Loaded '{slotId}'.";
+            }
+            else
+            {
+                _statusMessage = $"Load failed: {result.Error}";
+            }
         }
 
         // Load() returns a brand-new WorldState; every other service already holds a reference

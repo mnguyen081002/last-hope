@@ -55,17 +55,24 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-14 | Interaction System | Backlog | (KAN-28) |
-| BL-P1-15 | Item System | Backlog | (KAN-29) |
-| BL-P1-16 | Inventory | Backlog | (KAN-30) |
-| BL-P1-17 | Search System | Backlog | (KAN-31) |
-| BL-P1-18 | Shelter Storage | Backlog | (KAN-32) |
-| BL-P1-19 | Route và Travel | Backlog | (KAN-33) |
-| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Backlog | (KAN-34) |
-| BL-P1-21 | Telemetry P1 | Backlog | (KAN-35) |
-| BL-P1-22 | Playtest vòng P1 | Backlog | (KAN-36) |
+| BL-P1-14 | Interaction System | Verify | (KAN-28, S5) `IInteractable`/`InteractionDetector`/`InteractionPrompt`: OverlapSphere 1.6m + cursor raycast tiebreak, phím E tức thì (docs không spec hold). Chưa có interactable thật trong scene (chờ S6 SearchPointView/ShelterStorageView) |
+| BL-P1-15 | Item System | Verify | (KAN-29, S5) `ItemDefinition` +TwoHandCarry; content thật `items_p1.json` (5 item). Test: ContentValidationTests pass |
+| BL-P1-16 | Inventory | Verify | (KAN-30, S5) `InventoryRules`/`InventorySystem` (overload Normal/Light/Heavy, capacity hard-cap 150%), `InventoryPanel` UI (list + 2 thanh, nút Use; Drop chờ S6). Test: 8/8 InventoryRulesTests pass |
+| BL-P1-17 | Search System | Backlog | S6 |
+| BL-P1-18 | Shelter Storage | Backlog | S6 |
+| BL-P1-19 | Route và Travel | Backlog | S6 (BeginTravelCommand hiện chỉ validate+log, chưa có body thật) |
+| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Backlog | S6 — content JSON đã có (`locations_p1.json`), blockout scene chưa dựng |
+| BL-P1-21 | Telemetry P1 | Backlog | S6 |
+| BL-P1-22 | Playtest vòng P1 | Backlog | S6 |
 
-**Gate P1:** chưa đạt.
+**Gate P1:** chưa đạt — còn thiếu Search/Storage/Travel/content scene/Telemetry (S6).
+
+### S5 — sửa 3 vấn đề user phát hiện (2026-07-24)
+1. **Vị trí nhân vật giờ được lưu**: `PlayerState.PositionX/Y/Z/PositionLocationId` + `PlayerAvatarSync` (ghi mỗi frame, áp lại khi load qua `WorldStateReloaded`). Test: PlayerPositionSaveTests pass.
+2. **DebugPanel Load giờ có picker**: liệt kê `SaveService.ListSlots()` thành nút bấm, giữ ô nhập tay làm fallback.
+3. **Content JSON thật đã có**: `items_p1.json`, `locations_p1.json`, `routes_p1.json`, `searchpoints_p1.json`, `balance.json` — "Add Item" trong Debug Panel giờ dùng được với id thật (vd `item_water_bottle`).
+
+**Sự cố phát sinh + đã sửa:** TextMeshPro báo NullReferenceException lúc runtime vì thiếu TMP Essential Resources (chưa từng import) — đã import qua script `TmpSetup.cs` (batchmode, không dùng `-quit` vì ImportPackage là async).
 
 ---
 

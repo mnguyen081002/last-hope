@@ -45,6 +45,7 @@ namespace LastHope.Data
             }
 
             string definitionVersion = LoadManifestVersion(directoryPath, result.Errors);
+            BalanceConfig balance = LoadBalance(directoryPath);
 
             var items = LoadTyped<ItemDefinition>(directoryPath, "items_", result.Errors);
             var locations = LoadTyped<LocationDefinition>(directoryPath, "locations_", result.Errors);
@@ -53,9 +54,29 @@ namespace LastHope.Data
 
             Validate(items, locations, routes, searchPoints, result.Errors);
 
-            result.Registry = new DefinitionRegistry(definitionVersion, items, locations, routes, searchPoints);
+            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints);
             result.Success = result.Errors.Count == 0;
             return result;
+        }
+
+        /// <summary>
+        /// balance.json is config, not a Definition list — missing/unparsable falls back to
+        /// BalanceConfig defaults rather than failing the whole load (BL-P1-01 decision).
+        /// </summary>
+        private static BalanceConfig LoadBalance(string directoryPath)
+        {
+            string path = Path.Combine(directoryPath, "balance.json");
+            if (!File.Exists(path)) return new BalanceConfig();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<BalanceConfig>(File.ReadAllText(path), JsonSettings)
+                       ?? new BalanceConfig();
+            }
+            catch (Exception)
+            {
+                return new BalanceConfig();
+            }
         }
 
         private static string LoadManifestVersion(string directoryPath, List<string> errors)

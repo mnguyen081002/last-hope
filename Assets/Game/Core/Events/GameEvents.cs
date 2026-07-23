@@ -60,4 +60,35 @@ namespace LastHope.Core.Events
         public readonly string NpcId;
         public NpcStateChanged(string npcId) { NpcId = npcId; }
     }
+
+    public readonly struct OverloadStateChanged : IGameEvent
+    {
+        public readonly string OwnerId;
+        public readonly Core.State.OverloadState Overload;
+        public OverloadStateChanged(string ownerId, Core.State.OverloadState overload)
+        {
+            OwnerId = ownerId;
+            Overload = overload;
+        }
+    }
+
+    /// <summary>Published by SaveService-driven loads after WorldState fields are copied in
+    /// place, so systems that cache derived values (e.g. avatar position) can resync.</summary>
+    public readonly struct WorldStateReloaded : IGameEvent { }
+
+    public readonly struct ItemTransferred : IGameEvent
+    {
+        public readonly string SourceOwnerId;
+        public readonly string DestinationOwnerId;
+        public readonly string ItemId;
+        public readonly int Quantity;
+
+        public ItemTransferred(string sourceOwnerId, string destinationOwnerId, string itemId, int quantity)
+        {
+            SourceOwnerId = sourceOwnerId;
+            DestinationOwnerId = destinationOwnerId;
+            ItemId = itemId;
+            Quantity = quantity;
+        }
+    }
 }

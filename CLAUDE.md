@@ -41,4 +41,6 @@ Backlog tracking dùng file local `docs/backlog/BACKLOG.md` (không dùng Jira).
 
 Mọi implementation plan (kế hoạch code, không phải backlog item) lưu dưới dạng `.md` trong `docs/plans/YYYY-MM-DD-<slug>.md`, không chỉ trong `.claude/plans/`.
 
+Cuối plan / implementation, phải xác định người dùng cần test gì trên hệ thống mới hoàn thành.
+
 Tự xác định khi nào cần commit và tự thực hiện commit.
