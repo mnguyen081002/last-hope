@@ -1,0 +1,23 @@
+{
+    "name": "LastHope.EditorTools",
+    "rootNamespace": "LastHope.EditorTools",
+    "references": [
+        "LastHope.Core",
+        "LastHope.Data",
+        "LastHope.Presentation",
+        "LastHope.DebugTools",
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

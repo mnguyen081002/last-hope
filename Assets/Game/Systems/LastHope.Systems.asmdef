@@ -1,0 +1,17 @@
+{
+    "name": "LastHope.Systems",
+    "rootNamespace": "LastHope.Systems",
+    "references": [
+        "LastHope.Core",
+        "LastHope.Data"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

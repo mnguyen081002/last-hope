@@ -1,0 +1,19 @@
+{
+    "name": "LastHope.DebugTools",
+    "rootNamespace": "LastHope.DebugTools",
+    "references": [
+        "LastHope.Core",
+        "LastHope.Data",
+        "LastHope.Systems",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
