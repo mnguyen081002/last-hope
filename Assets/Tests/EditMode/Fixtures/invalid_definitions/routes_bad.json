@@ -1,0 +1,8 @@
+[
+  {
+    "id": "route_bad",
+    "from_location_id": "location_home",
+    "to_location_id": "location_missing",
+    "travel_minutes": 10
+  }
+]

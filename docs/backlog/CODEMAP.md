@@ -25,10 +25,26 @@ LastHope.EditorTools (Editor-only) → Core, Data, Presentation, DebugTools, Uni
 | File | Class | API chính | Test |
 | --- | --- | --- | --- |
 | `Assets/Game/Core/Logging/GameLog.cs` | `GameLog` (static) + `LogCategory` enum | `Info/Warn/Error(LogCategory, string)` | ⬜ |
+| `Assets/Game/Core/State/WorldState.cs` | `WorldState` + stub `RouteState/LocationState/ShelterState/NpcState/ActiveEventState/ActiveTaskState` (mỗi cái chỉ `Id`+`StatusName`, sẽ mở rộng khi hệ thống tương ứng được viết) | Root state graph: `WorldTimeMinutes`, `CurrentDisasterPhase`, `RandomSeed`, `RngStreams`, `Player`, các Dictionary state theo id | ⬜ (gián tiếp qua RngServiceTests) |
+| `Assets/Game/Core/State/PlayerState.cs` | `PlayerState` | `ActorId`, `CurrentLocationId`, `Inventory` | ⬜ |
+| `Assets/Game/Core/State/InventoryState.cs` | `InventoryState` + `OverloadState` enum | `Items` (instanceId→ItemInstanceState), `CurrentWeightKg/VolumeLiters`, `Overload`. **Overload chưa được set bởi ai** — capacity/overload rule thuộc `Systems.Inventory` (S5), chưa viết | ⬜ |
+| `Assets/Game/Core/State/ItemInstanceState.cs` | `ItemInstanceState` + `ContaminationState`/`WetState` enum | `InstanceId`, `ItemId`, `Quantity`, `Condition`, `Durability`, `Contamination`, `Wet`, `ContainerId` | ⬜ |
+| `Assets/Game/Core/State/InventoryOps.cs` | `InventoryOps` (static) | `RecalculateLoad(inv, defs)` (chỉ tính tổng weight/volume, KHÔNG set Overload); `AddItem(inv, defs, itemId, qty, idGen)` (merge stack theo MaxStackSize, không kiểm capacity) | ⬜ |
+| `Assets/Game/Core/Random/RngStream.cs` | `RngStream` + `RngStreamState` | xorshift64* trên state `ulong` mutable, `NextInt(min,maxExcl)`, `NextDouble()` | ✅ |
+| `Assets/Game/Core/Random/RngService.cs` | `RngService` | `GetStream(name)` — named stream derive từ `WorldState.RandomSeed ⊕ FNV1a64(name)`, state sống trong `WorldState.RngStreams` | ✅ |
+| `Assets/Game/Core/Save/WorldStateSerializer.cs` | `WorldStateSerializer` (static) | `Serialize(WorldState)` (indented), `SerializeCanonical(WorldState)` (Formatting.None, dùng cho checksum/deep-compare), `Deserialize(json)`, `Settings` (snake_case, StringEnumConverter, ObjectCreationHandling.Replace) | ⬜ (chưa có SaveRoundTripTests — chờ S4 khi SaveService tồn tại) |
 
 ## LastHope.Data
 
-Chưa có class nào (asmdef trống, chờ S2).
+| File | Class | API chính | Test |
+| --- | --- | --- | --- |
+| `Assets/Game/Data/Definitions/DefinitionBase.cs` | `DefinitionBase` (abstract) | `Id`, `DisplayNameKey`, `DataVersion` | ⬜ |
+| `Assets/Game/Data/Definitions/ItemDefinition.cs` | `ItemDefinition` | `Category`, `BaseWeightKg`, `BaseVolumeLiters`, `MaxStackSize`, `MaxDurability`, `WaterResistance`, `Tags` | 🟡 (qua fixture) |
+| `Assets/Game/Data/Definitions/LocationDefinition.cs` | `LocationDefinition` | `SearchPointIds`, `ConnectedRouteIds` | 🟡 |
+| `Assets/Game/Data/Definitions/RouteDefinition.cs` | `RouteDefinition` | `FromLocationId`, `ToLocationId`, `TravelMinutes` | 🟡 |
+| `Assets/Game/Data/Definitions/SearchPointDefinition.cs` | `SearchPointDefinition` + `LootEntry` | `LocationId`, `OpenTimeMinutes` (mặc định 0 — search mở tức thì), `LootTable` (List\<LootEntry\>: ItemId/Weight/MinQuantity/MaxQuantity) | 🟡 |
+| `Assets/Game/Data/DefinitionRegistry.cs` | `DefinitionRegistry` | `DefinitionVersion`, `Items/Locations/Routes/SearchPoints` (IReadOnlyDictionary), `TryGetItem/Location/Route/SearchPoint` | ✅ (qua DefinitionLoaderTests) |
+| `Assets/Game/Data/DefinitionLoader.cs` | `DefinitionLoader` (static) | `Load(directoryPath) → DefinitionLoadResult{Success,Registry,Errors}`. Routing theo prefix file: `manifest.json`, `items_*.json`, `locations_*.json`, `routes_*.json`, `searchpoints_*.json`. Gom TOÀN BỘ lỗi (duplicate id, dangling ref, missing id) — không fail-first | ✅ |
 
 ## LastHope.Systems
 
@@ -82,8 +98,16 @@ Chưa có class nào (asmdef trống).
 
 ## Việc CHƯA làm (để tránh giả định nhầm khi đọc code)
 
-- Không có Definition Registry / WorldState / Save / Command / EventBus / Tick — toàn bộ nằm ở M1 (S2–S4), chưa viết dòng nào.
+- **Chưa có** Save/Command/EventBus/Tick/GameBootstrapper — đó là S3–S4. WorldState/Registry/RNG/Serializer đã có (S2) nhưng **chưa được ai khởi tạo lúc chạy game** (không có Boot code gọi tới) — tồn tại như thư viện độc lập, test trực tiếp bằng NUnit constructor.
 - `DebugOverlay` (F1) là overlay tối thiểu Sprint 1, KHÔNG phải Debug Panel v1 (F2, sẽ thêm state tree + save/load ở S4) — hai file khác nhau, đừng nhầm.
 - `PlayerController.SpeedModifier` tồn tại nhưng chưa có hệ thống nào set nó (Carry Load/Flood ở M2/P2).
 - Input action "Interact" (E) đã khai báo trong `.inputactions` nhưng chưa có script nào subscribe.
-- Chưa có Content JSON nào — mọi Location/Item/Route trong bảng baseline (`docs/plans/2026-07-24-mvp-coding-plan.md`) mới là số liệu dự kiến, chưa nhập vào file thật.
+- `InventoryOps.RecalculateLoad` chỉ tính tổng, **không set `Overload`** — capacity 15kg/25L trong bảng baseline chưa được code ở đâu cả, sẽ vào `Systems/Inventory/InventorySystem.cs` (S5).
+- Chưa có Content JSON thật trong `Assets/StreamingAssets/Definitions/` (vẫn chỉ có README) — 5 file fixture test nằm ở `Assets/Tests/EditMode/Fixtures/{valid,invalid}_definitions/`, KHÔNG phải data thật của game.
+- `WorldStateSerializer` chưa có test roundtrip qua file thật (chỉ dùng gián tiếp nếu có) — `SaveRoundTripTests` ở S4 sẽ là bài test đầu tiên chạy nó qua `SaveService`.
+
+## Ghi chú kỹ thuật quan trọng (tránh dò lại code để hiểu "tại sao")
+
+- RNG dùng xorshift64* tự viết (không dùng `System.Random`) vì cần expose state để serialize và tiếp tục sequence bit-exact sau load — xem `RngStream.cs`.
+- `DefinitionLoader` không ném exception cho lỗi data (chỉ throw nếu JSON không đọc được, và exception đó cũng bị bắt + gom vào `Errors`). Gọi `Load()` luôn trả về `DefinitionLoadResult`, không bao giờ throw ra ngoài với input hợp lệ về mặt cấu trúc file.
+- Naming JSON trên đĩa là **snake_case**, nhưng C# property là PascalCase — đừng thêm `[JsonProperty]` thủ công, `SnakeCaseNamingStrategy` tự convert.

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "searchpoint_shelf_water",
+    "location_id": "location_store",
+    "open_time_minutes": 0,
+    "loot_table": [
+      { "item_id": "item_water_bottle", "weight": 1, "min_quantity": 2, "max_quantity": 3 }
+    ]
+  }
+]

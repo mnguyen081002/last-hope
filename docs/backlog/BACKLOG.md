@@ -40,14 +40,14 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-06 | Definition Registry | Backlog | (KAN-20) |
-| BL-P1-07 | Runtime World State | Backlog | (KAN-21) |
-| BL-P1-08 | World Clock | Backlog | (KAN-22) |
-| BL-P1-09 | Simulation Tick | Backlog | (KAN-23) |
-| BL-P1-10 | Command Layer | Backlog | (KAN-24) |
-| BL-P1-11 | Save Foundation | Backlog | (KAN-25) |
-| BL-P1-12 | Debug Panel v1 | Backlog | (KAN-26) |
-| BL-P1-13 | Test Foundation | Backlog | (KAN-27) |
+| BL-P1-06 | Definition Registry | Verify | (KAN-20) `DefinitionLoader`/`DefinitionRegistry` xong, gom toàn bộ lỗi (duplicate id, dangling ref). Test: 2/2 pass. Chưa có content JSON thật, chỉ fixture test |
+| BL-P1-07 | Runtime World State | Verify | (KAN-21) `WorldState` + state con (Player/Inventory/ItemInstance) xong; Route/Location/Shelter/Npc/Event/Task chỉ stub id+status, mở rộng dần theo hệ thống tương ứng |
+| BL-P1-08 | World Clock | Backlog | (KAN-22) — S3 |
+| BL-P1-09 | Simulation Tick | Backlog | (KAN-23) — S3 |
+| BL-P1-10 | Command Layer | Backlog | (KAN-24) — S3 |
+| BL-P1-11 | Save Foundation | Backlog | (KAN-25) — S4. RNG (xorshift64* named stream) đã xong ở S2 làm nền cho seed-preservation |
+| BL-P1-12 | Debug Panel v1 | Backlog | (KAN-26) — S4 |
+| BL-P1-13 | Test Foundation | In Progress | (KAN-27) "Seed ổn định" đã có 3 test RNG pass (S2). Clock/Tick/Save test còn lại ở S3/S4 |
 
 **Gate M1:** chưa đạt.
 

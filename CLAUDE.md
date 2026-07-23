@@ -40,3 +40,5 @@ Backlog tracking dùng file local `docs/backlog/BACKLOG.md` (không dùng Jira).
 Đầu mỗi session code: đọc `docs/backlog/BACKLOG.md` + `docs/backlog/CODEMAP.md` trước, không re-scan `Assets/` để nắm hiện trạng — hai file này đủ token-rẻ để biết cái gì đã có, ở đâu, test đến đâu. Cuối mỗi khối việc (mỗi sprint hoặc mỗi lần hệ thống mới hoàn thành): cập nhật cả hai file cùng lúc, commit message tham chiếu BL-ID. `CODEMAP.md` = bảng Hệ thống → file path → API chính → trạng thái test → ghi chú "chưa làm/mock".
 
 Mọi implementation plan (kế hoạch code, không phải backlog item) lưu dưới dạng `.md` trong `docs/plans/YYYY-MM-DD-<slug>.md`, không chỉ trong `.claude/plans/`.
+
+Tự xác định khi nào cần commit và tự thực hiện commit.
