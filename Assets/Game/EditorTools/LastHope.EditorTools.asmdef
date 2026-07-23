@@ -4,6 +4,7 @@
     "references": [
         "LastHope.Core",
         "LastHope.Data",
+        "LastHope.Systems",
         "LastHope.Presentation",
         "LastHope.DebugTools",
         "Unity.InputSystem",

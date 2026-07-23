@@ -33,6 +33,18 @@ LastHope.EditorTools (Editor-only) → Core, Data, Presentation, DebugTools, Uni
 | `Assets/Game/Core/Random/RngStream.cs` | `RngStream` + `RngStreamState` | xorshift64* trên state `ulong` mutable, `NextInt(min,maxExcl)`, `NextDouble()` | ✅ |
 | `Assets/Game/Core/Random/RngService.cs` | `RngService` | `GetStream(name)` — named stream derive từ `WorldState.RandomSeed ⊕ FNV1a64(name)`, state sống trong `WorldState.RngStreams` | ✅ |
 | `Assets/Game/Core/Save/WorldStateSerializer.cs` | `WorldStateSerializer` (static) | `Serialize(WorldState)` (indented), `SerializeCanonical(WorldState)` (Formatting.None, dùng cho checksum/deep-compare), `Deserialize(json)`, `Settings` (snake_case, StringEnumConverter, ObjectCreationHandling.Replace) | ⬜ (chưa có SaveRoundTripTests — chờ S4 khi SaveService tồn tại) |
+| `Assets/Game/Core/Events/EventBus.cs` | `EventBus` (+ private `EventChannel<T>`) | `Subscribe<T>/Unsubscribe<T>/Publish<T>` — struct event, copy-on-write handler array, zero-boxing | ✅ (gián tiếp qua CommandPipelineTests) |
+| `Assets/Game/Core/Events/GameEvents.cs` | `IGameEvent` + 8 struct: `WorldTimeChanged`, `DisasterPhaseChanged`, `RouteStateChanged`, `ShelterWarningRaised`, `TaskCompleted`, `EventDiscovered`, `InventoryChanged`, `NpcStateChanged` | | ⬜ |
+| `Assets/Game/Core/Time/GameTimeUtil.cs` | `GameTimeUtil` (static) | `DayIndex(m)`, `TimeOfDayMinutes(m)`, `Format(m)` — anchor Day 0 17:00 = phút 0 | ⬜ (gián tiếp qua TickSchedulerTests) |
+| `Assets/Game/Core/Time/SimulationClock.cs` | `SimulationClock` | `AccumulateRealSeconds(double)`, `TryConsumeMinute()`, `PendingGameSeconds`. **Bank dùng `decimal` nội bộ** (không phải double) — double cộng dồn ~17k lần bị lệch 1 phút/24h, xem comment trong file | ✅ |
+| `Assets/Game/Core/Time/TickScheduler.cs` | `TickScheduler` | `SubscribeShort/Long(Action<long>)`, `RegisterThreshold(minute, cb)`, `Advance(clock, maxMinutes)` (bounded catch-up), `FastForward(minutes)` (Sleep/Travel). `AdvanceOneMinute()` private — NƠI DUY NHẤT tăng `WorldTimeMinutes` | ✅ |
+| `Assets/Game/Core/Commands/IGameCommand.cs` | `IGameCommand`, `CommandResult`, `CommandErrorCode`, `GameContext` | `GameContext{World,Definitions,Events,Rng,Clock}` — bundle inject duy nhất (đã thêm `Clock` so với plan gốc, cần cho StartSleepCommand) | ✅ |
+| `Assets/Game/Core/Commands/CommandProcessor.cs` | `CommandProcessor` | `Submit(IGameCommand) → CommandResult` — stamp WorldTime, Validate→Execute, log lỗi qua GameLog | ✅ |
+| `Assets/Game/Core/Commands/InventoryOwnerResolver.cs` | `InventoryOwnerResolver` (internal static) | `TryResolve(ctx, ownerId, out inv)` — **chỉ biết "player"** hiện tại, NPC/Shelter thêm sau khi hệ thống đó tồn tại | ⬜ |
+| `Assets/Game/Core/Commands/UseItemCommand.cs` | `UseItemCommand` | Giảm quantity item trong inventory actor, publish `InventoryChanged` | ✅ |
+| `Assets/Game/Core/Commands/TransferItemCommand.cs` | `TransferItemCommand` | Chuyển item giữa 2 owner đã biết; move nguyên instance nếu chuyển hết quantity (giữ Condition/Contamination/Wet), chỉ split khi chuyển một phần | ✅ |
+| `Assets/Game/Core/Commands/StartSleepCommand.cs` | `StartSleepCommand` | `ctx.Clock.FastForward(Minutes)` — **chưa có interrupt-on-event** (chờ Event System M3+) | ⬜ |
+| `Assets/Game/Core/Commands/TaskCommands.cs` | `StartTaskCommand`, `CancelTaskCommand`, `BeginTravelCommand` | Validate + set flag stub (`ActiveTaskState`/log) — **body đầy đủ chưa viết**, chờ Shelter Task (S10+)/Travel (S6) | ⬜ |
 
 ## LastHope.Data
 
@@ -48,7 +60,11 @@ LastHope.EditorTools (Editor-only) → Core, Data, Presentation, DebugTools, Uni
 
 ## LastHope.Systems
 
-Chưa có class nào (asmdef trống, chờ S2/S3).
+| File | Class | API chính | Test |
+| --- | --- | --- | --- |
+| `Assets/Game/Systems/Registry/GameServiceRegistry.cs` | `GameServiceRegistry` (static) | `Register<T>`, `Get<T>`, `TryGet<T>`, `Clear()` — service locator giới hạn, chỉ `GameBootstrapper` ghi | ⬜ |
+| `Assets/Game/Systems/Boot/GameBootstrapper.cs` | `GameBootstrapper` (MonoBehaviour, sống trong `10_GamePersistent`) | Composition root: load Definitions từ `StreamingAssets/Definitions`, fail-fast nếu lỗi (dừng boot, `enabled=false`), tạo `WorldState` mới + seed, dựng toàn bộ Core service, đăng ký vào `GameServiceRegistry` | ⬜ (verify qua headless smoke test, chưa có PlayMode test) |
+| `Assets/Game/Systems/Boot/SimulationDriver.cs` | `SimulationDriver` (MonoBehaviour) | Cầu nối Unity Time → Core: đọc service ở `Start()` (không phải `Awake()`, tránh phụ thuộc thứ tự component), `Update()` clamp delta 1s, gọi `SimulationClock.AccumulateRealSeconds` + `TickScheduler.Advance`. `DebugPaused`/`DebugTimeScale` cho tooling | ⬜ |
 
 ## LastHope.Presentation
 
@@ -83,9 +99,9 @@ Chưa có class nào (asmdef trống).
 | --- | --- |
 | `Assets/Input/GameControls.inputactions` | Action map "Gameplay": `Move` (Vector2, WASD composite), `Zoom` (Axis, scroll), `Interact` (Button, E — **chưa có code nào đọc action này**, chờ S5 Interaction System) |
 
-## Data định nghĩa game (chưa có nội dung)
+## Data định nghĩa game (chưa có content thật)
 
-`Assets/StreamingAssets/Definitions/` — chỉ có `README.md` placeholder. JSON thật (`manifest.json`, `items_p1.json`, ...) sẽ thêm ở S2/S5.
+`Assets/StreamingAssets/Definitions/` — có `manifest.json` (`definition_version: 0.1.0`, cần để `GameBootstrapper` load được registry rỗng hợp lệ lúc boot) + `README.md`. **Chưa có** `items_*.json`/`locations_*.json`/`routes_*.json`/`searchpoints_*.json` thật — Registry hiện tại rỗng (0 item/location/route/searchpoint). Content P1 thật sẽ thêm ở S5.
 
 ## Render / Project settings đã cấu hình (S1)
 
@@ -98,8 +114,11 @@ Chưa có class nào (asmdef trống).
 
 ## Việc CHƯA làm (để tránh giả định nhầm khi đọc code)
 
-- **Chưa có** Save/Command/EventBus/Tick/GameBootstrapper — đó là S3–S4. WorldState/Registry/RNG/Serializer đã có (S2) nhưng **chưa được ai khởi tạo lúc chạy game** (không có Boot code gọi tới) — tồn tại như thư viện độc lập, test trực tiếp bằng NUnit constructor.
+- **Chưa có** Save (SaveFile/SaveService) và Debug Panel v1 — đó là S4. Command/EventBus/Tick/GameBootstrapper đã xong và **đang chạy thật** trong `10_GamePersistent` (verify qua headless smoke test: boot → load definitions → tạo WorldState → log seed, không exception).
 - `DebugOverlay` (F1) là overlay tối thiểu Sprint 1, KHÔNG phải Debug Panel v1 (F2, sẽ thêm state tree + save/load ở S4) — hai file khác nhau, đừng nhầm.
+- `InventoryOwnerResolver` chỉ nhận biết owner id = `"player"`. Gọi `TransferItemCommand`/`UseItemCommand` với owner id khác sẽ luôn fail validation `InvalidActor` — không phải bug, chỉ là NPC/Shelter storage chưa tồn tại.
+- `StartTaskCommand`/`CancelTaskCommand`/`BeginTravelCommand` chỉ validate + ghi flag/log, KHÔNG có effect thật (task không tốn resource, travel không đổi scene/tiêu thời gian) — đó là việc của S6 (Travel) và S10+ (Shelter Task).
+- `StartSleepCommand` fast-forward clock nhưng KHÔNG kiểm tra event/interrupt (Event System chưa tồn tại).
 - `PlayerController.SpeedModifier` tồn tại nhưng chưa có hệ thống nào set nó (Carry Load/Flood ở M2/P2).
 - Input action "Interact" (E) đã khai báo trong `.inputactions` nhưng chưa có script nào subscribe.
 - `InventoryOps.RecalculateLoad` chỉ tính tổng, **không set `Overload`** — capacity 15kg/25L trong bảng baseline chưa được code ở đâu cả, sẽ vào `Systems/Inventory/InventorySystem.cs` (S5).
