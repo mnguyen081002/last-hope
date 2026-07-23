@@ -3,7 +3,8 @@
     "rootNamespace": "LastHope.Systems",
     "references": [
         "LastHope.Core",
-        "LastHope.Data"
+        "LastHope.Data",
+        "Newtonsoft.Json"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

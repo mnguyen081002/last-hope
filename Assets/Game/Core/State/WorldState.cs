@@ -8,8 +8,26 @@ namespace LastHope.Core.State
     // reference something serializable today; do not add fields speculatively beyond
     // what the current sprint's systems need.
     public sealed class RouteState { public string Id { get; set; } public string StatusName { get; set; } = "Dry"; }
-    public sealed class LocationState { public string Id { get; set; } public string StatusName { get; set; } = "Normal"; }
-    public sealed class ShelterState { public string Id { get; set; } public string StatusName { get; set; } = "Normal"; }
+
+    /// <summary>SearchPointStates/DroppedItems added Sprint 6 (BL-P1-17) — search/drop containers
+    /// for this location; both lazily created by InventoryOwnerResolver on first access.</summary>
+    public sealed class LocationState
+    {
+        public string Id { get; set; }
+        public string StatusName { get; set; } = "Normal";
+        public Dictionary<string, SearchPointState> SearchPointStates { get; set; } = new Dictionary<string, SearchPointState>();
+        public InventoryState DroppedItems { get; set; }
+    }
+
+    /// <summary>Storage added Sprint 6 (BL-P1-18) — unlimited-capacity shelter container,
+    /// lazily created by InventoryOwnerResolver on first access.</summary>
+    public sealed class ShelterState
+    {
+        public string Id { get; set; }
+        public string StatusName { get; set; } = "Normal";
+        public InventoryState Storage { get; set; }
+    }
+
     public sealed class NpcState { public string Id { get; set; } public string StatusName { get; set; } = "Unknown"; }
     public sealed class ActiveEventState { public string Id { get; set; } public string StatusName { get; set; } = "Active"; }
     public sealed class ActiveTaskState { public string Id { get; set; } public string StatusName { get; set; } = "Queued"; }
@@ -36,5 +54,8 @@ namespace LastHope.Core.State
         public Dictionary<string, RngStreamState> RngStreams { get; set; } = new Dictionary<string, RngStreamState>();
 
         public PlayerState Player { get; set; } = new PlayerState();
+
+        /// <summary>Stable id for this playthrough's telemetry (BL-P1-21), generated once at new game.</summary>
+        public string PlaythroughId { get; set; }
     }
 }

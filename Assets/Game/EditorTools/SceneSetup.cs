@@ -2,9 +2,11 @@ using LastHope.Presentation.Boot;
 using LastHope.Presentation.CameraRig;
 using LastHope.Presentation.Interaction;
 using LastHope.Presentation.Player;
+using LastHope.Presentation.World;
 using LastHope.DebugTools.Overlay;
 using LastHope.DebugTools.Panel;
 using LastHope.Systems.Boot;
+using LastHope.UI.Container;
 using LastHope.UI.Inventory;
 using TMPro;
 using UnityEditor;
@@ -30,6 +32,8 @@ namespace LastHope.EditorTools
         private const string BootScenePath = ScenesFolder + "/00_Boot.unity";
         private const string PersistentScenePath = ScenesFolder + "/10_GamePersistent.unity";
         private const string TestSystemsScenePath = ScenesFolder + "/90_TestSystems.unity";
+        private const string MainShelterScenePath = ScenesFolder + "/Shelters/20_MainShelter.unity";
+        private const string ConvenienceStoreScenePath = ScenesFolder + "/Locations/41_Location_ConvenienceStore.unity";
         private const string InputActionsPath = "Assets/Input/GameControls.inputactions";
 
         [MenuItem("Last Hope/Build Sprint 1 Scenes")]
@@ -44,6 +48,8 @@ namespace LastHope.EditorTools
 
             BuildTestSystemsScene();
             BuildGamePersistentScene(inputActions);
+            BuildMainShelterScene();
+            BuildConvenienceStoreScene();
             BuildBootScene();
 
             EditorBuildSettings.scenes = new[]
@@ -51,6 +57,8 @@ namespace LastHope.EditorTools
                 new EditorBuildSettingsScene(BootScenePath, true),
                 new EditorBuildSettingsScene(PersistentScenePath, true),
                 new EditorBuildSettingsScene(TestSystemsScenePath, true),
+                new EditorBuildSettingsScene(MainShelterScenePath, true),
+                new EditorBuildSettingsScene(ConvenienceStoreScenePath, true),
             };
 
             AssetDatabase.SaveAssets();
@@ -96,6 +104,7 @@ namespace LastHope.EditorTools
             root.AddComponent<GamePersistentMarker>();
             root.AddComponent<GameBootstrapper>();
             root.AddComponent<SimulationDriver>();
+            root.AddComponent<SceneFlowController>();
             root.AddComponent<DebugOverlay>();
             root.AddComponent<DebugPanel>();
 
@@ -176,6 +185,90 @@ namespace LastHope.EditorTools
             panelRect.anchoredPosition = Vector2.zero;
             panelGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
             panelGo.AddComponent<InventoryPanel>().SetInputActions(inputActions);
+
+            var containerGo = new GameObject("ContainerPanel", typeof(RectTransform));
+            containerGo.transform.SetParent(canvasGo.transform, false);
+            var containerRect = containerGo.GetComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(1f, 0f);
+            containerRect.anchorMax = new Vector2(1f, 1f);
+            containerRect.pivot = new Vector2(1f, 0.5f);
+            containerRect.sizeDelta = new Vector2(420, 0);
+            containerRect.anchoredPosition = Vector2.zero;
+            containerGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+            containerGo.AddComponent<ContainerPanel>();
+        }
+
+        private static void BuildMainShelterScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "Ground";
+            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+
+            var lightGo = new GameObject("Directional Light");
+            var light = lightGo.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.2f;
+            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            var storage = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            storage.name = "ShelterStorage";
+            storage.transform.position = new Vector3(3f, 0.5f, 3f);
+            storage.AddComponent<ShelterStorageView>().SetShelterId("shelter_main");
+
+            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            travelPoint.name = "TravelPoint_Store";
+            travelPoint.transform.position = new Vector3(-3f, 0.5f, 3f);
+            travelPoint.AddComponent<TravelPointView>().SetRouteId("route_shelter_store");
+
+            var spawn = new GameObject("PlayerSpawnPoint");
+            spawn.transform.position = new Vector3(0f, 0.1f, 0f);
+            spawn.AddComponent<PlayerSpawnPoint>();
+
+            EditorSceneManager.SaveScene(scene, MainShelterScenePath);
+        }
+
+        private static void BuildConvenienceStoreScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "Ground";
+            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+
+            var lightGo = new GameObject("Directional Light");
+            var light = lightGo.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.2f;
+            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            CreateSearchPoint("searchpoint_drink_shelf_1", new Vector3(-4f, 0.5f, 2f));
+            CreateSearchPoint("searchpoint_drink_shelf_2", new Vector3(-4f, 0.5f, -2f));
+            CreateSearchPoint("searchpoint_dry_shelf_1", new Vector3(-1f, 0.5f, 2f));
+            CreateSearchPoint("searchpoint_dry_shelf_2", new Vector3(-1f, 0.5f, -2f));
+            CreateSearchPoint("searchpoint_counter", new Vector3(2f, 0.5f, 0f));
+            CreateSearchPoint("searchpoint_back_room", new Vector3(5f, 0.5f, 0f));
+
+            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            travelPoint.name = "TravelPoint_Shelter";
+            travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
+            travelPoint.AddComponent<TravelPointView>().SetRouteId("route_shelter_store");
+
+            var spawn = new GameObject("PlayerSpawnPoint");
+            spawn.transform.position = new Vector3(0f, 0.1f, -5f);
+            spawn.AddComponent<PlayerSpawnPoint>();
+
+            EditorSceneManager.SaveScene(scene, ConvenienceStoreScenePath);
+        }
+
+        private static void CreateSearchPoint(string id, Vector3 position)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = id;
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(1.5f, 1f, 0.5f);
+            go.AddComponent<SearchPointView>().SetSearchPointId(id);
         }
 
         private static void BuildBootScene()

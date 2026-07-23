@@ -1,4 +1,7 @@
+using System;
+using LastHope.Core.Events;
 using LastHope.Core.Logging;
+using LastHope.Core.Rules;
 using LastHope.Core.State;
 
 namespace LastHope.Core.Commands
@@ -62,6 +65,12 @@ namespace LastHope.Core.Commands
         }
     }
 
+    /// <summary>
+    /// Full body since Sprint 6 (BL-P1-19): validates the player is at one end of the route,
+    /// fast-forwards the clock by TravelMinutes scaled by carry-load factor, then switches
+    /// CurrentLocationId to the other end. Scene loading reacts to TravelCompleted
+    /// (SceneFlowController) — this command only touches simulation state.
+    /// </summary>
     public sealed class BeginTravelCommand : IGameCommand
     {
         public string ActorId { get; }
@@ -76,14 +85,29 @@ namespace LastHope.Core.Commands
 
         public CommandResult Validate(GameContext ctx)
         {
-            if (!ctx.Definitions.TryGetRoute(TargetId, out _))
+            if (!ctx.Definitions.TryGetRoute(TargetId, out var route))
                 return CommandResult.Fail(CommandErrorCode.RouteBlocked, $"Unknown route '{TargetId}'.");
+
+            string current = ctx.World.Player.CurrentLocationId;
+            if (current != route.FromLocationId && current != route.ToLocationId)
+                return CommandResult.Fail(CommandErrorCode.NotAtLocation, $"Player is not on route '{TargetId}'.");
+
             return CommandResult.Ok();
         }
 
         public void Execute(GameContext ctx)
         {
-            GameLog.Info(LogCategory.World, $"BeginTravelCommand: route '{TargetId}' validated only — full Travel System arrives in Sprint 6.");
+            ctx.Definitions.TryGetRoute(TargetId, out var route);
+            string from = ctx.World.Player.CurrentLocationId;
+            string to = from == route.FromLocationId ? route.ToLocationId : route.FromLocationId;
+
+            float loadFactor = InventoryRules.LoadFactorFor(ctx.World.Player.Inventory.Overload, ctx.Definitions.Balance);
+            int minutes = (int)Math.Ceiling(route.TravelMinutes * loadFactor);
+
+            ctx.Events.Publish(new TravelStarted(TargetId, from, to, minutes));
+            ctx.Clock.FastForward(minutes);
+            ctx.World.Player.CurrentLocationId = to;
+            ctx.Events.Publish(new TravelCompleted(TargetId, from, to, minutes));
         }
     }
 }

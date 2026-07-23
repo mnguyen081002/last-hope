@@ -19,6 +19,7 @@ namespace LastHope.Core.Commands
         RouteBlocked,
         InvalidState,
         InternalError,
+        NotAtLocation,
     }
 
     public readonly struct CommandResult

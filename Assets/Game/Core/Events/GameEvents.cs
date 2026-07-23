@@ -91,4 +91,52 @@ namespace LastHope.Core.Events
             Quantity = quantity;
         }
     }
+
+    public readonly struct SearchPointOpened : IGameEvent
+    {
+        public readonly string SearchPointId;
+        public readonly bool FirstOpen;
+        public SearchPointOpened(string searchPointId, bool firstOpen) { SearchPointId = searchPointId; FirstOpen = firstOpen; }
+    }
+
+    /// <summary>UI-routing event, not sim state: tells the UI layer to open a container view
+    /// for the given owner id (search point or shelter storage).</summary>
+    public readonly struct ContainerViewRequested : IGameEvent
+    {
+        public readonly string OwnerId;
+        public readonly string TitleKey;
+        public ContainerViewRequested(string ownerId, string titleKey) { OwnerId = ownerId; TitleKey = titleKey; }
+    }
+
+    public readonly struct TravelStarted : IGameEvent
+    {
+        public readonly string RouteId;
+        public readonly string FromLocationId;
+        public readonly string ToLocationId;
+        public readonly int PlannedMinutes;
+
+        public TravelStarted(string routeId, string fromLocationId, string toLocationId, int plannedMinutes)
+        {
+            RouteId = routeId;
+            FromLocationId = fromLocationId;
+            ToLocationId = toLocationId;
+            PlannedMinutes = plannedMinutes;
+        }
+    }
+
+    public readonly struct TravelCompleted : IGameEvent
+    {
+        public readonly string RouteId;
+        public readonly string FromLocationId;
+        public readonly string ToLocationId;
+        public readonly int MinutesSpent;
+
+        public TravelCompleted(string routeId, string fromLocationId, string toLocationId, int minutesSpent)
+        {
+            RouteId = routeId;
+            FromLocationId = fromLocationId;
+            ToLocationId = toLocationId;
+            MinutesSpent = minutesSpent;
+        }
+    }
 }

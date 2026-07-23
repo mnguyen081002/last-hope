@@ -55,27 +55,31 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-14 | Interaction System | Verify | (KAN-28, S5) `IInteractable`/`InteractionDetector`/`InteractionPrompt`: OverlapSphere 1.6m + cursor raycast tiebreak, phím E tức thì (docs không spec hold). Chưa có interactable thật trong scene (chờ S6 SearchPointView/ShelterStorageView) |
+| BL-P1-14 | Interaction System | Verify | (KAN-28, S5) `IInteractable`/`InteractionDetector`/`InteractionPrompt`: OverlapSphere 1.6m + cursor raycast tiebreak, phím E tức thì. S6: nay có interactable thật trong scene (SearchPointView×6, ShelterStorageView, TravelPointView) |
 | BL-P1-15 | Item System | Verify | (KAN-29, S5) `ItemDefinition` +TwoHandCarry; content thật `items_p1.json` (5 item). Test: ContentValidationTests pass |
-| BL-P1-16 | Inventory | Verify | (KAN-30, S5) `InventoryRules`/`InventorySystem` (overload Normal/Light/Heavy, capacity hard-cap 150%), `InventoryPanel` UI (list + 2 thanh, nút Use; Drop chờ S6). Test: 8/8 InventoryRulesTests pass |
-| BL-P1-17 | Search System | Backlog | S6 |
-| BL-P1-18 | Shelter Storage | Backlog | S6 |
-| BL-P1-19 | Route và Travel | Backlog | S6 (BeginTravelCommand hiện chỉ validate+log, chưa có body thật) |
-| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Backlog | S6 — content JSON đã có (`locations_p1.json`), blockout scene chưa dựng |
-| BL-P1-21 | Telemetry P1 | Backlog | S6 |
-| BL-P1-22 | Playtest vòng P1 | Backlog | S6 |
+| BL-P1-16 | Inventory | Verify | (KAN-30, S5) `InventoryRules`/`InventorySystem` (overload Normal/Light/Heavy, capacity hard-cap 150%), `InventoryPanel` UI (list + 2 thanh, nút Use; Drop chờ sau). Test: 8/8 InventoryRulesTests pass |
+| BL-P1-17 | Search System | Verify | (KAN-31, S6) `SearchPointState` + `OpenSearchPointCommand`: roll MỘT LẦN qua stream "loot", còn lại nằm nguyên container qua save/load, không re-roll. Test: 4/4 SearchPointTests pass |
+| BL-P1-18 | Shelter Storage | Verify | (KAN-32, S6) owner `shelter_storage:<id>` lazy-create, không giới hạn dung lượng; `ContainerPanel` Take/Take All/Store hai chiều. Test: qua OwnerResolverTests |
+| BL-P1-19 | Route và Travel | Verify | (KAN-33, S6) `BeginTravelCommand` đầy đủ: kiểm adjacency, loadFactor theo Overload, FastForward, đổi CurrentLocationId, publish TravelStarted/Completed; `SceneFlowController` load/unload scene theo `LocationDefinition.SceneName`. Test: 5/5 TravelTests pass; headless smoke xác nhận load `20_MainShelter` thành công |
+| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Verify | (KAN-34, S6) `41_Location_ConvenienceStore` dựng bằng primitive: 6 SearchPointView đúng vị trí, TravelPointView, PlayerSpawnPoint |
+| BL-P1-21 | Telemetry P1 | Verify | (KAN-35, S6) `TelemetryLogger` JSONL: travel_started/completed (kèm carry load lúc về), search_opened, item_collected. Test: TelemetryTests xác nhận đúng thứ tự event |
+| BL-P1-22 | Playtest vòng P1 | Verify | (KAN-36) Chạy được qua test tự động (depletion-qua-save) + headless smoke; **playtest thật bằng mắt/tay chưa làm** (môi trường AI headless) |
 
-**Gate P1:** chưa đạt — còn thiếu Search/Storage/Travel/content scene/Telemetry (S6).
+**Gate P1: PASS về mặt kỹ thuật (2026-07-24).** 48/48 EditMode test xanh (bao gồm SearchPointTests, OwnerResolverTests, TravelTests, TelemetryTests); build Windows 0 lỗi; headless smoke 12s xác nhận `SceneFlowController` chuyển scene `20_MainShelter` thành công không exception.
+
+**Còn thiếu để Gate P1 pass đầy đủ theo đúng nghĩa (cần user xác nhận bằng tay):** chưa có ai thực sự chơi qua chuyến Chuẩn bị→Đi→Search→Loot Decision→Về→Cất→Save/Load trong Editor/Player có cửa sổ để cảm nhận "có bỏ lại đồ giá trị không", "search dừng giữa chừng có hữu ích không". Test tự động chỉ xác nhận cơ chế đúng, không xác nhận trải nghiệm.
 
 ### S5 — sửa 3 vấn đề user phát hiện (2026-07-24)
 1. **Vị trí nhân vật giờ được lưu**: `PlayerState.PositionX/Y/Z/PositionLocationId` + `PlayerAvatarSync` (ghi mỗi frame, áp lại khi load qua `WorldStateReloaded`). Test: PlayerPositionSaveTests pass.
 2. **DebugPanel Load giờ có picker**: liệt kê `SaveService.ListSlots()` thành nút bấm, giữ ô nhập tay làm fallback.
 3. **Content JSON thật đã có**: `items_p1.json`, `locations_p1.json`, `routes_p1.json`, `searchpoints_p1.json`, `balance.json` — "Add Item" trong Debug Panel giờ dùng được với id thật (vd `item_water_bottle`).
 
-**Sự cố phát sinh + đã sửa:** TextMeshPro báo NullReferenceException lúc runtime vì thiếu TMP Essential Resources (chưa từng import) — đã import qua script `TmpSetup.cs` (batchmode, không dùng `-quit` vì ImportPackage là async).
+**Sự cố phát sinh + đã sửa (S5):** TextMeshPro báo NullReferenceException lúc runtime vì thiếu TMP Essential Resources (chưa từng import) — đã import qua script `TmpSetup.cs` (batchmode, không dùng `-quit` vì ImportPackage là async).
+
+**Sự cố phát sinh + đã sửa (S6):** `Tests.EditMode.asmdef` có `overrideReferences:true` nên liệt kê "Newtonsoft.Json" vào `references` không đủ (đó chỉ match asmdef khác theo tên, Newtonsoft là plugin DLL thuần) — phải thêm `"Newtonsoft.Json.dll"` vào `precompiledReferences`.
 
 ---
 
-## Milestone tiếp theo (P2+)
+## Milestone tiếp theo (P2: S7–S9)
 
-Chưa breakdown — sẽ thêm bảng mới vào file này khi Gate P1 pass (theo `docs/mvp-product-backlog.md` mục 6 trở đi).
+Outline đã có trong `docs/plans/2026-07-24-p1-p2-completion-plan.md` — Condition + Phase timeline (S7), Hazard/Flood + Equipment (S8), Shelter recovery + Scenario A-D (S9) → Gate P2. Bảng backlog chi tiết sẽ thêm khi bắt đầu S7.

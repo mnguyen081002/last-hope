@@ -26,16 +26,20 @@ namespace LastHope.DebugTools.Panel
         private string _saveSlotId = "manual_0";
         private string _statusMessage = "";
 
+        private string _travelRouteId = "route_shelter_store";
+
         private GameContext _ctx;
         private TickScheduler _scheduler;
         private SimulationDriver _driver;
         private SaveService _saveService;
+        private CommandProcessor _processor;
 
         private void Start()
         {
             GameServiceRegistry.TryGet(out _ctx);
             GameServiceRegistry.TryGet(out _scheduler);
             GameServiceRegistry.TryGet(out _saveService);
+            GameServiceRegistry.TryGet(out _processor);
             _driver = GetComponent<SimulationDriver>();
         }
 
@@ -91,6 +95,17 @@ namespace LastHope.DebugTools.Panel
                 {
                     _statusMessage = $"Unknown item id '{_addItemId}'.";
                 }
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(6);
+            GUILayout.Label($"Travel (at '{_ctx.World.Player.CurrentLocationId}')");
+            GUILayout.BeginHorizontal();
+            _travelRouteId = GUILayout.TextField(_travelRouteId, GUILayout.Width(180));
+            if (GUILayout.Button("Travel") && _processor != null)
+            {
+                CommandResult result = _processor.Submit(new BeginTravelCommand(_ctx.World.Player.ActorId, _travelRouteId));
+                _statusMessage = result.Success ? $"Arrived at '{_ctx.World.Player.CurrentLocationId}'." : $"Travel failed: {result.Code}";
             }
             GUILayout.EndHorizontal();
 
@@ -172,6 +187,7 @@ namespace LastHope.DebugTools.Panel
             into.RandomSeed = from.RandomSeed;
             into.RngStreams = from.RngStreams;
             into.Player = from.Player;
+            into.PlaythroughId = from.PlaythroughId;
         }
     }
 }

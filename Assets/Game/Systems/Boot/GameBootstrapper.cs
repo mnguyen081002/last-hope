@@ -10,6 +10,7 @@ using LastHope.Core.Time;
 using LastHope.Data;
 using LastHope.Systems.Inventory;
 using LastHope.Systems.Registry;
+using LastHope.Systems.Telemetry;
 using UnityEngine;
 
 namespace LastHope.Systems.Boot
@@ -42,6 +43,7 @@ namespace LastHope.Systems.Boot
             var world = new WorldState
             {
                 RandomSeed = newGameSeed != 0 ? newGameSeed : (ulong)DateTime.UtcNow.Ticks,
+                PlaythroughId = Guid.NewGuid().ToString("N"),
             };
             world.Player.CurrentLocationId = loadResult.Registry.Balance.NewGame.StartLocationId;
 
@@ -55,6 +57,8 @@ namespace LastHope.Systems.Boot
                 Path.Combine(Application.persistentDataPath, "Saves"), loadResult.Registry.DefinitionVersion);
             var inventorySystem = new InventorySystem(ctx);
             inventorySystem.RecomputeAll();
+            var telemetry = new TelemetryLogger(
+                Path.Combine(Application.persistentDataPath, "Telemetry"), ctx, Guid.NewGuid().ToString("N"));
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
@@ -62,6 +66,7 @@ namespace LastHope.Systems.Boot
             GameServiceRegistry.Register(processor);
             GameServiceRegistry.Register(saveService);
             GameServiceRegistry.Register(inventorySystem);
+            GameServiceRegistry.Register(telemetry);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");

@@ -52,5 +52,16 @@ namespace LastHope.Core.Rules
                 default: return 1f;
             }
         }
+
+        /// <summary>Travel time multiplier for the given carry state (BL-P1-19).</summary>
+        public static float LoadFactorFor(OverloadState overload, BalanceConfig balance)
+        {
+            switch (overload)
+            {
+                case OverloadState.Light: return balance.Travel.LoadFactorLight;
+                case OverloadState.Heavy: return balance.Travel.LoadFactorHeavy;
+                default: return balance.Travel.LoadFactorNormal;
+            }
+        }
     }
 }
