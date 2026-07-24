@@ -167,14 +167,27 @@ namespace LastHope.EditorTools
             eventSystemGo.AddComponent<EventSystem>();
             eventSystemGo.AddComponent<InputSystemUIInputModule>();
 
+            // y=-100 (not -16): DebugOverlay (F1, OnGUI, always on by default) occupies
+            // Rect(10,10,260,90) in screen pixels — a plain UGUI anchor at the same corner would
+            // render underneath/through it. Placed below instead of relying on players disabling F1.
             var hudGo = new GameObject("ConditionHud", typeof(RectTransform));
             hudGo.transform.SetParent(canvasGo.transform, false);
             var hudRect = hudGo.GetComponent<RectTransform>();
             hudRect.anchorMin = hudRect.anchorMax = new Vector2(0f, 1f);
             hudRect.pivot = new Vector2(0f, 1f);
-            hudRect.anchoredPosition = new Vector2(16f, -16f);
-            hudRect.sizeDelta = new Vector2(220, 120);
+            hudRect.anchoredPosition = new Vector2(16f, -100f);
+            hudRect.sizeDelta = new Vector2(260, 160);
             hudGo.AddComponent<ConditionHud>();
+
+            var legendGo = new GameObject("ControlsLegend", typeof(RectTransform));
+            legendGo.transform.SetParent(canvasGo.transform, false);
+            var legendRect = legendGo.GetComponent<RectTransform>();
+            legendRect.anchorMin = new Vector2(0f, 0f);
+            legendRect.anchorMax = new Vector2(1f, 0f);
+            legendRect.pivot = new Vector2(0.5f, 0f);
+            legendRect.anchoredPosition = new Vector2(0f, 0f);
+            legendRect.sizeDelta = new Vector2(0f, 32f);
+            legendGo.AddComponent<ControlsLegend>();
 
             var promptGo = new GameObject("InteractionPrompt", typeof(RectTransform));
             promptGo.transform.SetParent(canvasGo.transform, false);

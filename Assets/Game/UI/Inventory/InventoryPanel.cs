@@ -5,6 +5,7 @@ using LastHope.Core.State;
 using LastHope.Data;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Registry;
+using LastHope.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -19,6 +20,9 @@ namespace LastHope.UI.Inventory
     /// </summary>
     public sealed class InventoryPanel : MonoBehaviour
     {
+        private const float HeaderHeight = 130f;
+        private const float RowHeight = 34f;
+
         [SerializeField] private InputActionAsset inputActions;
 
         private GameContext _ctx;
@@ -67,8 +71,9 @@ namespace LastHope.UI.Inventory
             }
         }
 
+        // Enable only, never Disable(): see ContainerPanel's OnEnable comment — "ToggleInventory"
+        // is a shared InputAction instance, and Disable() on it would affect every other consumer.
         private void OnEnable() => _toggleAction?.Enable();
-        private void OnDisable() => _toggleAction?.Disable();
 
         private void Update()
         {
@@ -103,10 +108,12 @@ namespace LastHope.UI.Inventory
             _rows.Clear();
 
             InventoryState inv = _ctx.World.Player.Inventory;
+            int index = 0;
             foreach (ItemInstanceState item in inv.Items.Values)
             {
                 _ctx.Definitions.TryGetItem(item.ItemId, out ItemDefinition def);
-                _rows.Add(BuildRow(item, def));
+                _rows.Add(BuildRow(item, def, index));
+                index++;
             }
 
             InventoryBalance cap = _ctx.Definitions.Balance.Inventory;
@@ -126,19 +133,17 @@ namespace LastHope.UI.Inventory
             _volumeLabel.text = $"Volume {inv.CurrentVolumeLiters:0.0} / {cap.BackpackCapacityLiters:0} L";
         }
 
-        private GameObject BuildRow(ItemInstanceState item, ItemDefinition def)
+        private GameObject BuildRow(ItemInstanceState item, ItemDefinition def, int index)
         {
-            var row = new GameObject(item.InstanceId, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var row = new GameObject(item.InstanceId, typeof(RectTransform));
             row.transform.SetParent(_rowContainer, false);
-            var layout = row.GetComponent<HorizontalLayoutGroup>();
-            layout.childForceExpandWidth = false;
-            layout.spacing = 8;
+            UiLayout.StretchTop(row.GetComponent<RectTransform>(), index * RowHeight, RowHeight);
 
             string label = def?.DisplayNameKey ?? item.ItemId;
-            AddLabel(row.transform, $"{label} x{item.Quantity}", 260);
+            AddLabel(row.transform, $"{label} x{item.Quantity}", 12f, 4f, 280f, 26f);
 
             AddButton(row.transform, "Use", () =>
-                _processor.Submit(new UseItemCommand(_ctx.World.Player.ActorId, item.InstanceId, 1)));
+                _processor.Submit(new UseItemCommand(_ctx.World.Player.ActorId, item.InstanceId, 1)), 300f, 2f);
 
             return row;
         }
@@ -147,30 +152,34 @@ namespace LastHope.UI.Inventory
         {
             RectTransform root = GetComponent<RectTransform>();
 
-            var header = new GameObject("Header", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            var header = new GameObject("Header", typeof(RectTransform));
             header.transform.SetParent(root, false);
-            _weightLabel = AddLabel(header.transform, "Weight", 300);
-            _weightFill = AddBar(header.transform);
-            _volumeLabel = AddLabel(header.transform, "Volume", 300);
-            _volumeFill = AddBar(header.transform);
+            UiLayout.StretchTop(header.GetComponent<RectTransform>(), 0f, HeaderHeight);
 
-            var rowsGo = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            _weightLabel = AddLabel(header.transform, "Weight", 12f, 10f, 380f, 26f);
+            _weightFill = AddBar(header.transform, 12f, 40f, 380f, 20f);
+            _volumeLabel = AddLabel(header.transform, "Volume", 12f, 68f, 380f, 26f);
+            _volumeFill = AddBar(header.transform, 12f, 98f, 380f, 20f);
+
+            var rowsGo = new GameObject("Rows", typeof(RectTransform));
             rowsGo.transform.SetParent(root, false);
+            UiLayout.StretchTop(rowsGo.GetComponent<RectTransform>(), HeaderHeight, 0f);
             _rowContainer = rowsGo.GetComponent<RectTransform>();
         }
 
-        private static TextMeshProUGUI AddLabel(Transform parent, string text, float width)
+        private static TextMeshProUGUI AddLabel(Transform parent, string text, float x, float y, float width, float height)
         {
             var go = new GameObject("Label", typeof(RectTransform));
             go.transform.SetParent(parent, false);
             var label = go.AddComponent<TextMeshProUGUI>();
             label.text = text;
-            label.fontSize = 18;
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, 24);
+            label.fontSize = 22;
+            label.color = Color.white;
+            UiLayout.TopLeft(go.GetComponent<RectTransform>(), x, y, width, height);
             return label;
         }
 
-        private static Image AddBar(Transform parent)
+        private static Image AddBar(Transform parent, float x, float y, float width, float height)
         {
             var go = new GameObject("Bar", typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);
@@ -178,18 +187,30 @@ namespace LastHope.UI.Inventory
             image.type = Image.Type.Filled;
             image.fillMethod = Image.FillMethod.Horizontal;
             image.color = Color.green;
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 16);
+            UiLayout.TopLeft(go.GetComponent<RectTransform>(), x, y, width, height);
             return image;
         }
 
-        private static void AddButton(Transform parent, string text, System.Action onClick)
+        private static void AddButton(Transform parent, string text, System.Action onClick, float x, float y)
         {
             var go = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(60, 24);
-            go.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            UiLayout.TopLeft(go.GetComponent<RectTransform>(), x, y, 90f, 30f);
+            go.GetComponent<Image>().color = new Color(0.25f, 0.25f, 0.25f, 0.95f);
             go.GetComponent<Button>().onClick.AddListener(() => onClick());
-            AddLabel(go.transform, text, 60);
+
+            var labelGo = new GameObject("Label", typeof(RectTransform));
+            labelGo.transform.SetParent(go.transform, false);
+            var label = labelGo.AddComponent<TextMeshProUGUI>();
+            label.text = text;
+            label.fontSize = 18;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.sizeDelta = Vector2.zero;
+            labelRect.anchoredPosition = Vector2.zero;
         }
     }
 }

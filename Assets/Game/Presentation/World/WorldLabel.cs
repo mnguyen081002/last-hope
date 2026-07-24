@@ -22,7 +22,9 @@ namespace LastHope.Presentation.World
             var label = go.AddComponent<WorldLabel>();
             label._text = go.AddComponent<TextMeshPro>();
             label._text.text = text;
-            label._text.fontSize = 4f;
+            // 4 was nearly invisible, 14 was oversized AND the outline below caused visible mesh
+            // corruption on the default (non-outline-capable) material — reverted, plain color only.
+            label._text.fontSize = 6f;
             label._text.alignment = TextAlignmentOptions.Center;
             label._text.color = Color.white;
             return label;

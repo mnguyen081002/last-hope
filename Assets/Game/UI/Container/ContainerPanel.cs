@@ -5,6 +5,7 @@ using LastHope.Core.Events;
 using LastHope.Core.State;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Registry;
+using LastHope.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -29,11 +30,17 @@ namespace LastHope.UI.Container
         private CommandProcessor _processor;
         private InputAction _closeAction;
 
+        private const float HeaderHeight = 48f;
+        private const float RowHeight = 36f;
+        private const float SectionGap = 16f;
+        private const float SectionHeaderHeight = 32f;
+
         private string _ownerId;
         private TextMeshProUGUI _titleLabel;
         private RectTransform _containerRows;
         private RectTransform _playerRows;
         private GameObject _playerSection;
+        private RectTransform _playerSectionRect;
 
         private readonly List<GameObject> _containerRowObjects = new List<GameObject>();
         private readonly List<GameObject> _playerRowObjects = new List<GameObject>();
@@ -69,8 +76,12 @@ namespace LastHope.UI.Container
             gameObject.SetActive(false);
         }
 
+        // Enable only, never Disable(): FindAction("Close") returns the SAME shared InputAction
+        // instance that WorldMapPanel also reads. This panel toggling itself via SetActive cycles
+        // OnEnable/OnDisable far more often than WorldMapPanel (which stays permanently active) —
+        // an OnDisable() calling Disable() here would turn the Close action off globally the next
+        // time this panel closes, silently breaking Esc for WorldMapPanel too (bugfix 2026-07-24).
         private void OnEnable() => _closeAction?.Enable();
-        private void OnDisable() => _closeAction?.Disable();
 
         private void Update()
         {
@@ -112,36 +123,44 @@ namespace LastHope.UI.Container
 
             if (_ctx == null || _ownerId == null) return;
 
+            int containerCount = 0;
             if (InventoryOwnerResolver.TryResolve(_ctx, _ownerId, out var containerInv))
             {
                 foreach (var item in containerInv.Items.Values.ToList())
                 {
                     _ctx.Definitions.TryGetItem(item.ItemId, out ItemDefinition def);
-                    _containerRowObjects.Add(BuildRow(_containerRows, item, def, "Take",
+                    _containerRowObjects.Add(BuildRow(_containerRows, item, def, containerCount, "Take",
                         () => _processor.Submit(new TransferItemCommand(_ownerId, item.InstanceId, _ctx.World.Player.ActorId, item.Quantity))));
+                    containerCount++;
                 }
             }
 
+            // PlayerSection sits below however many container rows there turned out to be —
+            // repositioned every rebuild since that count changes as items are taken/added.
+            UiLayout.StretchTop(_playerSectionRect, HeaderHeight + containerCount * RowHeight + SectionGap, 0f);
+
             if (_playerSection.activeSelf)
             {
+                int playerCount = 0;
                 foreach (var item in _ctx.World.Player.Inventory.Items.Values.ToList())
                 {
                     _ctx.Definitions.TryGetItem(item.ItemId, out ItemDefinition def);
-                    _playerRowObjects.Add(BuildRow(_playerRows, item, def, "Store",
+                    _playerRowObjects.Add(BuildRow(_playerRows, item, def, playerCount, "Store",
                         () => _processor.Submit(new TransferItemCommand(_ctx.World.Player.ActorId, item.InstanceId, _ownerId, item.Quantity))));
+                    playerCount++;
                 }
             }
         }
 
-        private GameObject BuildRow(Transform parent, ItemInstanceState item, ItemDefinition def, string buttonText, System.Action onClick)
+        private GameObject BuildRow(Transform parent, ItemInstanceState item, ItemDefinition def, int index, string buttonText, System.Action onClick)
         {
-            var row = new GameObject(item.InstanceId, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var row = new GameObject(item.InstanceId, typeof(RectTransform));
             row.transform.SetParent(parent, false);
-            row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+            UiLayout.StretchTop(row.GetComponent<RectTransform>(), index * RowHeight, RowHeight);
 
             string label = def?.DisplayNameKey ?? item.ItemId;
-            AddLabel(row.transform, $"{label} x{item.Quantity}", 220);
-            AddButton(row.transform, buttonText, onClick);
+            AddLabel(row.transform, $"{label} x{item.Quantity}", 12f, 4f, 260f, 28f);
+            AddButton(row.transform, buttonText, onClick, 280f, 2f);
 
             return row;
         }
@@ -150,21 +169,27 @@ namespace LastHope.UI.Container
         {
             RectTransform root = GetComponent<RectTransform>();
 
-            var header = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var header = new GameObject("Header", typeof(RectTransform));
             header.transform.SetParent(root, false);
-            _titleLabel = AddLabel(header.transform, "Container", 200);
-            AddButton(header.transform, "Take All", TakeAll);
-            AddButton(header.transform, "Close", Close);
+            UiLayout.StretchTop(header.GetComponent<RectTransform>(), 0f, HeaderHeight);
+            _titleLabel = AddLabel(header.transform, "Container", 12f, 10f, 160f, 30f);
+            AddButton(header.transform, "Take All", TakeAll, 170f, 8f);
+            AddButton(header.transform, "Close (Esc)", Close, 280f, 8f);
 
-            var containerRowsGo = new GameObject("ContainerRows", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            var containerRowsGo = new GameObject("ContainerRows", typeof(RectTransform));
             containerRowsGo.transform.SetParent(root, false);
+            UiLayout.StretchTop(containerRowsGo.GetComponent<RectTransform>(), HeaderHeight, 0f);
             _containerRows = containerRowsGo.GetComponent<RectTransform>();
 
-            _playerSection = new GameObject("PlayerSection", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            _playerSection = new GameObject("PlayerSection", typeof(RectTransform));
             _playerSection.transform.SetParent(root, false);
-            AddLabel(_playerSection.transform, "Your Inventory", 300);
-            var playerRowsGo = new GameObject("PlayerRows", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            _playerSectionRect = _playerSection.GetComponent<RectTransform>();
+            UiLayout.StretchTop(_playerSectionRect, HeaderHeight + SectionGap, 0f);
+            AddLabel(_playerSection.transform, "Your Inventory", 12f, 4f, 300f, 26f);
+
+            var playerRowsGo = new GameObject("PlayerRows", typeof(RectTransform));
             playerRowsGo.transform.SetParent(_playerSection.transform, false);
+            UiLayout.StretchTop(playerRowsGo.GetComponent<RectTransform>(), SectionHeaderHeight, 0f);
             _playerRows = playerRowsGo.GetComponent<RectTransform>();
         }
 
@@ -180,25 +205,38 @@ namespace LastHope.UI.Container
             }
         }
 
-        private static TextMeshProUGUI AddLabel(Transform parent, string text, float width)
+        private static TextMeshProUGUI AddLabel(Transform parent, string text, float x, float y, float width, float height)
         {
             var go = new GameObject("Label", typeof(RectTransform));
             go.transform.SetParent(parent, false);
             var label = go.AddComponent<TextMeshProUGUI>();
             label.text = text;
-            label.fontSize = 18;
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, 24);
+            label.fontSize = 22;
+            label.color = Color.white;
+            UiLayout.TopLeft(go.GetComponent<RectTransform>(), x, y, width, height);
             return label;
         }
 
-        private static void AddButton(Transform parent, string text, System.Action onClick)
+        private static void AddButton(Transform parent, string text, System.Action onClick, float x, float y)
         {
             var go = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(80, 24);
-            go.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            UiLayout.TopLeft(go.GetComponent<RectTransform>(), x, y, 130f, 32f);
+            go.GetComponent<Image>().color = new Color(0.25f, 0.25f, 0.25f, 0.95f);
             go.GetComponent<Button>().onClick.AddListener(() => onClick());
-            AddLabel(go.transform, text, 80);
+
+            var labelGo = new GameObject("Label", typeof(RectTransform));
+            labelGo.transform.SetParent(go.transform, false);
+            var label = labelGo.AddComponent<TextMeshProUGUI>();
+            label.text = text;
+            label.fontSize = 18;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.sizeDelta = Vector2.zero;
+            labelRect.anchoredPosition = Vector2.zero;
         }
     }
 }

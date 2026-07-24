@@ -13,10 +13,13 @@ namespace LastHope.UI.Hud
     /// Always-visible player survival HUD (BL-P1 S9) — the real player-facing counterpart to
     /// DebugPanel's Condition section (F2, dev-only), which existed since S7 specifically so this
     /// could be verified before building the player-facing version. 4 stat bars + a status badge
-    /// line, rebuilt on ConditionChanged.
+    /// line, rebuilt on ConditionChanged. Every element explicitly positioned (no LayoutGroup) —
+    /// see UiLayout.cs for why.
     /// </summary>
     public sealed class ConditionHud : MonoBehaviour
     {
+        private const float RowHeight = 32f;
+
         private GameContext _ctx;
         private Image _healthFill;
         private Image _staminaFill;
@@ -52,33 +55,33 @@ namespace LastHope.UI.Hud
         private void BuildLayout()
         {
             RectTransform root = GetComponent<RectTransform>();
-            var column = new GameObject("Column", typeof(RectTransform), typeof(VerticalLayoutGroup));
-            column.transform.SetParent(root, false);
 
-            _healthFill = AddBar(column.transform, "HP", Color.red);
-            _staminaFill = AddBar(column.transform, "STA", Color.green);
-            _hungerFill = AddBar(column.transform, "HUN", new Color(0.85f, 0.55f, 0.15f));
-            _thirstFill = AddBar(column.transform, "THI", Color.cyan);
+            _healthFill = AddBar(root, "HP", Color.red, 0);
+            _staminaFill = AddBar(root, "STA", Color.green, 1);
+            _hungerFill = AddBar(root, "HUN", new Color(0.85f, 0.55f, 0.15f), 2);
+            _thirstFill = AddBar(root, "THI", Color.cyan, 3);
 
             var statusGo = new GameObject("StatusBadges", typeof(RectTransform));
-            statusGo.transform.SetParent(column.transform, false);
+            statusGo.transform.SetParent(root, false);
             _statusLabel = statusGo.AddComponent<TextMeshProUGUI>();
-            _statusLabel.fontSize = 14;
-            statusGo.GetComponent<RectTransform>().sizeDelta = new Vector2(220, 20);
+            _statusLabel.fontSize = 18;
+            _statusLabel.color = new Color(1f, 0.4f, 0.4f);
+            UiLayout.TopLeft(statusGo.GetComponent<RectTransform>(), 0f, 4 * RowHeight, 260f, 24f);
         }
 
-        private static Image AddBar(Transform parent, string label, Color color)
+        private static Image AddBar(Transform parent, string label, Color color, int index)
         {
-            var row = new GameObject(label, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var row = new GameObject(label, typeof(RectTransform));
             row.transform.SetParent(parent, false);
-            row.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            UiLayout.StretchTop(row.GetComponent<RectTransform>(), index * RowHeight, RowHeight);
 
             var textGo = new GameObject("Label", typeof(RectTransform));
             textGo.transform.SetParent(row.transform, false);
             var text = textGo.AddComponent<TextMeshProUGUI>();
             text.text = label;
-            text.fontSize = 14;
-            textGo.GetComponent<RectTransform>().sizeDelta = new Vector2(36, 18);
+            text.fontSize = 18;
+            text.color = Color.white;
+            UiLayout.TopLeft(textGo.GetComponent<RectTransform>(), 0f, 2f, 44f, 24f);
 
             var barGo = new GameObject("Bar", typeof(RectTransform), typeof(Image));
             barGo.transform.SetParent(row.transform, false);
@@ -86,7 +89,7 @@ namespace LastHope.UI.Hud
             image.type = Image.Type.Filled;
             image.fillMethod = Image.FillMethod.Horizontal;
             image.color = color;
-            barGo.GetComponent<RectTransform>().sizeDelta = new Vector2(140, 14);
+            UiLayout.TopLeft(barGo.GetComponent<RectTransform>(), 48f, 6f, 180f, 18f);
             return image;
         }
     }
