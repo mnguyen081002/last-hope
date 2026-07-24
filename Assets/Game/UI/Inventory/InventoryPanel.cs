@@ -24,6 +24,8 @@ namespace LastHope.UI.Inventory
         private GameContext _ctx;
         private CommandProcessor _processor;
         private InputAction _toggleAction;
+        private CanvasGroup _canvasGroup;
+        private bool _visible;
 
         private RectTransform _rowContainer;
         private Image _weightFill;
@@ -38,6 +40,18 @@ namespace LastHope.UI.Inventory
         private void Awake()
         {
             BuildLayout();
+            _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+            // Resolved here, not Start(): OnEnable() runs before Start() in Unity's lifecycle, so
+            // resolving _toggleAction in Start() meant OnEnable()'s _toggleAction?.Enable() call
+            // always hit a still-null reference and never actually enabled the action.
+            if (inputActions != null)
+            {
+                var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
+                _toggleAction = map?.FindAction("ToggleInventory", throwIfNotFound: false);
+            }
+
+            SetVisible(false);
         }
 
         private void Start()
@@ -45,20 +59,12 @@ namespace LastHope.UI.Inventory
             GameServiceRegistry.TryGet(out _ctx);
             GameServiceRegistry.TryGet(out _processor);
 
-            if (inputActions != null)
-            {
-                var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
-                _toggleAction = map?.FindAction("ToggleInventory", throwIfNotFound: false);
-            }
-
             if (_ctx != null)
             {
                 _ctx.Events.Subscribe<InventoryChanged>(OnInventoryChanged);
                 _ctx.Events.Subscribe<OverloadStateChanged>(OnOverloadChanged);
                 Rebuild();
             }
-
-            gameObject.SetActive(false);
         }
 
         private void OnEnable() => _toggleAction?.Enable();
@@ -67,7 +73,18 @@ namespace LastHope.UI.Inventory
         private void Update()
         {
             if (_toggleAction != null && _toggleAction.WasPressedThisFrame())
-                gameObject.SetActive(!gameObject.activeSelf);
+                SetVisible(!_visible);
+        }
+
+        // CanvasGroup, not gameObject.SetActive(false): deactivating this GameObject would stop
+        // its own Update() from running, so the toggle key could never be polled again to show it
+        // back — the panel would hide once and never reopen.
+        private void SetVisible(bool visible)
+        {
+            _visible = visible;
+            _canvasGroup.alpha = visible ? 1f : 0f;
+            _canvasGroup.interactable = visible;
+            _canvasGroup.blocksRaycasts = visible;
         }
 
         private void OnInventoryChanged(InventoryChanged evt)

@@ -36,7 +36,6 @@ namespace LastHope.UI.Container
         private void Awake()
         {
             BuildLayout();
-            gameObject.SetActive(false);
         }
 
         private void Start()
@@ -49,6 +48,11 @@ namespace LastHope.UI.Container
                 _ctx.Events.Subscribe<ContainerViewRequested>(OnContainerViewRequested);
                 _ctx.Events.Subscribe<InventoryChanged>(OnInventoryChanged);
             }
+
+            // Deactivating here (not in Awake) — SetActive(false) called from an object's own
+            // Awake() stops Unity from ever calling that object's Start(), which would have
+            // silently broken the ContainerViewRequested subscription above forever.
+            gameObject.SetActive(false);
         }
 
         private void OnContainerViewRequested(ContainerViewRequested evt)

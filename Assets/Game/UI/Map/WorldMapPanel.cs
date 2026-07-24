@@ -25,6 +25,8 @@ namespace LastHope.UI.Map
         private GameContext _ctx;
         private CommandProcessor _processor;
         private InputAction _toggleAction;
+        private CanvasGroup _canvasGroup;
+        private bool _visible;
         private RectTransform _rowContainer;
         private readonly List<GameObject> _rows = new List<GameObject>();
 
@@ -33,7 +35,18 @@ namespace LastHope.UI.Map
         private void Awake()
         {
             BuildLayout();
-            gameObject.SetActive(false);
+            _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+            // Resolved here, not Start(): OnEnable() runs before Start(), so resolving
+            // _toggleAction in Start() meant OnEnable()'s Enable() call always hit a still-null
+            // reference and never actually enabled the action.
+            if (inputActions != null)
+            {
+                var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
+                _toggleAction = map?.FindAction("ToggleMap", throwIfNotFound: false);
+            }
+
+            SetVisible(false);
         }
 
         private void Start()
@@ -41,12 +54,9 @@ namespace LastHope.UI.Map
             GameServiceRegistry.TryGet(out _ctx);
             GameServiceRegistry.TryGet(out _processor);
 
-            if (inputActions != null)
-            {
-                var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
-                _toggleAction = map?.FindAction("ToggleMap", throwIfNotFound: false);
-            }
-
+            // Subscribing here relies on Start() actually running — it wouldn't have if Awake()
+            // called gameObject.SetActive(false) directly (a GameObject deactivated from within
+            // its own Awake() never gets its Start() called at all).
             if (_ctx != null) _ctx.Events.Subscribe<WorldMapRequested>(_ => Open());
         }
 
@@ -56,13 +66,23 @@ namespace LastHope.UI.Map
         private void Update()
         {
             if (_toggleAction != null && _toggleAction.WasPressedThisFrame())
-                gameObject.SetActive(!gameObject.activeSelf);
+                SetVisible(!_visible);
         }
 
         private void Open()
         {
-            gameObject.SetActive(true);
+            SetVisible(true);
             Rebuild();
+        }
+
+        // CanvasGroup, not gameObject.SetActive(false): deactivating this GameObject would stop
+        // its own Update() from running, so the M key could never be polled again to reopen it.
+        private void SetVisible(bool visible)
+        {
+            _visible = visible;
+            _canvasGroup.alpha = visible ? 1f : 0f;
+            _canvasGroup.interactable = visible;
+            _canvasGroup.blocksRaycasts = visible;
         }
 
         private void Rebuild()
@@ -117,7 +137,7 @@ namespace LastHope.UI.Map
             var header = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             header.transform.SetParent(root, false);
             AddLabel(header.transform, "World Map (M)", 200);
-            AddButton(header.transform, "Close", () => gameObject.SetActive(false));
+            AddButton(header.transform, "Close", () => SetVisible(false));
 
             var rowsGo = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup));
             rowsGo.transform.SetParent(root, false);
