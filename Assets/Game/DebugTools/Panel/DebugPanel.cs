@@ -21,6 +21,7 @@ namespace LastHope.DebugTools.Panel
     public sealed class DebugPanel : MonoBehaviour
     {
         private bool _visible;
+        private Vector2 _panelScroll;
         private Vector2 _stateScroll;
         private string _addItemId = "item_test";
         private string _addItemQty = "1";
@@ -65,7 +66,8 @@ namespace LastHope.DebugTools.Panel
                 return;
             }
 
-            GUILayout.BeginArea(new Rect(280, 10, 380, 640), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(280, 10, 380, Mathf.Min(640, Screen.height - 20)), GUI.skin.box);
+            _panelScroll = GUILayout.BeginScrollView(_panelScroll);
             GUILayout.Label("Last Hope — Debug Panel (F2)");
             GUILayout.Label($"World time: {GameTimeUtil.Format(_ctx.World.WorldTimeMinutes)} (minute {_ctx.World.WorldTimeMinutes})");
 
@@ -165,11 +167,14 @@ namespace LastHope.DebugTools.Panel
             _addItemQty = GUILayout.TextField(_addItemQty, GUILayout.Width(40));
             if (GUILayout.Button("Add") && int.TryParse(_addItemQty, out int qty) && qty > 0)
             {
-                if (_ctx.Definitions.TryGetItem(_addItemId, out _))
+                if (_ctx.Definitions.TryGetItem(_addItemId, out var addedDef))
                 {
-                    InventoryOps.AddItem(_ctx.World.Player.Inventory, _ctx.Definitions, _addItemId, qty,
+                    var instance = InventoryOps.AddItem(_ctx.World.Player.Inventory, _ctx.Definitions, _addItemId, qty,
                         () => System.Guid.NewGuid().ToString("N"));
-                    _statusMessage = $"Added {qty}x {_addItemId}.";
+                    _equipItemInstanceId = instance.InstanceId;
+                    if (!string.IsNullOrEmpty(addedDef.EquipSlot))
+                        _equipSlot = addedDef.EquipSlot;
+                    _statusMessage = $"Added {qty}x {_addItemId} (instance '{instance.InstanceId}', pre-filled into Equip above).";
                 }
                 else
                 {
@@ -230,6 +235,7 @@ namespace LastHope.DebugTools.Panel
             GUILayout.TextArea(WorldStateSerializer.Serialize(_ctx.World));
             GUILayout.EndScrollView();
 
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
