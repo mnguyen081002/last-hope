@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
+using LastHope.Core.Rules;
 using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
@@ -13,8 +14,9 @@ namespace LastHope.DebugTools.Panel
 {
     /// <summary>
     /// Debug Panel v1 (technical-specification.md mục 9/§38, BL-P1-12). Toggle F2 (F1 is the
-    /// always-on DebugOverlay). "Add Item" is the one sanctioned Command Layer bypass — an
-    /// explicit, clearly-labeled cheat, not a pattern for gameplay code to follow.
+    /// always-on DebugOverlay). "Add Item" and the Condition stat cheat are the sanctioned
+    /// Command Layer bypasses — explicit, clearly-labeled cheats, not a pattern for gameplay
+    /// code to follow.
     /// </summary>
     public sealed class DebugPanel : MonoBehaviour
     {
@@ -25,6 +27,8 @@ namespace LastHope.DebugTools.Panel
         private string _fastForwardMinutes = "60";
         private string _saveSlotId = "manual_0";
         private string _statusMessage = "";
+        private string _conditionStatName = "health";
+        private string _conditionStatDelta = "10";
 
         private string _travelRouteId = "route_shelter_store";
 
@@ -77,6 +81,24 @@ namespace LastHope.DebugTools.Panel
                 GUILayout.Label($"Time scale: {_driver.DebugTimeScale:0.0}x");
                 _driver.DebugTimeScale = GUILayout.HorizontalSlider(_driver.DebugTimeScale, 0f, 10f);
             }
+
+            GUILayout.Space(6);
+            GUILayout.Label("Condition");
+            var condition = _ctx.World.Player.Condition;
+            GUILayout.Label($"Health {condition.Health:0.0}  Stamina {condition.Stamina:0.0}  Fatigue {condition.Fatigue:0.0}");
+            GUILayout.Label($"Hunger {condition.Hunger:0.0}  Thirst {condition.Thirst:0.0}  BodyTemp {condition.BodyTemperatureC:0.0}C  ({condition.Incapacitation})");
+            if (condition.StatusEffects.Count > 0)
+            {
+                var statuses = new List<string>();
+                foreach (var kvp in condition.StatusEffects) statuses.Add($"{kvp.Key}={kvp.Value.Severity:0}");
+                GUILayout.Label("Status: " + string.Join(", ", statuses));
+            }
+            GUILayout.BeginHorizontal();
+            _conditionStatName = GUILayout.TextField(_conditionStatName, GUILayout.Width(140));
+            _conditionStatDelta = GUILayout.TextField(_conditionStatDelta, GUILayout.Width(60));
+            if (GUILayout.Button("Apply delta") && float.TryParse(_conditionStatDelta, out float delta))
+                ApplyConditionCheat(condition, _conditionStatName, delta);
+            GUILayout.EndHorizontal();
 
             GUILayout.Space(6);
             GUILayout.Label("Add Item (bypasses Command Layer — debug only)");
@@ -151,6 +173,29 @@ namespace LastHope.DebugTools.Panel
             GUILayout.EndScrollView();
 
             GUILayout.EndArea();
+        }
+
+        private void ApplyConditionCheat(PlayerConditionState condition, string statName, float delta)
+        {
+            var cfg = _ctx.Definitions.Balance.Condition;
+            switch (statName.Trim().ToLowerInvariant())
+            {
+                case "health": ConditionOps.ApplyHealth(condition, delta); break;
+                case "stamina": ConditionOps.ApplyStamina(condition, delta); break;
+                case "fatigue": ConditionOps.ApplyFatigue(condition, delta); break;
+                case "hunger": ConditionOps.ApplyHunger(condition, delta); break;
+                case "thirst": ConditionOps.ApplyThirst(condition, delta); break;
+                case "bodytemp": condition.BodyTemperatureC += delta; break;
+                case "exposure_black_water":
+                    ConditionOps.AddExposure(condition, "black_water", delta);
+                    ConditionOps.ApplyExposureStatusChain(condition, "black_water", _ctx.World.WorldTimeMinutes, cfg);
+                    break;
+                default:
+                    _statusMessage = $"Unknown condition stat '{statName}' (health/stamina/fatigue/hunger/thirst/bodytemp/exposure_black_water).";
+                    return;
+            }
+            ConditionOps.RecomputeIncapacitation(condition, cfg);
+            _statusMessage = $"Applied {delta:+0.0;-0.0} to '{statName}'.";
         }
 
         private void LoadSlot(string slotId)

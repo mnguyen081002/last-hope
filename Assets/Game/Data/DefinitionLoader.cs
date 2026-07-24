@@ -51,10 +51,12 @@ namespace LastHope.Data
             var locations = LoadTyped<LocationDefinition>(directoryPath, "locations_", result.Errors);
             var routes = LoadTyped<RouteDefinition>(directoryPath, "routes_", result.Errors);
             var searchPoints = LoadTyped<SearchPointDefinition>(directoryPath, "searchpoints_", result.Errors);
+            var disasterPhases = LoadTyped<DisasterPhaseDefinition>(directoryPath, "phases_", result.Errors);
 
             Validate(items, locations, routes, searchPoints, result.Errors);
+            ValidateDisasterPhases(disasterPhases, result.Errors);
 
-            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints);
+            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases);
             result.Success = result.Errors.Count == 0;
             return result;
         }
@@ -182,6 +184,25 @@ namespace LastHope.Data
                         errors.Add($"SearchPoint '{searchPoint.Id}' loot entry '{loot.ItemId}' has chance {loot.Chance}, must be 0-100.");
                 }
             }
+        }
+
+        /// <summary>Empty is valid (no phases_*.json shipped yet, e.g. P1 fixtures). Once any
+        /// phase exists, exactly one must start at minute 0 and StartMinute values must be unique
+        /// — DisasterPhaseSystem walks them in StartMinute order to find "current phase".</summary>
+        private static void ValidateDisasterPhases(Dictionary<string, DisasterPhaseDefinition> phases, List<string> errors)
+        {
+            if (phases.Count == 0) return;
+
+            var seenStartMinutes = new HashSet<long>();
+            bool hasZero = false;
+            foreach (var phase in phases.Values)
+            {
+                if (!seenStartMinutes.Add(phase.StartMinute))
+                    errors.Add($"Duplicate start_minute {phase.StartMinute} among disaster phases (phase '{phase.Id}').");
+                if (phase.StartMinute == 0) hasZero = true;
+            }
+            if (!hasZero)
+                errors.Add("No disaster phase defined at start_minute 0.");
         }
 
         private sealed class Manifest

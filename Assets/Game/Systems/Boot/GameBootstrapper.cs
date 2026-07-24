@@ -8,6 +8,8 @@ using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Condition;
+using LastHope.Systems.Disaster;
 using LastHope.Systems.Inventory;
 using LastHope.Systems.Registry;
 using LastHope.Systems.Telemetry;
@@ -59,6 +61,8 @@ namespace LastHope.Systems.Boot
             inventorySystem.RecomputeAll();
             var telemetry = new TelemetryLogger(
                 Path.Combine(Application.persistentDataPath, "Telemetry"), ctx, Guid.NewGuid().ToString("N"));
+            var disasterPhaseSystem = new DisasterPhaseSystem(ctx);
+            var conditionSystem = new ConditionSystem(ctx);
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
@@ -67,6 +71,8 @@ namespace LastHope.Systems.Boot
             GameServiceRegistry.Register(saveService);
             GameServiceRegistry.Register(inventorySystem);
             GameServiceRegistry.Register(telemetry);
+            GameServiceRegistry.Register(disasterPhaseSystem);
+            GameServiceRegistry.Register(conditionSystem);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");

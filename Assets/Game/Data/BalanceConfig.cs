@@ -11,6 +11,7 @@ namespace LastHope.Data
         public InventoryBalance Inventory { get; set; } = new InventoryBalance();
         public TravelBalance Travel { get; set; } = new TravelBalance();
         public NewGameBalance NewGame { get; set; } = new NewGameBalance();
+        public ConditionBalance Condition { get; set; } = new ConditionBalance();
     }
 
     public sealed class InventoryBalance
@@ -34,5 +35,28 @@ namespace LastHope.Data
     public sealed class NewGameBalance
     {
         public string StartLocationId { get; set; } = "location_shelter";
+    }
+
+    public sealed class ConditionBalance
+    {
+        public float ThirstPerHour { get; set; } = 3.33f;
+        public float HungerPerHour { get; set; } = 3.1f;
+        public float FatiguePerLongTick { get; set; } = 0.2f;
+        public float FatiguePerTravel { get; set; } = 8f;
+        public float StaminaRegenPerMinute { get; set; } = 1f;
+        public float StaminaRegenHalvedMultiplier { get; set; } = 0.5f;
+        public float BodyTempDriftDownPerMinute { get; set; } = 0.05f;
+        public float BodyTempRegenAtShelterPerMinute { get; set; } = 0.1f;
+        public float WetThresholdForTempDrift { get; set; } = 50f;
+        public float WetGainPerMinuteInRain { get; set; } = 1f;
+        public float WetDryPerMinuteAtShelter { get; set; } = 2f;
+        public float ColdBodyTempThreshold { get; set; } = 35.0f;
+        public float ColdClearBodyTempThreshold { get; set; } = 36.0f;
+        public float BlackWaterExposureThreshold { get; set; } = 40f;
+        public float SickExposureThreshold { get; set; } = 70f;
+        public float StarvationHealthDecayPerLongTick { get; set; } = 0.5f;
+        public float StarvationHealthFloor { get; set; } = 1f;
+        public float SickHealthDecayPerLongTick { get; set; } = 0.5f;
+        public float CollapsedHealthThreshold { get; set; } = 5f;
     }
 }

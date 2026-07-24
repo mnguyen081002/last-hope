@@ -4,14 +4,16 @@
     "category": "water",
     "base_weight_kg": 0.8,
     "base_volume_liters": 1.0,
-    "max_stack_size": 4
+    "max_stack_size": 4,
+    "use_effects": { "thirst": -40 }
   },
   {
     "id": "item_canned_food",
     "category": "food",
     "base_weight_kg": 0.4,
     "base_volume_liters": 0.5,
-    "max_stack_size": 8
+    "max_stack_size": 8,
+    "use_effects": { "hunger": -50 }
   },
   {
     "id": "item_battery",

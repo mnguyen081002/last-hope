@@ -20,6 +20,8 @@ namespace LastHope.Core.Commands
         InvalidState,
         InternalError,
         NotAtLocation,
+        Incapacitated,
+        SlotMismatch,
     }
 
     public readonly struct CommandResult

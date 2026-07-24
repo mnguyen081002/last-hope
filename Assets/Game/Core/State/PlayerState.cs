@@ -5,6 +5,7 @@ namespace LastHope.Core.State
         public string ActorId { get; set; } = "player";
         public string CurrentLocationId { get; set; }
         public InventoryState Inventory { get; set; } = new InventoryState { OwnerId = "player" };
+        public PlayerConditionState Condition { get; set; } = new PlayerConditionState();
 
         // Flat floats, not a Vector3 — Core stays UnityEngine-free. Written by
         // Presentation.PlayerAvatarSync every frame; PositionLocationId disambiguates which

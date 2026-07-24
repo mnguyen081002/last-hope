@@ -139,4 +139,24 @@ namespace LastHope.Core.Events
             MinutesSpent = minutesSpent;
         }
     }
+
+    public readonly struct ConditionChanged : IGameEvent
+    {
+        public readonly string ActorId;
+        public ConditionChanged(string actorId) { ActorId = actorId; }
+    }
+
+    public readonly struct StatusEffectChanged : IGameEvent
+    {
+        public readonly string ActorId;
+        public readonly string StatusId;
+        public readonly float Severity;
+
+        public StatusEffectChanged(string actorId, string statusId, float severity)
+        {
+            ActorId = actorId;
+            StatusId = statusId;
+            Severity = severity;
+        }
+    }
 }

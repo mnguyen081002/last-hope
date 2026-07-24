@@ -88,9 +88,13 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 
 **Cần user test bằng tay:** vào cửa hàng mở cả 6 điểm — kệ nước/đồ khô phải LUÔN có hàng; new game vài lần (seed khác) — pin/toolbox/container 20L lúc có lúc không.
 
-## Milestone tiếp theo (P2: S7–S9)
+## P2 — Flood and Hazard Loop
 
-Outline đã có trong `docs/plans/2026-07-24-p1-p2-completion-plan.md` — Condition + Phase timeline (S7), Hazard/Flood + Equipment (S8), Shelter recovery + Scenario A-D (S9) → Gate P2. Bảng backlog chi tiết sẽ thêm khi bắt đầu S7.
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| S7 | Condition + Phase timeline | Verify | `PlayerConditionState`/`ConditionOps`/`ConditionSystem` (Health/Stamina/Fatigue/Hunger/Thirst/BodyTemp/StatusEffects/Exposures/Incapacitation); `DisasterPhaseDefinition`+`phases_p2.json`(4 phase)+`DisasterPhaseSystem` (resync trên construct và `WorldStateReloaded`); `UseItemCommand` áp `UseEffects` + chặn khi Incapacitated trừ item tag "medical"; `LocationDefinition.IsShelter` (mới) cho body-temp regen/wet-dry tại shelter. SaveVersion→2, manifest→0.3.0. Test: 80/80 EditMode pass (28 test mới: ConditionOps, DisasterPhaseSystem, ConditionSystem, UseItem UseEffects/Incapacitated) |
+
+Outline S8-S9 trong `docs/plans/2026-07-24-p1-p2-completion-plan.md` — Hazard/Flood + Equipment (S8), Shelter recovery + Scenario A-D (S9) → Gate P2.
 
 ## Milestone sau nữa (P3: S10–S13 → Gate P3; P4: S14–S18 → Gate GO/NO-GO)
 

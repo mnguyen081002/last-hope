@@ -1,0 +1,42 @@
+[
+  {
+    "id": "phase_dry",
+    "start_minute": 0,
+    "flood_band_min": 0,
+    "flood_band_max": 0,
+    "current_band_min": 0,
+    "current_band_max": 0,
+    "black_water": false,
+    "rain_intensity": 0
+  },
+  {
+    "id": "phase_first_rain",
+    "start_minute": 30,
+    "flood_band_min": 0,
+    "flood_band_max": 2,
+    "current_band_min": 0,
+    "current_band_max": 1,
+    "black_water": false,
+    "rain_intensity": 1
+  },
+  {
+    "id": "phase_black_rain",
+    "start_minute": 80,
+    "flood_band_min": 1,
+    "flood_band_max": 3,
+    "current_band_min": 1,
+    "current_band_max": 2,
+    "black_water": true,
+    "rain_intensity": 2
+  },
+  {
+    "id": "phase_route_closure",
+    "start_minute": 140,
+    "flood_band_min": 2,
+    "flood_band_max": 4,
+    "current_band_min": 2,
+    "current_band_max": 3,
+    "black_water": true,
+    "rain_intensity": 3
+  }
+]

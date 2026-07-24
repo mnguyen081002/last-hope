@@ -15,6 +15,7 @@ namespace LastHope.Data
         public IReadOnlyDictionary<string, LocationDefinition> Locations { get; }
         public IReadOnlyDictionary<string, RouteDefinition> Routes { get; }
         public IReadOnlyDictionary<string, SearchPointDefinition> SearchPoints { get; }
+        public IReadOnlyDictionary<string, DisasterPhaseDefinition> DisasterPhases { get; }
 
         public DefinitionRegistry(
             string definitionVersion,
@@ -22,7 +23,8 @@ namespace LastHope.Data
             Dictionary<string, ItemDefinition> items,
             Dictionary<string, LocationDefinition> locations,
             Dictionary<string, RouteDefinition> routes,
-            Dictionary<string, SearchPointDefinition> searchPoints)
+            Dictionary<string, SearchPointDefinition> searchPoints,
+            Dictionary<string, DisasterPhaseDefinition> disasterPhases = null)
         {
             DefinitionVersion = definitionVersion;
             Balance = balance ?? new BalanceConfig();
@@ -30,11 +32,13 @@ namespace LastHope.Data
             Locations = locations;
             Routes = routes;
             SearchPoints = searchPoints;
+            DisasterPhases = disasterPhases ?? new Dictionary<string, DisasterPhaseDefinition>();
         }
 
         public bool TryGetItem(string id, out ItemDefinition def) => Items.TryGetValue(id, out def);
         public bool TryGetLocation(string id, out LocationDefinition def) => Locations.TryGetValue(id, out def);
         public bool TryGetRoute(string id, out RouteDefinition def) => Routes.TryGetValue(id, out def);
         public bool TryGetSearchPoint(string id, out SearchPointDefinition def) => SearchPoints.TryGetValue(id, out def);
+        public bool TryGetDisasterPhase(string id, out DisasterPhaseDefinition def) => DisasterPhases.TryGetValue(id, out def);
     }
 }

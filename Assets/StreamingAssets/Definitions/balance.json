@@ -15,5 +15,26 @@
   },
   "new_game": {
     "start_location_id": "location_shelter"
+  },
+  "condition": {
+    "thirst_per_hour": 3.33,
+    "hunger_per_hour": 3.1,
+    "fatigue_per_long_tick": 0.2,
+    "fatigue_per_travel": 8,
+    "stamina_regen_per_minute": 1,
+    "stamina_regen_halved_multiplier": 0.5,
+    "body_temp_drift_down_per_minute": 0.05,
+    "body_temp_regen_at_shelter_per_minute": 0.1,
+    "wet_threshold_for_temp_drift": 50,
+    "wet_gain_per_minute_in_rain": 1,
+    "wet_dry_per_minute_at_shelter": 2,
+    "cold_body_temp_threshold": 35.0,
+    "cold_clear_body_temp_threshold": 36.0,
+    "black_water_exposure_threshold": 40,
+    "sick_exposure_threshold": 70,
+    "starvation_health_decay_per_long_tick": 0.5,
+    "starvation_health_floor": 1,
+    "sick_health_decay_per_long_tick": 0.5,
+    "collapsed_health_threshold": 5
   }
 }
