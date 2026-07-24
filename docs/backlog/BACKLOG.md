@@ -102,6 +102,17 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 
 Milestone tiếp theo: **P3 — Shelter Loop (S10–S13)**, plan chi tiết đã có ở `docs/plans/2026-07-24-p3-p4-completion-plan.md`.
 
+### Bug phát hiện qua playtest thật (2026-07-24, sau S9) — đã sửa
+
+User báo "phím điều khiển có vẻ không hoạt động" (I/Tab, E không phản hồi). Phát hiện 3 lỗi lifecycle MonoBehaviour, tồn tại từ S6 (không phải do S7-S9):
+
+1. **`ContainerPanel`** — `Awake()` tự gọi `gameObject.SetActive(false)` → Unity **không bao giờ gọi `Start()`** của chính GameObject đó (gotcha Unity đã biết) → subscription `ContainerViewRequested` không bao giờ đăng ký được → **UI Search/Storage chưa từng mở ra từ S6**, dù lệnh vẫn chạy đúng ngầm (loot roll, item transfer). Sửa: dời `SetActive(false)` xuống cuối `Start()`.
+2. **`InventoryPanel`** (phím I/Tab) — resolve input action trong `Start()`, nhưng `OnEnable()` (gọi `Enable()`) chạy TRƯỚC `Start()` trong lifecycle → action không bao giờ thực sự bật → phím không phản hồi. Sửa: resolve action trong `Awake()`.
+3. Cùng file, `SetActive(false)`/`(true)` để ẩn/hiện panel bằng chính `Update()` của nó — một khi ẩn thì `Update()` không chạy nữa, không bao giờ mở lại được. Sửa: dùng `CanvasGroup` (alpha/interactable/blocksRaycasts) thay vì `SetActive`.
+4. **`WorldMapPanel`** (phím M, viết ở S8) — dính cả 3 lỗi trên do copy nhầm pattern. Sửa tương tự.
+
+**Phát hiện thêm:** `Assets/Scenes/*.unity` chưa được `SceneSetup.BuildAll()` regenerate từ sau S6 (commit `e963c35`), dù `SceneSetup.cs` đã đổi qua S7-S9 (thêm `ConditionHud`, `WorldMapPanel`, sửa `TravelPointView`) — nghĩa là các thành phần này **chưa từng tồn tại trong scene thật** cho tới khi chạy lại `BuildAll()` lần này. Đã regenerate + verify lại 127/127 test + build 0 lỗi/0 warning + headless smoke sạch.
+
 ## Milestone sau nữa (P3: S10–S13 → Gate P3; P4: S14–S18 → Gate GO/NO-GO)
 
 Plan chi tiết đã có trong `docs/plans/2026-07-24-p3-p4-completion-plan.md` (viết 2026-07-24, giả định P2 PASS): Shelter State/Build/Task/Water Intrusion (S10–S11), Power/Water/Sleep (S12), Event Framework lõi + 3 Shelter Event + kịch bản 2-trong-3 (S13, Gate P3), Event Framework hoàn chỉnh (S14), Intel + NPC nền (S15), Nguyễn Minh (S16), slice content 3 location/6 event (S17), Outcome + Causal Report + external playtest (S18, Gate GO/NO-GO). Event Framework XL tách qua S13/S14/S17. Bảng backlog chi tiết (BL-P3-01..18, BL-P4-01..16 — mô tả trong `docs/mvp-product-backlog.md` mục 7–8) sẽ thêm vào file này khi bắt đầu S10.
