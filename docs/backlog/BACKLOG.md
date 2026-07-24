@@ -91,3 +91,7 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 ## Milestone tiếp theo (P2: S7–S9)
 
 Outline đã có trong `docs/plans/2026-07-24-p1-p2-completion-plan.md` — Condition + Phase timeline (S7), Hazard/Flood + Equipment (S8), Shelter recovery + Scenario A-D (S9) → Gate P2. Bảng backlog chi tiết sẽ thêm khi bắt đầu S7.
+
+## Milestone sau nữa (P3: S10–S13 → Gate P3; P4: S14–S18 → Gate GO/NO-GO)
+
+Plan chi tiết đã có trong `docs/plans/2026-07-24-p3-p4-completion-plan.md` (viết 2026-07-24, giả định P2 PASS): Shelter State/Build/Task/Water Intrusion (S10–S11), Power/Water/Sleep (S12), Event Framework lõi + 3 Shelter Event + kịch bản 2-trong-3 (S13, Gate P3), Event Framework hoàn chỉnh (S14), Intel + NPC nền (S15), Nguyễn Minh (S16), slice content 3 location/6 event (S17), Outcome + Causal Report + external playtest (S18, Gate GO/NO-GO). Event Framework XL tách qua S13/S14/S17. Bảng backlog chi tiết (BL-P3-01..18, BL-P4-01..16 — mô tả trong `docs/mvp-product-backlog.md` mục 7–8) sẽ thêm vào file này khi bắt đầu S10.
