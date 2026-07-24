@@ -13,6 +13,7 @@ namespace LastHope.Data
         public NewGameBalance NewGame { get; set; } = new NewGameBalance();
         public ConditionBalance Condition { get; set; } = new ConditionBalance();
         public HazardBalance Hazard { get; set; } = new HazardBalance();
+        public ShelterBalance Shelter { get; set; } = new ShelterBalance();
     }
 
     public sealed class InventoryBalance
@@ -36,6 +37,10 @@ namespace LastHope.Data
     public sealed class NewGameBalance
     {
         public string StartLocationId { get; set; } = "location_shelter";
+
+        /// <summary>Single-shelter assumption (S10) — the one ShelterState WaterIntrusionSystem
+        /// seeds/ticks. S17 introduces a second shelter (shelter_school) alongside this.</summary>
+        public string MainShelterId { get; set; } = "shelter_main";
     }
 
     public sealed class ConditionBalance
@@ -74,5 +79,30 @@ namespace LastHope.Data
         public float[] CrossingWetGain { get; set; } = { 10f, 30f, 60f, 90f };
         public float[] CrossingTimeFactor { get; set; } = { 1.0f, 1.2f, 1.5f, 2.0f };
         public float ContaminatedHandlingExposureGain { get; set; } = 10f;
+    }
+
+    /// <summary>Water Intrusion model (main-shelter-design.md §21-22, S10 baseline —
+    /// docs/plans/2026-07-24-p3-p4-completion-plan.md "Bảng baseline"). InflowByRainIntensity is
+    /// indexed by DisasterPhaseDefinition.RainIntensity (0-3 in the current phases_p2.json content;
+    /// additive to extend when P4's longer timeline ships in S17).</summary>
+    public sealed class ShelterBalance
+    {
+        public float DampThreshold { get; set; } = 10f;
+        public float ShallowThreshold { get; set; } = 30f;
+        public float DeepThreshold { get; set; } = 60f;
+        public float CriticalThreshold { get; set; } = 85f;
+
+        public float[] InflowByRainIntensity { get; set; } = { 0f, 2f, 4f, 6f };
+        public float BackflowInflow { get; set; } = 6f;
+        public float PassiveDrainPerLongTick { get; set; } = 2f;
+
+        /// <summary>Applied once per active Portable Pump module (arrives S11); requires
+        /// PumpPowerDemand power allocated (arrives S12) — S10 always passes 0 active pumps.</summary>
+        public float PumpOutputPerLongTick { get; set; } = 6f;
+
+        public float InitialStructuralIntegrity { get; set; } = 85f;
+        public int InitialLivingCapacity { get; set; } = 2;
+        public float InitialCleanWater { get; set; } = 3f;
+        public float InitialUntreatedWater { get; set; } = 0f;
     }
 }

@@ -14,7 +14,8 @@
     "load_factor_heavy": 1.5
   },
   "new_game": {
-    "start_location_id": "location_shelter"
+    "start_location_id": "location_shelter",
+    "main_shelter_id": "shelter_main"
   },
   "condition": {
     "thirst_per_hour": 3.33,
@@ -46,5 +47,19 @@
     "crossing_wet_gain": [10, 30, 60, 90],
     "crossing_time_factor": [1.0, 1.2, 1.5, 2.0],
     "contaminated_handling_exposure_gain": 10
+  },
+  "shelter": {
+    "damp_threshold": 10,
+    "shallow_threshold": 30,
+    "deep_threshold": 60,
+    "critical_threshold": 85,
+    "inflow_by_rain_intensity": [0, 2, 4, 6],
+    "backflow_inflow": 6,
+    "passive_drain_per_long_tick": 2,
+    "pump_output_per_long_tick": 6,
+    "initial_structural_integrity": 85,
+    "initial_living_capacity": 2,
+    "initial_clean_water": 3,
+    "initial_untreated_water": 0
   }
 }

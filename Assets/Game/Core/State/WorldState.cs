@@ -34,13 +34,52 @@ namespace LastHope.Core.State
         public InventoryState DroppedItems { get; set; }
     }
 
+    /// <summary>Water Intrusion Level (main-shelter-design.md §22), thresholds in
+    /// ShelterBalance. Ordered low-to-high so callers can compare with &lt;/&gt;.</summary>
+    public enum WaterIntrusionLevel { Dry, Damp, Shallow, Deep, Critical }
+
+    public sealed class WaterIntrusionState
+    {
+        public WaterIntrusionLevel Level { get; set; } = WaterIntrusionLevel.Dry;
+        public float Units { get; set; }
+    }
+
+    /// <summary>One Build Slot inside a ShelterZoneDefinition (S10 tracks slot existence/lock
+    /// only; Module occupancy becomes real in S11's Build System).</summary>
+    public sealed class BuildSlotState
+    {
+        public bool Locked { get; set; }
+        public string ModuleInstanceId { get; set; }
+    }
+
+    public sealed class WaterStocksState
+    {
+        public float Clean { get; set; }
+        public float Untreated { get; set; }
+    }
+
     /// <summary>Storage added Sprint 6 (BL-P1-18) — unlimited-capacity shelter container,
-    /// lazily created by InventoryOwnerResolver on first access.</summary>
+    /// lazily created by InventoryOwnerResolver on first access. S10 adds the real shelter
+    /// simulation fields (WaterIntrusionSystem owns seeding + upkeep of this shelter's state —
+    /// see WaterIntrusionSystem.Resync). PowerState/Modules arrive with S12/S11 respectively —
+    /// not declared here yet, their owning system doesn't exist.</summary>
     public sealed class ShelterState
     {
         public string Id { get; set; }
         public string StatusName { get; set; } = "Normal";
         public InventoryState Storage { get; set; }
+
+        public float StructuralIntegrity { get; set; }
+        public WaterIntrusionState WaterIntrusion { get; set; } = new WaterIntrusionState();
+        public int LivingCapacity { get; set; }
+        public int Occupants { get; set; }
+        public Dictionary<string, BuildSlotState> BuildSlots { get; set; } = new Dictionary<string, BuildSlotState>();
+        public WaterStocksState WaterStocks { get; set; } = new WaterStocksState();
+
+        /// <summary>Named boolean flags for shelter-scoped conditions no dedicated field exists
+        /// for yet (e.g. "ground_floor_lost", "lower_floor_power_locked") — same role as
+        /// WorldState.PersistentFlags but scoped to one shelter.</summary>
+        public HashSet<string> EventFlags { get; set; } = new HashSet<string>();
     }
 
     public sealed class NpcState { public string Id { get; set; } public string StatusName { get; set; } = "Unknown"; }

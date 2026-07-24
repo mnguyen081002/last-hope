@@ -260,7 +260,95 @@ namespace LastHope.EditorTools
             spawn.transform.position = new Vector3(0f, 0.1f, 0f);
             spawn.AddComponent<PlayerSpawnPoint>();
 
+            // S10 blockout: 6 ground-floor/upper zones + Fixed Core Component anchors
+            // (main-shelter-design.md §6-14). Roof is co-located on the Upper platform (single
+            // zone/1 slot — a third physical elevation isn't worth the extra ramp for a blockout).
+            CreateZoneMarker("shelter_entrance", new Vector3(-6f, 0.5f, -6f));
+            CreateBuildSlots(new Vector3(-6f, 0.5f, -6f), "slot_shelter_entrance_1", "slot_shelter_entrance_2");
+
+            CreateZoneMarker("central_hall", new Vector3(0f, 0.5f, -4f));
+            CreateCoreComponent("main_staircase", new Vector3(1f, 0.5f, -4f));
+
+            CreateZoneMarker("ground_storage", new Vector3(-6f, 0.5f, 3f));
+            CreateBuildSlots(new Vector3(-6f, 0.5f, 3f), "slot_ground_storage_1", "slot_ground_storage_2");
+
+            CreateZoneMarker("utility_area", new Vector3(6f, 0.5f, -4f));
+            CreateBuildSlots(new Vector3(6f, 0.5f, -4f), "slot_utility_area_1", "slot_utility_area_2");
+            CreateCoreComponent("structural_pillars", new Vector3(6f, 0.5f, -6f));
+            CreateCoreComponent("electrical_backbone", new Vector3(7f, 0.5f, -4f));
+            var drainCore = new GameObject("DrainCore");
+            drainCore.transform.position = new Vector3(5f, 0.5f, -3f);
+            drainCore.AddComponent<DrainCoreView>();
+
+            CreateZoneMarker("water_processing", new Vector3(6f, 0.5f, 2f));
+            CreateBuildSlots(new Vector3(6f, 0.5f, 2f), "slot_water_processing_1", "slot_water_processing_2");
+            CreateCoreComponent("water_intake", new Vector3(7f, 0.5f, 2f));
+
+            CreateZoneMarker("workshop", new Vector3(6f, 0.5f, 6f));
+            CreateBuildSlots(new Vector3(6f, 0.5f, 6f), "slot_workshop_1");
+
+            // Upper Floor: raised platform reached by a ramp from Central Hall (Main Staircase).
+            var upperPlatform = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            upperPlatform.name = "UpperFloor";
+            upperPlatform.transform.position = new Vector3(0f, 2.4f, -10f);
+            upperPlatform.transform.localScale = new Vector3(8f, 0.2f, 6f);
+            CreateRamp(new Vector3(0f, 0.15f, -5f), new Vector3(0f, 2.5f, -8f), width: 2.5f);
+
+            CreateZoneMarker("upper_living", new Vector3(-2f, 2.5f, -10f));
+            CreateBuildSlots(new Vector3(-2f, 2.5f, -10f), "slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3");
+
+            CreateZoneMarker("roof", new Vector3(2.5f, 2.5f, -10f));
+            CreateBuildSlots(new Vector3(2.5f, 2.5f, -10f), "slot_roof_1");
+            CreateCoreComponent("antenna_mount", new Vector3(3.5f, 2.5f, -10f));
+
             EditorSceneManager.SaveScene(scene, MainShelterScenePath);
+        }
+
+        private static void CreateZoneMarker(string zoneId, Vector3 position)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = "Zone_" + zoneId;
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(1f, 0.1f, 1f);
+            WorldLabel.Create(go.transform, "Zone\n" + zoneId, heightOffset: 0.6f);
+        }
+
+        private static void CreateCoreComponent(string coreId, Vector3 position)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            go.name = "Core_" + coreId;
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(0.4f, 0.5f, 0.4f);
+            go.AddComponent<CoreComponentView>().SetCoreId(coreId);
+        }
+
+        private static void CreateBuildSlots(Vector3 zoneCenter, params string[] slotIds)
+        {
+            for (int i = 0; i < slotIds.Length; i++)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                go.name = "BuildSlot_" + slotIds[i];
+                go.transform.position = zoneCenter + new Vector3(0.8f * (i + 1), 0.1f, 0.8f);
+                go.transform.localScale = new Vector3(0.5f, 0.05f, 0.5f);
+                go.AddComponent<BuildSlotView>().SetSlotId(slotIds[i]);
+            }
+        }
+
+        /// <summary>Boxy walkable ramp connecting a ground point to a raised platform point —
+        /// rotation computed from the two points so callers never hand-tune angles.</summary>
+        private static void CreateRamp(Vector3 groundPoint, Vector3 platformPoint, float width)
+        {
+            Vector3 diff = platformPoint - groundPoint;
+            float horizontalRun = new Vector2(diff.x, diff.z).magnitude;
+            float length = diff.magnitude;
+            float pitch = Mathf.Atan2(diff.y, horizontalRun) * Mathf.Rad2Deg;
+            float yaw = Mathf.Atan2(diff.x, diff.z) * Mathf.Rad2Deg;
+
+            var ramp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ramp.name = "Ramp_UpperFloor";
+            ramp.transform.position = (groundPoint + platformPoint) / 2f;
+            ramp.transform.rotation = Quaternion.Euler(-pitch, yaw, 0f);
+            ramp.transform.localScale = new Vector3(width, 0.3f, length);
         }
 
         private static void BuildConvenienceStoreScene()

@@ -52,11 +52,12 @@ namespace LastHope.Data
             var routes = LoadTyped<RouteDefinition>(directoryPath, "routes_", result.Errors);
             var searchPoints = LoadTyped<SearchPointDefinition>(directoryPath, "searchpoints_", result.Errors);
             var disasterPhases = LoadTyped<DisasterPhaseDefinition>(directoryPath, "phases_", result.Errors);
+            var shelterZones = LoadTyped<ShelterZoneDefinition>(directoryPath, "shelterzones_", result.Errors);
 
             Validate(items, locations, routes, searchPoints, result.Errors);
             ValidateDisasterPhases(disasterPhases, result.Errors);
 
-            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases);
+            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones);
             result.Success = result.Errors.Count == 0;
             return result;
         }

@@ -188,4 +188,17 @@ namespace LastHope.Core.Events
         public readonly string PanelName;
         public ExclusivePanelOpened(string panelName) { PanelName = panelName; }
     }
+
+    /// <summary>Published by WaterIntrusionSystem (S10) only when WaterIntrusionState.Level
+    /// actually changes (not every long-tick) — mirrors RouteStateChanged's change-only rule.</summary>
+    public readonly struct ShelterWaterChanged : IGameEvent
+    {
+        public readonly string ShelterId;
+        public readonly Core.State.WaterIntrusionLevel Level;
+        public ShelterWaterChanged(string shelterId, Core.State.WaterIntrusionLevel level)
+        {
+            ShelterId = shelterId;
+            Level = level;
+        }
+    }
 }

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "shelter_entrance",
+    "floor": "Ground",
+    "build_slot_ids": ["slot_shelter_entrance_1", "slot_shelter_entrance_2"],
+    "water_risk": "High"
+  },
+  {
+    "id": "central_hall",
+    "floor": "Ground",
+    "build_slot_ids": [],
+    "water_risk": "Medium"
+  },
+  {
+    "id": "ground_storage",
+    "floor": "Ground",
+    "build_slot_ids": ["slot_ground_storage_1", "slot_ground_storage_2"],
+    "water_risk": "High"
+  },
+  {
+    "id": "utility_area",
+    "floor": "Ground",
+    "build_slot_ids": ["slot_utility_area_1", "slot_utility_area_2"],
+    "water_risk": "Critical"
+  },
+  {
+    "id": "water_processing",
+    "floor": "Ground",
+    "build_slot_ids": ["slot_water_processing_1", "slot_water_processing_2"],
+    "water_risk": "High"
+  },
+  {
+    "id": "workshop",
+    "floor": "Ground",
+    "build_slot_ids": ["slot_workshop_1"],
+    "water_risk": "Medium"
+  },
+  {
+    "id": "upper_living",
+    "floor": "Upper",
+    "build_slot_ids": ["slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3"],
+    "water_risk": "Low"
+  },
+  {
+    "id": "roof",
+    "floor": "Roof",
+    "build_slot_ids": ["slot_roof_1"],
+    "water_risk": "None"
+  }
+]

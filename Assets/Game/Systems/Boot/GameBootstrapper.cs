@@ -13,6 +13,7 @@ using LastHope.Systems.Disaster;
 using LastHope.Systems.Hazard;
 using LastHope.Systems.Inventory;
 using LastHope.Systems.Registry;
+using LastHope.Systems.Shelter;
 using LastHope.Systems.Telemetry;
 using UnityEngine;
 
@@ -65,6 +66,7 @@ namespace LastHope.Systems.Boot
             var disasterPhaseSystem = new DisasterPhaseSystem(ctx);
             var conditionSystem = new ConditionSystem(ctx);
             var hazardSystem = new HazardSystem(ctx);
+            var waterIntrusionSystem = new WaterIntrusionSystem(ctx);
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
@@ -76,6 +78,7 @@ namespace LastHope.Systems.Boot
             GameServiceRegistry.Register(disasterPhaseSystem);
             GameServiceRegistry.Register(conditionSystem);
             GameServiceRegistry.Register(hazardSystem);
+            GameServiceRegistry.Register(waterIntrusionSystem);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");

@@ -34,6 +34,17 @@ namespace LastHope.Tests.EditMode
                 ItemId = "item_test",
                 Quantity = 3,
             };
+            world.ShelterStates["shelter_main"] = new ShelterState
+            {
+                Id = "shelter_main",
+                StructuralIntegrity = 85f,
+                LivingCapacity = 2,
+                Occupants = 1,
+                WaterIntrusion = new WaterIntrusionState { Level = WaterIntrusionLevel.Damp, Units = 12f },
+                WaterStocks = new WaterStocksState { Clean = 3f, Untreated = 1f },
+                BuildSlots = { ["slot_utility_area_1"] = new BuildSlotState { Locked = false, ModuleInstanceId = null } },
+                EventFlags = { "lower_floor_power_locked" },
+            };
             return world;
         }
 

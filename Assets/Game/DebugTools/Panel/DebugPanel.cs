@@ -32,6 +32,7 @@ namespace LastHope.DebugTools.Panel
         private string _conditionStatDelta = "10";
         private string _equipItemInstanceId = "";
         private string _equipSlot = "body";
+        private string _shelterWaterDelta = "10";
 
         private string _travelRouteId = "route_shelter_store";
 
@@ -149,6 +150,26 @@ namespace LastHope.DebugTools.Panel
             GUILayout.EndHorizontal();
 
             GUILayout.Space(6);
+            GUILayout.Label("Shelter (Water Intrusion)");
+            string mainShelterId = _ctx.Definitions.Balance.NewGame.MainShelterId;
+            if (_ctx.World.ShelterStates.TryGetValue(mainShelterId, out var shelter))
+            {
+                GUILayout.Label($"Structural {shelter.StructuralIntegrity:0}  Water {shelter.WaterIntrusion.Level} ({shelter.WaterIntrusion.Units:0}/100)");
+                GUILayout.Label($"Clean Water {shelter.WaterStocks.Clean:0}  Untreated {shelter.WaterStocks.Untreated:0}  Living {shelter.Occupants}/{shelter.LivingCapacity}");
+                if (shelter.EventFlags.Count > 0)
+                    GUILayout.Label("Flags: " + string.Join(", ", shelter.EventFlags));
+                GUILayout.BeginHorizontal();
+                _shelterWaterDelta = GUILayout.TextField(_shelterWaterDelta, GUILayout.Width(60));
+                if (GUILayout.Button("Add Water Units") && float.TryParse(_shelterWaterDelta, out float waterDelta))
+                    ApplyShelterWaterCheat(shelter, waterDelta);
+                GUILayout.EndHorizontal();
+            }
+            else
+            {
+                GUILayout.Label("(shelter state not initialized yet)");
+            }
+
+            GUILayout.Space(6);
             GUILayout.Label("Phase jump (cheat)");
             foreach (var phase in _ctx.Definitions.DisasterPhasesSorted)
             {
@@ -260,6 +281,19 @@ namespace LastHope.DebugTools.Panel
             }
             ConditionOps.RecomputeIncapacitation(condition, cfg);
             _statusMessage = $"Applied {delta:+0.0;-0.0} to '{statName}'.";
+        }
+
+        private void ApplyShelterWaterCheat(ShelterState shelter, float delta)
+        {
+            var cfg = _ctx.Definitions.Balance.Shelter;
+            shelter.WaterIntrusion.Units = WaterIntrusionRules.Clamp01To100(shelter.WaterIntrusion.Units + delta);
+            var newLevel = WaterIntrusionRules.LevelFor(shelter.WaterIntrusion.Units, cfg);
+            if (newLevel != shelter.WaterIntrusion.Level)
+            {
+                shelter.WaterIntrusion.Level = newLevel;
+                _ctx.Events.Publish(new ShelterWaterChanged(shelter.Id, newLevel));
+            }
+            _statusMessage = $"Shelter water now {shelter.WaterIntrusion.Units:0} ({shelter.WaterIntrusion.Level}).";
         }
 
         private void LoadSlot(string slotId)

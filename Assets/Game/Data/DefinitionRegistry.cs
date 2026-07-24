@@ -17,6 +17,7 @@ namespace LastHope.Data
         public IReadOnlyDictionary<string, RouteDefinition> Routes { get; }
         public IReadOnlyDictionary<string, SearchPointDefinition> SearchPoints { get; }
         public IReadOnlyDictionary<string, DisasterPhaseDefinition> DisasterPhases { get; }
+        public IReadOnlyDictionary<string, ShelterZoneDefinition> ShelterZones { get; }
 
         /// <summary>DisasterPhases ordered by StartMinute, computed once here so
         /// DisasterPhaseSystem/HazardSystem/ReturnWindowCalculator/BeginTravelCommand all walk the
@@ -30,7 +31,8 @@ namespace LastHope.Data
             Dictionary<string, LocationDefinition> locations,
             Dictionary<string, RouteDefinition> routes,
             Dictionary<string, SearchPointDefinition> searchPoints,
-            Dictionary<string, DisasterPhaseDefinition> disasterPhases = null)
+            Dictionary<string, DisasterPhaseDefinition> disasterPhases = null,
+            Dictionary<string, ShelterZoneDefinition> shelterZones = null)
         {
             DefinitionVersion = definitionVersion;
             Balance = balance ?? new BalanceConfig();
@@ -40,6 +42,7 @@ namespace LastHope.Data
             SearchPoints = searchPoints;
             DisasterPhases = disasterPhases ?? new Dictionary<string, DisasterPhaseDefinition>();
             DisasterPhasesSorted = DisasterPhases.Values.OrderBy(p => p.StartMinute).ToList();
+            ShelterZones = shelterZones ?? new Dictionary<string, ShelterZoneDefinition>();
         }
 
         public bool TryGetItem(string id, out ItemDefinition def) => Items.TryGetValue(id, out def);
@@ -47,5 +50,6 @@ namespace LastHope.Data
         public bool TryGetRoute(string id, out RouteDefinition def) => Routes.TryGetValue(id, out def);
         public bool TryGetSearchPoint(string id, out SearchPointDefinition def) => SearchPoints.TryGetValue(id, out def);
         public bool TryGetDisasterPhase(string id, out DisasterPhaseDefinition def) => DisasterPhases.TryGetValue(id, out def);
+        public bool TryGetShelterZone(string id, out ShelterZoneDefinition def) => ShelterZones.TryGetValue(id, out def);
     }
 }
