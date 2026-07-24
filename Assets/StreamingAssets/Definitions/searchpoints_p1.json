@@ -4,7 +4,7 @@
     "location_id": "location_convenience_store",
     "open_time_minutes": 0,
     "loot_table": [
-      { "item_id": "item_water_bottle", "weight": 1, "min_quantity": 3, "max_quantity": 3 }
+      { "item_id": "item_water_bottle", "guaranteed": true, "min_quantity": 3, "max_quantity": 3 }
     ]
   },
   {
@@ -12,7 +12,7 @@
     "location_id": "location_convenience_store",
     "open_time_minutes": 0,
     "loot_table": [
-      { "item_id": "item_water_bottle", "weight": 1, "min_quantity": 3, "max_quantity": 3 }
+      { "item_id": "item_water_bottle", "guaranteed": true, "min_quantity": 3, "max_quantity": 3 }
     ]
   },
   {
@@ -20,7 +20,7 @@
     "location_id": "location_convenience_store",
     "open_time_minutes": 0,
     "loot_table": [
-      { "item_id": "item_canned_food", "weight": 1, "min_quantity": 3, "max_quantity": 3 }
+      { "item_id": "item_canned_food", "guaranteed": true, "min_quantity": 3, "max_quantity": 3 }
     ]
   },
   {
@@ -28,7 +28,7 @@
     "location_id": "location_convenience_store",
     "open_time_minutes": 0,
     "loot_table": [
-      { "item_id": "item_canned_food", "weight": 1, "min_quantity": 3, "max_quantity": 3 }
+      { "item_id": "item_canned_food", "guaranteed": true, "min_quantity": 3, "max_quantity": 3 }
     ]
   },
   {
@@ -36,8 +36,8 @@
     "location_id": "location_convenience_store",
     "open_time_minutes": 0,
     "loot_table": [
-      { "item_id": "item_battery", "weight": 1, "min_quantity": 2, "max_quantity": 2 },
-      { "item_id": "item_canned_food", "weight": 1, "min_quantity": 1, "max_quantity": 1 }
+      { "item_id": "item_battery", "chance": 60, "min_quantity": 2, "max_quantity": 2 },
+      { "item_id": "item_canned_food", "guaranteed": true, "min_quantity": 1, "max_quantity": 1 }
     ]
   },
   {
@@ -45,10 +45,10 @@
     "location_id": "location_convenience_store",
     "open_time_minutes": 2,
     "loot_table": [
-      { "item_id": "item_toolbox", "weight": 1, "min_quantity": 1, "max_quantity": 1 },
-      { "item_id": "item_water_container_20l", "weight": 1, "min_quantity": 1, "max_quantity": 1 },
-      { "item_id": "item_water_bottle", "weight": 1, "min_quantity": 2, "max_quantity": 2 },
-      { "item_id": "item_battery", "weight": 1, "min_quantity": 2, "max_quantity": 2 }
+      { "item_id": "item_toolbox", "chance": 45, "min_quantity": 1, "max_quantity": 1 },
+      { "item_id": "item_water_container_20l", "chance": 45, "min_quantity": 1, "max_quantity": 1 },
+      { "item_id": "item_water_bottle", "chance": 70, "min_quantity": 2, "max_quantity": 2 },
+      { "item_id": "item_battery", "chance": 60, "min_quantity": 2, "max_quantity": 2 }
     ]
   }
 ]

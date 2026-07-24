@@ -7,8 +7,9 @@ namespace LastHope.Core.Commands
     /// <summary>
     /// Opens a search point container (BL-P1-17, decision 2026-07-24: "see everything, take
     /// everything, decide at carry capacity"). Rolls its loot table ONCE on first open, deterministic
-    /// via the "loot" RNG stream, then leaves whatever isn't taken in place forever — nothing is
-    /// re-rolled, nothing disappears until a player actually takes it.
+    /// via the "loot" RNG stream (hybrid: guaranteed entries always spawn, others per Chance), then
+    /// leaves whatever isn't taken in place forever — nothing is re-rolled, nothing disappears until
+    /// a player actually takes it.
     /// </summary>
     public sealed class OpenSearchPointCommand : IGameCommand
     {
@@ -76,7 +77,7 @@ namespace LastHope.Core.Commands
 
             foreach (var entry in def.LootTable)
             {
-                if (entry.Weight <= 0) continue;
+                if (!entry.Guaranteed && loot.NextInt(0, 100) >= entry.Chance) continue;
 
                 int quantity = entry.MinQuantity == entry.MaxQuantity
                     ? entry.MinQuantity

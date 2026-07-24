@@ -56,7 +56,7 @@ namespace LastHope.Tests.EditMode
                 {
                     Id = "sp_1",
                     LocationId = "location_b",
-                    LootTable = new List<LootEntry> { new LootEntry { ItemId = "item_water", Weight = 1, MinQuantity = 1, MaxQuantity = 1 } },
+                    LootTable = new List<LootEntry> { new LootEntry { ItemId = "item_water", Guaranteed = true, MinQuantity = 1, MaxQuantity = 1 } },
                 },
             };
             var registry = new DefinitionRegistry("test", new BalanceConfig(), items, locations, routes, searchPoints);

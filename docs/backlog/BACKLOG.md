@@ -58,7 +58,7 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 | BL-P1-14 | Interaction System | Verify | (KAN-28, S5) `IInteractable`/`InteractionDetector`/`InteractionPrompt`: OverlapSphere 1.6m + cursor raycast tiebreak, phím E tức thì. S6: nay có interactable thật trong scene (SearchPointView×6, ShelterStorageView, TravelPointView) |
 | BL-P1-15 | Item System | Verify | (KAN-29, S5) `ItemDefinition` +TwoHandCarry; content thật `items_p1.json` (5 item). Test: ContentValidationTests pass |
 | BL-P1-16 | Inventory | Verify | (KAN-30, S5) `InventoryRules`/`InventorySystem` (overload Normal/Light/Heavy, capacity hard-cap 150%), `InventoryPanel` UI (list + 2 thanh, nút Use; Drop chờ sau). Test: 8/8 InventoryRulesTests pass |
-| BL-P1-17 | Search System | Verify | (KAN-31, S6) `SearchPointState` + `OpenSearchPointCommand`: roll MỘT LẦN qua stream "loot", còn lại nằm nguyên container qua save/load, không re-roll. Test: 4/4 SearchPointTests pass |
+| BL-P1-17 | Search System | Verify | (KAN-31, S6; hybrid loot 2026-07-24) `SearchPointState` + `OpenSearchPointCommand`: roll MỘT LẦN qua stream "loot", còn lại nằm nguyên container qua save/load, không re-roll. Loot table hybrid: entry `guaranteed` luôn spawn (khoá floor tài nguyên), entry thường roll theo `chance` 0-100 (thay `weight` cũ vốn là knob chết — mọi entry đều luôn spawn bất kể weight). Test: 8/8 SearchPointTests pass |
 | BL-P1-18 | Shelter Storage | Verify | (KAN-32, S6) owner `shelter_storage:<id>` lazy-create, không giới hạn dung lượng; `ContainerPanel` Take/Take All/Store hai chiều. Test: qua OwnerResolverTests |
 | BL-P1-19 | Route và Travel | Verify | (KAN-33, S6) `BeginTravelCommand` đầy đủ: kiểm adjacency, loadFactor theo Overload, FastForward, đổi CurrentLocationId, publish TravelStarted/Completed; `SceneFlowController` load/unload scene theo `LocationDefinition.SceneName`. Test: 5/5 TravelTests pass; headless smoke xác nhận load `20_MainShelter` thành công |
 | BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Verify | (KAN-34, S6) `41_Location_ConvenienceStore` dựng bằng primitive: 6 SearchPointView đúng vị trí, TravelPointView, PlayerSpawnPoint |
@@ -81,6 +81,12 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 **Sự cố phát sinh + đã sửa (S6):** `Tests.EditMode.asmdef` có `overrideReferences:true` nên liệt kê "Newtonsoft.Json" vào `references` không đủ (đó chỉ match asmdef khác theo tên, Newtonsoft là plugin DLL thuần) — phải thêm `"Newtonsoft.Json.dll"` vào `precompiledReferences`.
 
 ---
+
+### Search hybrid loot (2026-07-24, sau Gate P1)
+
+Đổi cơ chế loot table từ "mọi entry luôn spawn, chỉ quantity random" (weight vốn là knob chết) sang hybrid tường minh: `guaranteed:true` → luôn spawn (designer khoá floor tài nguyên sống còn, VD nước/đồ ăn); entry thường → roll theo `chance` 0-100 (đồ giá trị: pin, toolbox, container 20L). Không đổi state schema, không cần bump SaveVersion. Plan: `docs/plans/2026-07-24-search-hybrid-loot.md`. 52/52 EditMode test pass (4 test mới: guaranteed-always, chance-0-never, chance-100-always, chance-50-deterministic-per-seed).
+
+**Cần user test bằng tay:** vào cửa hàng mở cả 6 điểm — kệ nước/đồ khô phải LUÔN có hàng; new game vài lần (seed khác) — pin/toolbox/container 20L lúc có lúc không.
 
 ## Milestone tiếp theo (P2: S7–S9)
 

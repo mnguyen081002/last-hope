@@ -13,9 +13,9 @@ namespace LastHope.Tests.EditMode
 {
     public class SearchPointTests
     {
-        private static GameContext BuildContext()
+        private static GameContext BuildContext(ulong seed = 12345, List<LootEntry> lootTable = null)
         {
-            var world = new WorldState { RandomSeed = 12345 };
+            var world = new WorldState { RandomSeed = seed };
             world.Player.CurrentLocationId = "location_store";
             var bus = new EventBus();
 
@@ -34,9 +34,9 @@ namespace LastHope.Tests.EditMode
                     Id = "sp_shelf",
                     LocationId = "location_store",
                     OpenTimeMinutes = 0,
-                    LootTable = new List<LootEntry>
+                    LootTable = lootTable ?? new List<LootEntry>
                     {
-                        new LootEntry { ItemId = "item_water", Weight = 1, MinQuantity = 3, MaxQuantity = 3 },
+                        new LootEntry { ItemId = "item_water", Guaranteed = true, MinQuantity = 3, MaxQuantity = 3 },
                     },
                 },
             };
@@ -112,6 +112,79 @@ namespace LastHope.Tests.EditMode
 
             Assert.AreEqual(0, searchPoint.Inventory.Items.Count);
             Assert.AreEqual(3, ctx.World.Player.Inventory.Items["sp_shelf_item_water_0"].Quantity);
+        }
+
+        [Test]
+        public void Guaranteed_AlwaysSpawns_AcrossManySeeds()
+        {
+            var lootTable = new List<LootEntry>
+            {
+                new LootEntry { ItemId = "item_water", Guaranteed = true, MinQuantity = 3, MaxQuantity = 3 },
+            };
+
+            for (ulong seed = 0; seed < 20; seed++)
+            {
+                var ctx = BuildContext(seed, lootTable);
+                new CommandProcessor(ctx).Submit(new OpenSearchPointCommand("player", "sp_shelf"));
+
+                var searchPoint = ctx.World.LocationStates["location_store"].SearchPointStates["sp_shelf"];
+                Assert.AreEqual(3, searchPoint.Inventory.Items["sp_shelf_item_water_0"].Quantity, $"seed {seed}");
+            }
+        }
+
+        [Test]
+        public void Chance_Zero_NeverSpawns()
+        {
+            var lootTable = new List<LootEntry>
+            {
+                new LootEntry { ItemId = "item_water", Chance = 0, MinQuantity = 1, MaxQuantity = 1 },
+            };
+
+            for (ulong seed = 0; seed < 20; seed++)
+            {
+                var ctx = BuildContext(seed, lootTable);
+                new CommandProcessor(ctx).Submit(new OpenSearchPointCommand("player", "sp_shelf"));
+
+                var searchPoint = ctx.World.LocationStates["location_store"].SearchPointStates["sp_shelf"];
+                Assert.AreEqual(0, searchPoint.Inventory.Items.Count, $"seed {seed}");
+            }
+        }
+
+        [Test]
+        public void Chance_Hundred_AlwaysSpawns()
+        {
+            var lootTable = new List<LootEntry>
+            {
+                new LootEntry { ItemId = "item_water", Chance = 100, MinQuantity = 1, MaxQuantity = 1 },
+            };
+
+            for (ulong seed = 0; seed < 20; seed++)
+            {
+                var ctx = BuildContext(seed, lootTable);
+                new CommandProcessor(ctx).Submit(new OpenSearchPointCommand("player", "sp_shelf"));
+
+                var searchPoint = ctx.World.LocationStates["location_store"].SearchPointStates["sp_shelf"];
+                Assert.AreEqual(1, searchPoint.Inventory.Items.Count, $"seed {seed}");
+            }
+        }
+
+        [Test]
+        public void Chance_PartialRoll_IsDeterministicPerSeed()
+        {
+            var lootTable = new List<LootEntry>
+            {
+                new LootEntry { ItemId = "item_water", Chance = 50, MinQuantity = 1, MaxQuantity = 1 },
+            };
+
+            var ctxA = BuildContext(999, lootTable);
+            new CommandProcessor(ctxA).Submit(new OpenSearchPointCommand("player", "sp_shelf"));
+            int countA = ctxA.World.LocationStates["location_store"].SearchPointStates["sp_shelf"].Inventory.Items.Count;
+
+            var ctxB = BuildContext(999, lootTable);
+            new CommandProcessor(ctxB).Submit(new OpenSearchPointCommand("player", "sp_shelf"));
+            int countB = ctxB.World.LocationStates["location_store"].SearchPointStates["sp_shelf"].Inventory.Items.Count;
+
+            Assert.AreEqual(countA, countB);
         }
     }
 }

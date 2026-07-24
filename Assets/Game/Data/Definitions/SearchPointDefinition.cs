@@ -3,12 +3,15 @@ using System.Collections.Generic;
 namespace LastHope.Data.Definitions
 {
     /// <summary>
-    /// Loot table entry: on first open, rolled once against Weight, quantity uniform in [Min, Max].
+    /// Loot table entry, rolled once on first open. Guaranteed entries always spawn (designer-controlled
+    /// resource floor). Non-guaranteed entries spawn with probability Chance (0-100). Quantity is
+    /// uniform in [Min, Max] either way.
     /// </summary>
     public sealed class LootEntry
     {
         public string ItemId { get; set; }
-        public int Weight { get; set; } = 1;
+        public bool Guaranteed { get; set; }
+        public int Chance { get; set; } = 100;
         public int MinQuantity { get; set; } = 1;
         public int MaxQuantity { get; set; } = 1;
     }

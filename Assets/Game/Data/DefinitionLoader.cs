@@ -174,8 +174,13 @@ namespace LastHope.Data
                     errors.Add($"SearchPoint '{searchPoint.Id}' references missing location '{searchPoint.LocationId}'.");
 
                 foreach (var loot in searchPoint.LootTable)
+                {
                     if (!items.ContainsKey(loot.ItemId))
                         errors.Add($"SearchPoint '{searchPoint.Id}' loot table references missing item '{loot.ItemId}'.");
+
+                    if (loot.Chance < 0 || loot.Chance > 100)
+                        errors.Add($"SearchPoint '{searchPoint.Id}' loot entry '{loot.ItemId}' has chance {loot.Chance}, must be 0-100.");
+                }
             }
         }
 
