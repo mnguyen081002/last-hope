@@ -57,23 +57,9 @@ namespace LastHope.Core.Commands
 
         private void ApplyUseEffects(GameContext ctx, ItemDefinition def)
         {
-            if (def.UseEffects == null || def.UseEffects.Count == 0) return;
-
             PlayerConditionState condition = ctx.World.Player.Condition;
-            bool changed = false;
-            foreach (var effect in def.UseEffects)
-            {
-                switch (effect.Key)
-                {
-                    case "thirst": ConditionOps.ApplyThirst(condition, effect.Value); changed = true; break;
-                    case "hunger": ConditionOps.ApplyHunger(condition, effect.Value); changed = true; break;
-                    case "health": ConditionOps.ApplyHealth(condition, effect.Value); changed = true; break;
-                    case "stamina": ConditionOps.ApplyStamina(condition, effect.Value); changed = true; break;
-                    case "fatigue": ConditionOps.ApplyFatigue(condition, effect.Value); changed = true; break;
-                }
-            }
+            if (!ConditionOps.ApplyItemUseEffects(condition, def.UseEffects)) return;
 
-            if (!changed) return;
             ConditionOps.RecomputeIncapacitation(condition, ctx.Definitions.Balance.Condition);
             ctx.Events.Publish(new ConditionChanged(ActorId));
         }

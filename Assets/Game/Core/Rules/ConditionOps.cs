@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LastHope.Core.State;
 using LastHope.Data;
 
@@ -80,6 +81,29 @@ namespace LastHope.Core.Rules
                 c.StatusEffects.Remove(StatusBlackWaterExposure);
                 c.StatusEffects.Remove(StatusSick);
             }
+        }
+
+        /// <summary>Applies an item's ItemDefinition.UseEffects (key: thirst/hunger/health/stamina/
+        /// fatigue) to a PlayerConditionState. Shared by UseItemCommand and RestAtShelterCommand's
+        /// TreatExposure mode so the two paths that consume a "use" item never diverge. Returns
+        /// true if anything changed (caller decides whether to publish ConditionChanged).</summary>
+        public static bool ApplyItemUseEffects(PlayerConditionState c, IReadOnlyDictionary<string, float> effects)
+        {
+            if (effects == null || effects.Count == 0) return false;
+
+            bool changed = false;
+            foreach (var effect in effects)
+            {
+                switch (effect.Key)
+                {
+                    case "thirst": ApplyThirst(c, effect.Value); changed = true; break;
+                    case "hunger": ApplyHunger(c, effect.Value); changed = true; break;
+                    case "health": ApplyHealth(c, effect.Value); changed = true; break;
+                    case "stamina": ApplyStamina(c, effect.Value); changed = true; break;
+                    case "fatigue": ApplyFatigue(c, effect.Value); changed = true; break;
+                }
+            }
+            return changed;
         }
 
         public static void RecomputeIncapacitation(PlayerConditionState c, ConditionBalance cfg) =>

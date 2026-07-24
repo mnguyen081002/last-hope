@@ -35,6 +35,16 @@
     "starvation_health_decay_per_long_tick": 0.5,
     "starvation_health_floor": 1,
     "sick_health_decay_per_long_tick": 0.5,
-    "collapsed_health_threshold": 5
+    "collapsed_health_threshold": 5,
+    "shelter_rest_minutes": 60,
+    "shelter_treat_exposure_minutes": 60,
+    "shelter_treat_exposure_decay_per_long_tick": 5
+  },
+  "hazard": {
+    "crossing_stamina_cost": [0, 5, 15, 30],
+    "crossing_exposure_gain": [0, 5, 15, 30],
+    "crossing_wet_gain": [10, 30, 60, 90],
+    "crossing_time_factor": [1.0, 1.2, 1.5, 2.0],
+    "contaminated_handling_exposure_gain": 10
   }
 }

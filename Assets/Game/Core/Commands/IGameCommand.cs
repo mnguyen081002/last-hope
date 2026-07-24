@@ -22,6 +22,7 @@ namespace LastHope.Core.Commands
         NotAtLocation,
         Incapacitated,
         SlotMismatch,
+        NoMedicalItem,
     }
 
     public readonly struct CommandResult

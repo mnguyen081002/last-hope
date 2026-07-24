@@ -7,6 +7,7 @@ using LastHope.DebugTools.Overlay;
 using LastHope.DebugTools.Panel;
 using LastHope.Systems.Boot;
 using LastHope.UI.Container;
+using LastHope.UI.Hud;
 using LastHope.UI.Inventory;
 using LastHope.UI.Map;
 using TMPro;
@@ -165,6 +166,15 @@ namespace LastHope.EditorTools
             var eventSystemGo = new GameObject("EventSystem");
             eventSystemGo.AddComponent<EventSystem>();
             eventSystemGo.AddComponent<InputSystemUIInputModule>();
+
+            var hudGo = new GameObject("ConditionHud", typeof(RectTransform));
+            hudGo.transform.SetParent(canvasGo.transform, false);
+            var hudRect = hudGo.GetComponent<RectTransform>();
+            hudRect.anchorMin = hudRect.anchorMax = new Vector2(0f, 1f);
+            hudRect.pivot = new Vector2(0f, 1f);
+            hudRect.anchoredPosition = new Vector2(16f, -16f);
+            hudRect.sizeDelta = new Vector2(220, 120);
+            hudGo.AddComponent<ConditionHud>();
 
             var promptGo = new GameObject("InteractionPrompt", typeof(RectTransform));
             promptGo.transform.SetParent(canvasGo.transform, false);

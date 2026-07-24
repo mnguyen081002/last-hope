@@ -33,5 +33,10 @@ namespace LastHope.Core.State
         public Dictionary<string, float> Exposures { get; set; } = new Dictionary<string, float>();
 
         public IncapacitationState Incapacitation { get; set; }
+
+        /// <summary>True only during a RestAtShelterCommand.TreatExposure session's FastForward
+        /// (S9) — ConditionSystem's LongTick applies bonus "black_water" exposure decay while set,
+        /// then RestAtShelterCommand clears it when the session ends.</summary>
+        public bool TreatingExposure { get; set; }
     }
 }

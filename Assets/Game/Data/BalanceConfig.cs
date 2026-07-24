@@ -59,6 +59,10 @@ namespace LastHope.Data
         public float StarvationHealthFloor { get; set; } = 1f;
         public float SickHealthDecayPerLongTick { get; set; } = 0.5f;
         public float CollapsedHealthThreshold { get; set; } = 5f;
+
+        public int ShelterRestMinutes { get; set; } = 60;
+        public int ShelterTreatExposureMinutes { get; set; } = 60;
+        public float ShelterTreatExposureDecayPerLongTick { get; set; } = 5f;
     }
 
     /// <summary>Crossing-cost table indexed by tier 0-3 (tier 4 = HazardRules.MaxLevel = Impassable,

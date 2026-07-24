@@ -127,6 +127,38 @@ namespace LastHope.DebugTools.Panel
             GUILayout.EndHorizontal();
 
             GUILayout.Space(6);
+            GUILayout.Label("Rest at Shelter (must be at a shelter location)");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Rest") && _processor != null)
+            {
+                var result = _processor.Submit(new RestAtShelterCommand(_ctx.World.Player.ActorId, RestMode.Rest));
+                _statusMessage = result.Success ? "Rested." : $"Rest failed: {result.Code}";
+            }
+            if (GUILayout.Button("Treat Exposure") && _processor != null)
+            {
+                var result = _processor.Submit(new RestAtShelterCommand(_ctx.World.Player.ActorId, RestMode.TreatExposure));
+                _statusMessage = result.Success ? "Treated exposure." : $"Treat failed: {result.Code}";
+            }
+            if (GUILayout.Button("Dry Off") && _processor != null)
+            {
+                var result = _processor.Submit(new RestAtShelterCommand(_ctx.World.Player.ActorId, RestMode.DryOff));
+                _statusMessage = result.Success ? "Dried off." : $"Dry off failed: {result.Code}";
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(6);
+            GUILayout.Label("Phase jump (cheat)");
+            foreach (var phase in _ctx.Definitions.DisasterPhasesSorted)
+            {
+                if (GUILayout.Button($"Jump to '{phase.Id}' (minute {phase.StartMinute})"))
+                {
+                    _ctx.World.WorldTimeMinutes = phase.StartMinute;
+                    _ctx.Events.Publish(new WorldStateReloaded());
+                    _statusMessage = $"Jumped to '{phase.Id}'.";
+                }
+            }
+
+            GUILayout.Space(6);
             GUILayout.Label("Add Item (bypasses Command Layer — debug only)");
             GUILayout.BeginHorizontal();
             _addItemId = GUILayout.TextField(_addItemId, GUILayout.Width(180));

@@ -40,8 +40,18 @@ namespace LastHope.Systems.Condition
             bool raining = IsRaining();
 
             float wet = ConditionOps.GetStatusSeverity(c, ConditionOps.StatusWet);
-            if (atShelter) wet -= cfg.WetDryPerMinuteAtShelter;
-            else if (raining) wet += cfg.WetGainPerMinuteInRain;
+            if (atShelter)
+            {
+                wet -= cfg.WetDryPerMinuteAtShelter;
+            }
+            else if (raining)
+            {
+                // Reuses the same equipment resolution BeginTravelCommand uses for route crossings
+                // (S8) — a jacket protects against rain exposure while standing around too, not
+                // just mid-crossing.
+                float wetMultiplier = EquipmentRules.ResolveTravelProtection(_ctx.World.Player.Inventory, _ctx.Definitions).WetMultiplier;
+                wet += cfg.WetGainPerMinuteInRain * wetMultiplier;
+            }
             ConditionOps.SetStatusSeverity(c, ConditionOps.StatusWet, ConditionOps.Clamp(wet), minute);
 
             if (raining && wet > cfg.WetThresholdForTempDrift)
@@ -78,6 +88,8 @@ namespace LastHope.Systems.Condition
             ConditionOps.ApplyHunger(c, cfg.HungerPerHour * longTickHours);
             ConditionOps.ApplyFatigue(c, cfg.FatiguePerLongTick);
 
+            if (c.TreatingExposure)
+                ConditionOps.AddExposure(c, "black_water", -cfg.ShelterTreatExposureDecayPerLongTick);
             ConditionOps.ApplyExposureStatusChain(c, "black_water", minute, cfg);
 
             if (c.Hunger >= 100f || c.Thirst >= 100f)
