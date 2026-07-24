@@ -28,6 +28,11 @@ namespace LastHope.Core.Commands
         MissingMaterials,
         TaskNotFound,
         TaskNotRunning,
+        NoPower,
+        NoFilter,
+        NothingToPurify,
+        NoBedAvailable,
+        UnsafeToSleep,
     }
 
     public readonly struct CommandResult

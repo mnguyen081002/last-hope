@@ -33,6 +33,7 @@ namespace LastHope.DebugTools.Panel
         private string _equipItemInstanceId = "";
         private string _equipSlot = "body";
         private string _shelterWaterDelta = "10";
+        private string _sleepMinutes = "480";
 
         private string _travelRouteId = "route_shelter_store";
 
@@ -146,6 +147,17 @@ namespace LastHope.DebugTools.Panel
             {
                 var result = _processor.Submit(new RestAtShelterCommand(_ctx.World.Player.ActorId, RestMode.DryOff));
                 _statusMessage = result.Success ? "Dried off." : $"Dry off failed: {result.Code}";
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(6);
+            GUILayout.Label("Sleep (must be at a shelter, S12 wakes early if it floods to Deep+)");
+            GUILayout.BeginHorizontal();
+            _sleepMinutes = GUILayout.TextField(_sleepMinutes, GUILayout.Width(60));
+            if (GUILayout.Button("Sleep") && _processor != null && int.TryParse(_sleepMinutes, out int sleepMinutes) && sleepMinutes > 0)
+            {
+                var result = _processor.Submit(new StartSleepCommand(_ctx.World.Player.ActorId, sleepMinutes));
+                _statusMessage = result.Success ? "Slept (see log for SleepEnded/SleepInterrupted)." : $"Sleep failed: {result.Code}";
             }
             GUILayout.EndHorizontal();
 

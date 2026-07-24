@@ -63,5 +63,17 @@
     "initial_living_capacity": 2,
     "initial_clean_water": 3,
     "initial_untreated_water": 0
+  },
+  "power": {
+    "grid_supply": 6,
+    "battery_max_charge": 360,
+    "battery_max_discharge_per_long_tick": 30,
+    "battery_charge_rate_per_long_tick": 20
+  },
+  "water": {
+    "purify_batch_size": 3,
+    "purify_batch_minutes": 60,
+    "filter_wear_per_batch": 33.34,
+    "intake_untreated_per_hour": 1
   }
 }

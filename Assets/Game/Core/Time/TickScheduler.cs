@@ -57,6 +57,20 @@ namespace LastHope.Core.Time
             for (int i = 0; i < minutes; i++) AdvanceOneMinute();
         }
 
+        /// <summary>Sleep-with-interrupt (S12): same as FastForward, but checked after every minute
+        /// — stops early the first time `interrupt` returns true. Returns minutes actually elapsed.</summary>
+        public int FastForward(int minutes, Func<long, bool> interrupt)
+        {
+            int elapsed = 0;
+            for (int i = 0; i < minutes; i++)
+            {
+                AdvanceOneMinute();
+                elapsed++;
+                if (interrupt != null && interrupt(_world.WorldTimeMinutes)) break;
+            }
+            return elapsed;
+        }
+
         private void AdvanceOneMinute()
         {
             _world.WorldTimeMinutes++;

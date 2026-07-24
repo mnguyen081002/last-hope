@@ -58,6 +58,19 @@ namespace LastHope.Core.State
         public float Untreated { get; set; }
     }
 
+    /// <summary>Ordered low-to-high so callers can compare with &lt;/&gt; — Critical wins ties for
+    /// power (main-shelter-design.md §19-20, S12).</summary>
+    public enum PowerPriority { Disabled, Normal, High, Critical }
+
+    public sealed class ShelterPowerState
+    {
+        public float BatteryCharge { get; set; }
+
+        /// <summary>Per-module priority, keyed by ModuleState.InstanceId. Missing entry defaults
+        /// to Normal (set explicitly when a power-consuming module finishes building).</summary>
+        public Dictionary<string, PowerPriority> Priorities { get; set; } = new Dictionary<string, PowerPriority>();
+    }
+
     /// <summary>One built (or building) Module occupying a BuildSlot (S11). Active gates whether
     /// its effect (Pump drain, Purifier batch, etc.) currently applies — S11 defaults it true the
     /// moment construction completes (ungated); S12's PowerSystem starts flipping it false when
@@ -89,6 +102,7 @@ namespace LastHope.Core.State
         public Dictionary<string, BuildSlotState> BuildSlots { get; set; } = new Dictionary<string, BuildSlotState>();
         public Dictionary<string, ModuleState> Modules { get; set; } = new Dictionary<string, ModuleState>();
         public WaterStocksState WaterStocks { get; set; } = new WaterStocksState();
+        public ShelterPowerState Power { get; set; } = new ShelterPowerState();
 
         /// <summary>Named boolean flags for shelter-scoped conditions no dedicated field exists
         /// for yet (e.g. "ground_floor_lost", "lower_floor_power_locked") — same role as

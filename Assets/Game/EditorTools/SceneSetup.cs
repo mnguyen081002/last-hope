@@ -241,6 +241,16 @@ namespace LastHope.EditorTools
             buildRect.offsetMax = Vector2.zero;
             buildGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
             buildGo.AddComponent<BuildPanel>().SetInputActions(inputActions);
+
+            var shelterGo = new GameObject("ShelterPanel", typeof(RectTransform));
+            shelterGo.transform.SetParent(canvasGo.transform, false);
+            var shelterRect = shelterGo.GetComponent<RectTransform>();
+            shelterRect.anchorMin = new Vector2(0.15f, 0.15f);
+            shelterRect.anchorMax = new Vector2(0.85f, 0.85f);
+            shelterRect.offsetMin = Vector2.zero;
+            shelterRect.offsetMax = Vector2.zero;
+            shelterGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
+            shelterGo.AddComponent<ShelterPanel>().SetInputActions(inputActions);
         }
 
         private static void BuildMainShelterScene()

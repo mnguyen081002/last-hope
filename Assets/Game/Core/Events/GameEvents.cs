@@ -227,4 +227,32 @@ namespace LastHope.Core.Events
         public readonly string ModuleInstanceId;
         public ModuleCompleted(string slotId, string moduleInstanceId) { SlotId = slotId; ModuleInstanceId = moduleInstanceId; }
     }
+
+    /// <summary>Published by PowerSystem (S12) whenever any module's Active (powered) state
+    /// actually changes, or a priority is set.</summary>
+    public readonly struct PowerStateChanged : IGameEvent
+    {
+        public readonly string ShelterId;
+        public PowerStateChanged(string shelterId) { ShelterId = shelterId; }
+    }
+
+    /// <summary>Published by WaterSystem (passive intake) and StartPurifyBatchCommand/
+    /// CollectWaterCommand (S12) whenever WaterStocksState changes.</summary>
+    public readonly struct WaterStocksChanged : IGameEvent
+    {
+        public readonly string ShelterId;
+        public WaterStocksChanged(string shelterId) { ShelterId = shelterId; }
+    }
+
+    public readonly struct SleepStarted : IGameEvent { }
+
+    /// <summary>Woken early — S12 wake condition is WaterIntrusion reaching Deep/Critical;
+    /// S14 will add Event-priority wake conditions on top without changing this struct.</summary>
+    public readonly struct SleepInterrupted : IGameEvent
+    {
+        public readonly int MinutesSlept;
+        public SleepInterrupted(int minutesSlept) { MinutesSlept = minutesSlept; }
+    }
+
+    public readonly struct SleepEnded : IGameEvent { }
 }

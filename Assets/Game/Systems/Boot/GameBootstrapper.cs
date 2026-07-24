@@ -69,6 +69,8 @@ namespace LastHope.Systems.Boot
             var hazardSystem = new HazardSystem(ctx);
             var waterIntrusionSystem = new WaterIntrusionSystem(ctx);
             var taskSystem = new TaskSystem(ctx);
+            var powerSystem = new PowerSystem(ctx);
+            var waterSystem = new WaterSystem(ctx);
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
@@ -82,6 +84,8 @@ namespace LastHope.Systems.Boot
             GameServiceRegistry.Register(hazardSystem);
             GameServiceRegistry.Register(waterIntrusionSystem);
             GameServiceRegistry.Register(taskSystem);
+            GameServiceRegistry.Register(powerSystem);
+            GameServiceRegistry.Register(waterSystem);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");

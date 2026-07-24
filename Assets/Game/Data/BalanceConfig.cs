@@ -14,6 +14,8 @@ namespace LastHope.Data
         public ConditionBalance Condition { get; set; } = new ConditionBalance();
         public HazardBalance Hazard { get; set; } = new HazardBalance();
         public ShelterBalance Shelter { get; set; } = new ShelterBalance();
+        public PowerBalance Power { get; set; } = new PowerBalance();
+        public WaterBalance Water { get; set; } = new WaterBalance();
     }
 
     public sealed class InventoryBalance
@@ -108,5 +110,28 @@ namespace LastHope.Data
         public int InitialLivingCapacity { get; set; } = 2;
         public float InitialCleanWater { get; set; } = 3f;
         public float InitialUntreatedWater { get; set; } = 0f;
+    }
+
+    /// <summary>Power allocation model (main-shelter-design.md §19-20, S12) — one long-tick
+    /// (10-minute) resolution, same convention ConditionSystem uses for hourly accrual.</summary>
+    public sealed class PowerBalance
+    {
+        public float GridSupply { get; set; } = 6f;
+        public float BatteryMaxCharge { get; set; } = 360f; // unit-minutes
+        public float BatteryMaxDischargePerLongTick { get; set; } = 30f; // 3 units * 10 min
+        public float BatteryChargeRatePerLongTick { get; set; } = 20f; // 2 units * 10 min
+    }
+
+    /// <summary>Water Processing model (main-shelter-design.md §11, S12).</summary>
+    public sealed class WaterBalance
+    {
+        public float PurifyBatchSize { get; set; } = 3f;
+        public int PurifyBatchMinutes { get; set; } = 60;
+
+        /// <summary>A filter lasts 3 batches — ModuleState.Durability (MaxDurability 100) reused
+        /// as the Purifier's filter-life meter; ~100/3 per batch.</summary>
+        public float FilterWearPerBatch { get; set; } = 33.34f;
+
+        public float IntakeUntreatedPerHour { get; set; } = 1f;
     }
 }

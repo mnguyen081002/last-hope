@@ -71,6 +71,11 @@ namespace LastHope.Systems.Tasks
             };
             shelter.BuildSlots[task.TargetId].ModuleInstanceId = moduleInstanceId;
 
+            // Power-consuming modules default to Normal priority; PowerSystem's next long-tick
+            // decides whether they actually get power (may flip Active back to false).
+            if (moduleDef.PowerDemand > 0f)
+                shelter.Power.Priorities[moduleInstanceId] = PowerPriority.Normal;
+
             _ctx.World.ActiveTasks.Remove(task);
 
             _ctx.Events.Publish(new ModuleCompleted(task.TargetId, moduleInstanceId));
