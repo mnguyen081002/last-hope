@@ -33,6 +33,8 @@ namespace LastHope.Core.Commands
         NothingToPurify,
         NoBedAvailable,
         UnsafeToSleep,
+        EventNotActive,
+        ResponseUnavailable,
     }
 
     public readonly struct CommandResult

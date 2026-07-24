@@ -54,12 +54,13 @@ namespace LastHope.Data
             var disasterPhases = LoadTyped<DisasterPhaseDefinition>(directoryPath, "phases_", result.Errors);
             var shelterZones = LoadTyped<ShelterZoneDefinition>(directoryPath, "shelterzones_", result.Errors);
             var modules = LoadTyped<ModuleDefinition>(directoryPath, "modules_", result.Errors);
+            var events = LoadTyped<EventDefinition>(directoryPath, "events_", result.Errors);
 
             Validate(items, locations, routes, searchPoints, result.Errors);
             ValidateDisasterPhases(disasterPhases, result.Errors);
             ValidateModules(modules, items, shelterZones, result.Errors);
 
-            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules);
+            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules, events);
             result.Success = result.Errors.Count == 0;
             return result;
         }

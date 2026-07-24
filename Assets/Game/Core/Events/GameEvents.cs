@@ -255,4 +255,27 @@ namespace LastHope.Core.Events
     }
 
     public readonly struct SleepEnded : IGameEvent { }
+
+    /// <summary>Published by EventSystem (S13) when a trigger condition is met — S13 skips
+    /// Undiscovered/Discovered, so the instance is already Active by the time this fires.</summary>
+    public readonly struct EventTriggered : IGameEvent
+    {
+        public readonly string EventInstanceId;
+        public readonly string EventId;
+        public EventTriggered(string eventInstanceId, string eventId) { EventInstanceId = eventInstanceId; EventId = eventId; }
+    }
+
+    /// <summary>Published by ResolveEventCommand (S13) when a player response resolves an Active event.</summary>
+    public readonly struct EventResolved : IGameEvent
+    {
+        public readonly string EventInstanceId;
+        public readonly string EventId;
+        public readonly string ResponseId;
+        public EventResolved(string eventInstanceId, string eventId, string responseId)
+        {
+            EventInstanceId = eventInstanceId;
+            EventId = eventId;
+            ResponseId = responseId;
+        }
+    }
 }

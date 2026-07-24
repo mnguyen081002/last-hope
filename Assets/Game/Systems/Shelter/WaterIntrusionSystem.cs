@@ -15,9 +15,6 @@ namespace LastHope.Systems.Shelter
     /// </summary>
     public sealed class WaterIntrusionSystem
     {
-        public const string FlagLowerFloorPowerLocked = "lower_floor_power_locked";
-        public const string FlagGroundFloorLost = "ground_floor_lost";
-
         private readonly GameContext _ctx;
 
         public WaterIntrusionSystem(GameContext ctx)
@@ -73,7 +70,7 @@ namespace LastHope.Systems.Shelter
             ShelterBalance cfg = _ctx.Definitions.Balance.Shelter;
             int rainIntensity = _ctx.Definitions.TryGetDisasterPhase(_ctx.World.CurrentDisasterPhase, out var phase)
                 ? phase.RainIntensity : 0;
-            bool backflowActive = false; // wired to EventFlags by S13's Drain Backflow event
+            bool backflowActive = shelter.EventFlags.Contains(ShelterEventFlags.DrainBackflowActive);
 
             int activePumpCount = CountActiveModulesByTag(shelter, "pump");
             ModuleState barrier = FindActiveModuleByTag(shelter, "barrier");
@@ -105,6 +102,8 @@ namespace LastHope.Systems.Shelter
 
         private int CountActiveModulesByTag(ShelterState shelter, string tag)
         {
+            if (tag == "pump" && shelter.EventFlags.Contains(ShelterEventFlags.PumpJammed)) return 0;
+
             int count = 0;
             foreach (var module in shelter.Modules.Values)
             {
@@ -126,11 +125,11 @@ namespace LastHope.Systems.Shelter
 
         private static void UpdateFlags(ShelterState shelter, WaterIntrusionLevel level)
         {
-            if (level >= WaterIntrusionLevel.Deep) shelter.EventFlags.Add(FlagLowerFloorPowerLocked);
-            else shelter.EventFlags.Remove(FlagLowerFloorPowerLocked);
+            if (level >= WaterIntrusionLevel.Deep) shelter.EventFlags.Add(ShelterEventFlags.LowerFloorPowerLocked);
+            else shelter.EventFlags.Remove(ShelterEventFlags.LowerFloorPowerLocked);
 
-            if (level >= WaterIntrusionLevel.Critical) shelter.EventFlags.Add(FlagGroundFloorLost);
-            else shelter.EventFlags.Remove(FlagGroundFloorLost);
+            if (level >= WaterIntrusionLevel.Critical) shelter.EventFlags.Add(ShelterEventFlags.GroundFloorLost);
+            else shelter.EventFlags.Remove(ShelterEventFlags.GroundFloorLost);
         }
     }
 }

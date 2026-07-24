@@ -62,6 +62,18 @@ namespace LastHope.Core.State
     /// power (main-shelter-design.md §19-20, S12).</summary>
     public enum PowerPriority { Disabled, Normal, High, Critical }
 
+    /// <summary>Named constants for ShelterState.EventFlags — centralized here (Core.State) since
+    /// both a Systems-layer system (WaterIntrusionSystem) and a Core-layer command
+    /// (ResolveEventCommand) need to read/write the same flag names, and Core cannot depend on
+    /// Systems.</summary>
+    public static class ShelterEventFlags
+    {
+        public const string LowerFloorPowerLocked = "lower_floor_power_locked";
+        public const string GroundFloorLost = "ground_floor_lost";
+        public const string DrainBackflowActive = "drain_backflow_active";
+        public const string PumpJammed = "pump_jammed";
+    }
+
     public sealed class ShelterPowerState
     {
         public float BatteryCharge { get; set; }
@@ -111,7 +123,25 @@ namespace LastHope.Core.State
     }
 
     public sealed class NpcState { public string Id { get; set; } public string StatusName { get; set; } = "Unknown"; }
-    public sealed class ActiveEventState { public string Id { get; set; } public string StatusName { get; set; } = "Active"; }
+
+    /// <summary>Full 8-state lifecycle from event-system-design.md §5, declared for S14+ — S13
+    /// only ever produces Active (trigger skips Undiscovered/Discovered gating) and Resolved.</summary>
+    public enum EventLifecycleState { Dormant, Triggered, Undiscovered, Discovered, Active, Resolved, Expired, PersistentConsequence }
+
+    /// <summary>Replaces the S2-era Id/StatusName stub (S13).</summary>
+    public sealed class ActiveEventState
+    {
+        public string EventInstanceId { get; set; }
+        public string EventId { get; set; }
+        public EventLifecycleState State { get; set; }
+        public long TriggeredAtMinute { get; set; }
+
+        /// <summary>Hard deadline in world minutes; null if the definition has none. Stored but not
+        /// auto-enforced (no expire-on-deadline) until S14.</summary>
+        public long? DeadlineMinute { get; set; }
+
+        public string ChosenResponse { get; set; }
+    }
 
     /// <summary>Passive tasks (Build) advance every LongTick regardless of player location/sleep —
     /// they're work the shelter itself is doing. Active tasks (S12+: Purify batch, Repair) also

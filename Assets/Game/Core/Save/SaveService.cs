@@ -36,7 +36,7 @@ namespace LastHope.Core.Save
     /// </summary>
     public sealed class SaveService
     {
-        private const int CurrentSaveVersion = 7; // S12: ShelterState.Power (ShelterPowerState) added (additive)
+        private const int CurrentSaveVersion = 8; // S13: ActiveEventState real fields, WorldState.ActiveEvents payload shape changed (additive)
         private const int AutosaveSlotCount = 3;
 
         private readonly string _saveDirectory;

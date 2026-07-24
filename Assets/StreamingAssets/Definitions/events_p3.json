@@ -1,0 +1,34 @@
+[
+  {
+    "id": "event_drain_backflow",
+    "event_type": "shelter",
+    "priority": "Major",
+    "scope": "shelter",
+    "trigger_requires_black_water": true,
+    "trigger_state_min_level": "Damp",
+    "hard_deadline_minutes": 0,
+    "available_responses": ["reinforce_seal"],
+    "tags": ["drain_backflow"]
+  },
+  {
+    "id": "event_storage_flood_risk",
+    "event_type": "shelter",
+    "priority": "Standard",
+    "scope": "shelter",
+    "trigger_state_min_level": "Shallow",
+    "hard_deadline_minutes": 0,
+    "available_responses": ["secure_storage"],
+    "tags": ["storage_flood_risk"]
+  },
+  {
+    "id": "event_pump_jam",
+    "event_type": "shelter",
+    "priority": "Critical",
+    "scope": "shelter",
+    "trigger_requires_pump_module": true,
+    "trigger_chance_percent_per_long_tick": 1,
+    "hard_deadline_minutes": 60,
+    "available_responses": ["clear_pump"],
+    "tags": ["pump_jam"]
+  }
+]

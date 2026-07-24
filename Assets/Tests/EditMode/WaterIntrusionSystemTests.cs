@@ -111,12 +111,12 @@ namespace LastHope.Tests.EditMode
 
             ctx.Clock.FastForward(10); // 58 -> 60 -> Deep
             Assert.AreEqual(WaterIntrusionLevel.Deep, shelter.WaterIntrusion.Level);
-            Assert.IsTrue(shelter.EventFlags.Contains(WaterIntrusionSystem.FlagLowerFloorPowerLocked));
+            Assert.IsTrue(shelter.EventFlags.Contains(ShelterEventFlags.LowerFloorPowerLocked));
 
             ctx.World.CurrentDisasterPhase = "phase_dry"; // net -2/long-tick (passive drain only)
             ctx.Clock.FastForward(10); // 60 -> 58 -> back to Shallow
             Assert.AreEqual(WaterIntrusionLevel.Shallow, shelter.WaterIntrusion.Level);
-            Assert.IsFalse(shelter.EventFlags.Contains(WaterIntrusionSystem.FlagLowerFloorPowerLocked));
+            Assert.IsFalse(shelter.EventFlags.Contains(ShelterEventFlags.LowerFloorPowerLocked));
         }
 
         [Test]

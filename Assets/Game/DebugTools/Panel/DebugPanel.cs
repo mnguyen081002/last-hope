@@ -183,6 +183,32 @@ namespace LastHope.DebugTools.Panel
             }
 
             GUILayout.Space(6);
+            GUILayout.Label("Events (trigger cheat bypasses EventTriggerRules — testing only)");
+            foreach (var eventDef in _ctx.Definitions.Events.Values)
+            {
+                if (GUILayout.Button($"Force-trigger '{eventDef.Id}'"))
+                    ForceTriggerEventCheat(eventDef.Id);
+            }
+            foreach (var activeEvent in _ctx.World.ActiveEvents)
+            {
+                if (activeEvent.State != EventLifecycleState.Active) continue;
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"{activeEvent.EventId} [{activeEvent.State}]", GUILayout.Width(220));
+                if (_ctx.Definitions.TryGetEvent(activeEvent.EventId, out var def))
+                {
+                    foreach (string responseId in def.AvailableResponses)
+                    {
+                        if (GUILayout.Button(responseId) && _processor != null)
+                        {
+                            var result = _processor.Submit(new ResolveEventCommand(_ctx.World.Player.ActorId, activeEvent.EventInstanceId, responseId));
+                            _statusMessage = result.Success ? $"Resolved '{activeEvent.EventId}' via '{responseId}'." : $"Resolve failed: {result.Code}";
+                        }
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Space(6);
             GUILayout.Label("Phase jump (cheat)");
             foreach (var phase in _ctx.Definitions.DisasterPhasesSorted)
             {
@@ -307,6 +333,39 @@ namespace LastHope.DebugTools.Panel
                 _ctx.Events.Publish(new ShelterWaterChanged(shelter.Id, newLevel));
             }
             _statusMessage = $"Shelter water now {shelter.WaterIntrusion.Units:0} ({shelter.WaterIntrusion.Level}).";
+        }
+
+        private void ForceTriggerEventCheat(string eventId)
+        {
+            if (_ctx.World.ActiveEvents.Exists(e => e.EventId == eventId && e.State != EventLifecycleState.Resolved))
+            {
+                _statusMessage = $"'{eventId}' already active.";
+                return;
+            }
+
+            string shelterId = _ctx.Definitions.Balance.NewGame.MainShelterId;
+            if (!_ctx.World.ShelterStates.TryGetValue(shelterId, out var shelter))
+            {
+                _statusMessage = "Shelter state not initialized.";
+                return;
+            }
+
+            _ctx.Definitions.TryGetEvent(eventId, out var def);
+            var instance = new ActiveEventState
+            {
+                EventInstanceId = System.Guid.NewGuid().ToString("N"),
+                EventId = eventId,
+                State = EventLifecycleState.Active,
+                TriggeredAtMinute = _ctx.World.WorldTimeMinutes,
+                DeadlineMinute = def.HardDeadlineMinutes > 0 ? _ctx.World.WorldTimeMinutes + def.HardDeadlineMinutes : (long?)null,
+            };
+            _ctx.World.ActiveEvents.Add(instance);
+
+            if (def.Tags.Contains("drain_backflow")) shelter.EventFlags.Add(ShelterEventFlags.DrainBackflowActive);
+            else if (def.Tags.Contains("pump_jam")) shelter.EventFlags.Add(ShelterEventFlags.PumpJammed);
+
+            _ctx.Events.Publish(new EventTriggered(instance.EventInstanceId, eventId));
+            _statusMessage = $"Force-triggered '{eventId}'.";
         }
 
         private void LoadSlot(string slotId)
