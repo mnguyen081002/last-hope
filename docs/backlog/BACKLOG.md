@@ -111,6 +111,16 @@ Milestone tiếp theo: **P3 — Shelter Loop (S10–S13)**, plan chi tiết ở 
 
 **Gate P3: PASS về mặt kỹ thuật (2026-07-24).** 221/221 EditMode test; build Windows 0 lỗi; headless smoke sạch qua toàn bộ hệ thống P3 (Water Intrusion/Build/Task/Power/Water/Sleep/Event) khởi tạo không exception. Scenario E xanh (budget hỗ trợ 3 chiến lược 2-module khác nhau).
 
+### Bug phát hiện qua playtest thật (2026-07-24, sau S13) — đã sửa
+
+User báo camera lệch không vào trọng tâm người chơi, zoom chuột rất chậm, các thanh chỉ số (Condition HUD, Inventory weight/volume) không thấy đổi hình. Cả 3 đều là bug tồn tại từ lúc các hệ thống này được viết (P1/P1-C), chưa ai từng nhìn bằng mắt tới giờ:
+
+1. **Camera lệch**: `CameraRig` offset theo-target `(0,12,-12)` không thực sự nằm trên trục nhìn của rotation cố định (pitch 35.264°/yaw 45°) — offset đúng cho rotation này phải có thành phần X khác 0. Sửa: tính offset trực tiếp từ rotation (`rotation * Vector3.back * distance`) thay vì hard-code, để 2 giá trị không bao giờ lệch nhau nữa.
+2. **Zoom chậm**: nhân input scroll chuột với `Time.deltaTime` — nhưng scroll là xung 1-frame mỗi nấc, không phải trục analog giữ liên tục, nên nhân với deltaTime (~16ms) làm giá trị gần như triệt tiêu. Sửa: bỏ `Time.deltaTime`, chỉnh `zoomSpeed` lại làm bước nhảy cố định mỗi nấc.
+3. **Thanh chỉ số không đổi hình** (ConditionHud 4 thanh + InventoryPanel weight/volume): set `Image.type = Filled` nhưng chưa từng gán `sprite` — Unity's `Image.OnPopulateMesh` âm thầm fallback vẽ full-rect bỏ qua `type`/`fillAmount` hoàn toàn khi `sprite == null`. Mọi thanh trong game tĩnh từ lúc viết ra tới giờ. Sửa: thêm `UiLayout.WhiteSprite()` (sprite trắng 1x1 cache sẵn), gán vào cả 2 chỗ tạo thanh.
+
+Verify: 221/221 test vẫn pass (không có test tự động cho vùng Presentation/UI này), build 0 lỗi, headless smoke sạch. **User cần tự xác nhận lại bằng mắt**: camera có thực sự căn giữa người chơi chưa, zoom cảm giác đã ổn chưa (giá trị `zoomSpeed` mới là ước lượng, có thể cần chỉnh thêm), thanh máu/đói/khát và weight/volume có nhúc nhích khi giá trị đổi không.
+
 **Còn thiếu để Gate P3 pass đầy đủ (cần user xác nhận bằng tay):** playtest 6h chuẩn bị + 6h Peak thật — hiểu vì sao nước vào (Rain phase + Drain Backflow event), Power Allocation phải chọn ưu tiên khi thiếu điện, Ground Floor mất (Critical flood) vẫn chơi tiếp được, không đứng chờ task (Passive task tự chạy), Pump Jam event xử lý được qua BuildPanel/DebugPanel. AI headless không tự xác nhận được cảm giác chơi hay UI có thực sự bấm được (B/N/F2 Events section), chỉ xác nhận cơ chế đúng qua test.
 
 Milestone tiếp theo: **P4 — Vertical Slice (S14–S18 → Gate GO/NO-GO)**, plan chi tiết đã có ở `docs/plans/2026-07-24-p3-p4-completion-plan.md`.
