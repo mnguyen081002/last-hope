@@ -13,11 +13,13 @@ namespace LastHope.Presentation.World
     {
         // CameraRig's isometric view never rotates (fixed pitch 35.264°/yaw 45°), so every label
         // needs exactly one "face the camera" orientation, set once — not a per-frame Camera.main
-        // lookup + LookRotation. The old per-frame version also drifted slightly as the camera
-        // followed the player (its position changes even though its angle doesn't), which read as
-        // labels faintly tracking the character instead of staying fixed (2026-07-24 feedback).
+        // lookup + LookRotation. The old per-frame version computed `label.position - camera.position`
+        // (label's forward = same direction the camera itself looks, i.e. Vector3.forward under the
+        // camera's rotation) — using Vector3.back here instead pointed the readable face away from
+        // the camera and rendered every label mirror-flipped (2026-07-24 screenshot report). Must be
+        // Vector3.forward, matching the original's sign, not Vector3.back.
         private static readonly Quaternion FacingRotation =
-            Quaternion.LookRotation(Quaternion.Euler(35.264f, 45f, 0f) * Vector3.back);
+            Quaternion.LookRotation(Quaternion.Euler(35.264f, 45f, 0f) * Vector3.forward);
 
         private TextMeshPro _text;
 
