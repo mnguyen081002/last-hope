@@ -15,7 +15,7 @@ namespace LastHope.Presentation.CameraRig
         [SerializeField] private float followDistance = 16.97f;
         [SerializeField] private float minOrthoSize = 4f;
         [SerializeField] private float maxOrthoSize = 12f;
-        [SerializeField] private float zoomSpeed = 0.02f;
+        [SerializeField] private float zoomSpeed = 1f;
         [SerializeField] private float followSmoothing = 12f;
 
         private Camera _camera;

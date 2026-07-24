@@ -16,9 +16,16 @@ namespace LastHope.Presentation.Player
         [SerializeField] private float baseMoveSpeed = 4.5f;
         [SerializeField] private float gravity = -20f;
 
+        /// <summary>Any world Y below this while airborne means "walked off a blockout edge with
+        /// nothing below" (2026-07-24 playtest: fell through the map near the Upper Floor ramp,
+        /// no way back). Caught here instead of relying on every scene having complete floor
+        /// coverage — the ramp/platform blockout is still rough and more gaps are plausible.</summary>
+        [SerializeField] private float fallResetY = -15f;
+
         private CharacterController _controller;
         private InputAction _moveAction;
         private float _verticalVelocity;
+        private Vector3 _lastGroundedPosition;
 
         public float SpeedModifier { get; set; } = 1f;
 
@@ -37,6 +44,18 @@ namespace LastHope.Presentation.Player
 
         private void Update()
         {
+            if (_controller.isGrounded)
+            {
+                _lastGroundedPosition = transform.position;
+            }
+            else if (transform.position.y < fallResetY)
+            {
+                _controller.enabled = false;
+                transform.position = _lastGroundedPosition;
+                _controller.enabled = true;
+                _verticalVelocity = 0f;
+            }
+
             Vector2 input = _moveAction != null ? _moveAction.ReadValue<Vector2>() : Vector2.zero;
 
             Vector3 screenForward = cameraTransform != null ? Flatten(cameraTransform.forward) : Vector3.forward;

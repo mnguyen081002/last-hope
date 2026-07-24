@@ -261,7 +261,11 @@ namespace LastHope.EditorTools
 
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Ground";
-            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+            // (1.5,1.5) = 15x15m (±7.5) used to leave the ramp/Upper Floor platform (z down to
+            // -13) entirely off the edge — walking past z=-7.5 meant no floor at all, an
+            // unrecoverable fall (2026-07-24 playtest). (1.8,3) = 18x30m (x:±9, z:±15) comfortably
+            // covers the whole layout with margin.
+            ground.transform.localScale = new Vector3(1.8f, 1f, 3f);
 
             var lightGo = new GameObject("Directional Light");
             var light = lightGo.AddComponent<Light>();
