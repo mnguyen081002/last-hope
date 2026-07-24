@@ -69,6 +69,8 @@ Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú 
 
 **Còn thiếu để Gate P1 pass đầy đủ theo đúng nghĩa (cần user xác nhận bằng tay):** chưa có ai thực sự chơi qua chuyến Chuẩn bị→Đi→Search→Loot Decision→Về→Cất→Save/Load trong Editor/Player có cửa sổ để cảm nhận "có bỏ lại đồ giá trị không", "search dừng giữa chừng có hữu ích không". Test tự động chỉ xác nhận cơ chế đúng, không xác nhận trải nghiệm.
 
+**Bug phát hiện qua playtest thật (2026-07-24), đã sửa:** nhân vật rơi ra khỏi map ngay khi vào game. Nguyên nhân: race condition giữa `PlayerAvatarSync` (ghi `PositionLocationId` mỗi frame) và `SceneFlowController` (chỉ đặt nhân vật vào spawn point khi `PositionLocationId != CurrentLocationId`) — `PlayerAvatarSync` ghi đè field này trước khi `SceneFlowController` kịp kiểm tra, khiến điều kiện luôn "đã khớp" và spawn-placement không bao giờ chạy; nhân vật kẹt ở toạ độ khởi tạo trong `10_GamePersistent` (scene không có sàn) → rơi mãi. Sửa: `PlayerAvatarSync` chỉ ghi toạ độ X/Y/Z liên tục, KHÔNG tự ý ghi `PositionLocationId` nữa — chỉ `SceneFlowController` (sau khi đặt vào spawn) mới được phép stamp field này. Verify: headless smoke test log `"placed player at spawn (0.00, 0.10, 0.00) for 'location_shelter'"`, 48/48 test vẫn pass.
+
 ### S5 — sửa 3 vấn đề user phát hiện (2026-07-24)
 1. **Vị trí nhân vật giờ được lưu**: `PlayerState.PositionX/Y/Z/PositionLocationId` + `PlayerAvatarSync` (ghi mỗi frame, áp lại khi load qua `WorldStateReloaded`). Test: PlayerPositionSaveTests pass.
 2. **DebugPanel Load giờ có picker**: liệt kê `SaveService.ListSlots()` thành nút bấm, giữ ô nhập tay làm fallback.

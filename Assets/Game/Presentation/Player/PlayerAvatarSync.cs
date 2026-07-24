@@ -45,12 +45,17 @@ namespace LastHope.Presentation.Player
         {
             if (_ctx == null) return;
 
+            // Only the raw coordinates are continuous data. PositionLocationId is NOT touched
+            // here — it must only change when something has actually confirmed the position is
+            // valid for CurrentLocationId (SceneFlowController's spawn placement, or a loaded
+            // save whose location already matches). Stamping it unconditionally every frame
+            // raced SceneFlowController's placement check and left new-game players stranded at
+            // their pre-scene-load coordinates with no floor under them (BL-P1-19 bug fix).
             var player = _ctx.World.Player;
             Vector3 pos = transform.position;
             player.PositionX = pos.x;
             player.PositionY = pos.y;
             player.PositionZ = pos.z;
-            player.PositionLocationId = player.CurrentLocationId;
         }
 
         private void OnWorldStateReloaded(WorldStateReloaded evt) => ApplyFromState();

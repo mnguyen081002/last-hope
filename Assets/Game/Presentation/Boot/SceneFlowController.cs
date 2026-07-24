@@ -70,16 +70,30 @@ namespace LastHope.Presentation.Boot
         private void PlaceAtSpawnPointIfNeeded()
         {
             var player = _ctx.World.Player;
-            if (player.PositionLocationId == player.CurrentLocationId) return; // PlayerAvatarSync already placed it
+            // Already resolved for this location (a loaded save's position matched, or a
+            // previous placement already stamped it) — nothing to do.
+            if (player.PositionLocationId == player.CurrentLocationId) return;
 
             var spawn = FindFirstObjectByType<PlayerSpawnPoint>();
             var playerGo = GameObject.FindWithTag("Player");
-            if (spawn == null || playerGo == null) return;
+            if (spawn == null || playerGo == null)
+            {
+                GameLog.Warn(LogCategory.World,
+                    $"SceneFlowController: no PlayerSpawnPoint/Player found in '{_currentSceneName}' — player position left unresolved.");
+                return;
+            }
 
             var controller = playerGo.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;
             playerGo.transform.position = spawn.transform.position;
             if (controller != null) controller.enabled = true;
+
+            // Only NOW is the position actually valid for CurrentLocationId — stamp it so
+            // PlayerAvatarSync's per-frame sync (which no longer touches this field itself)
+            // and the next scene switch's mismatch check both see accurate state.
+            player.PositionLocationId = player.CurrentLocationId;
+            GameLog.Info(LogCategory.World,
+                $"SceneFlowController: placed player at spawn {spawn.transform.position} for '{player.CurrentLocationId}'.");
         }
     }
 }
