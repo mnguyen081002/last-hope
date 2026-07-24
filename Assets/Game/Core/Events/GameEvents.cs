@@ -178,4 +178,14 @@ namespace LastHope.Core.Events
     /// submitting BeginTravelCommand directly (S8) — WorldMapPanel opens and shows every route
     /// connected to the player's current location.</summary>
     public readonly struct WorldMapRequested : IGameEvent { }
+
+    /// <summary>Published by a "focused" full-attention panel (Container, WorldMap) whenever it
+    /// opens, so any other such panel that's currently visible closes itself instead of rendering
+    /// on top of it unreadably (bugfix 2026-07-24: E at a travel point opening the map while a
+    /// search container was still open from an earlier interaction).</summary>
+    public readonly struct ExclusivePanelOpened : IGameEvent
+    {
+        public readonly string PanelName;
+        public ExclusivePanelOpened(string panelName) { PanelName = panelName; }
+    }
 }

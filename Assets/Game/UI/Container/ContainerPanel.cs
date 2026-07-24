@@ -7,6 +7,7 @@ using LastHope.Data.Definitions;
 using LastHope.Systems.Registry;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace LastHope.UI.Container
@@ -19,10 +20,14 @@ namespace LastHope.UI.Container
     /// </summary>
     public sealed class ContainerPanel : MonoBehaviour
     {
+        private const string PanelName = "Container";
         private const string ShelterStoragePrefix = "shelter_storage:";
+
+        [SerializeField] private InputActionAsset inputActions;
 
         private GameContext _ctx;
         private CommandProcessor _processor;
+        private InputAction _closeAction;
 
         private string _ownerId;
         private TextMeshProUGUI _titleLabel;
@@ -33,9 +38,17 @@ namespace LastHope.UI.Container
         private readonly List<GameObject> _containerRowObjects = new List<GameObject>();
         private readonly List<GameObject> _playerRowObjects = new List<GameObject>();
 
+        public void SetInputActions(InputActionAsset asset) => inputActions = asset;
+
         private void Awake()
         {
             BuildLayout();
+
+            if (inputActions != null)
+            {
+                var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
+                _closeAction = map?.FindAction("Close", throwIfNotFound: false);
+            }
         }
 
         private void Start()
@@ -47,12 +60,22 @@ namespace LastHope.UI.Container
             {
                 _ctx.Events.Subscribe<ContainerViewRequested>(OnContainerViewRequested);
                 _ctx.Events.Subscribe<InventoryChanged>(OnInventoryChanged);
+                _ctx.Events.Subscribe<ExclusivePanelOpened>(OnExclusivePanelOpened);
             }
 
             // Deactivating here (not in Awake) — SetActive(false) called from an object's own
             // Awake() stops Unity from ever calling that object's Start(), which would have
             // silently broken the ContainerViewRequested subscription above forever.
             gameObject.SetActive(false);
+        }
+
+        private void OnEnable() => _closeAction?.Enable();
+        private void OnDisable() => _closeAction?.Disable();
+
+        private void Update()
+        {
+            if (gameObject.activeSelf && _closeAction != null && _closeAction.WasPressedThisFrame())
+                Close();
         }
 
         private void OnContainerViewRequested(ContainerViewRequested evt)
@@ -62,12 +85,20 @@ namespace LastHope.UI.Container
             _playerSection.SetActive(_ownerId.StartsWith(ShelterStoragePrefix));
             gameObject.SetActive(true);
             Rebuild();
+            _ctx.Events.Publish(new ExclusivePanelOpened(PanelName));
         }
 
         private void OnInventoryChanged(InventoryChanged evt)
         {
             if (!gameObject.activeSelf || _ctx == null) return;
             if (evt.OwnerId == _ownerId || evt.OwnerId == _ctx.World.Player.ActorId) Rebuild();
+        }
+
+        // Another focused panel (e.g. WorldMapPanel) just opened — close so the two don't render
+        // on top of each other unreadably (bugfix 2026-07-24).
+        private void OnExclusivePanelOpened(ExclusivePanelOpened evt)
+        {
+            if (evt.PanelName != PanelName && gameObject.activeSelf) Close();
         }
 
         public void Close() => gameObject.SetActive(false);

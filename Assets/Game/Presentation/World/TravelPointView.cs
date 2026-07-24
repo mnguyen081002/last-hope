@@ -16,6 +16,8 @@ namespace LastHope.Presentation.World
     {
         public string PromptText => "Travel";
 
+        private void Awake() => WorldLabel.Create(transform, "Travel");
+
         public bool CanInteract(GameContext ctx) => true;
 
         public void Interact(GameContext ctx, CommandProcessor processor)

@@ -13,6 +13,8 @@ namespace LastHope.Presentation.World
 
         public string PromptText => "Search";
 
+        private void Awake() => WorldLabel.Create(transform, $"Search\n{searchPointId}");
+
         public bool CanInteract(GameContext ctx) => true;
 
         public void Interact(GameContext ctx, CommandProcessor processor)

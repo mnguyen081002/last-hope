@@ -20,11 +20,14 @@ namespace LastHope.UI.Map
     /// </summary>
     public sealed class WorldMapPanel : MonoBehaviour
     {
+        private const string PanelName = "WorldMap";
+
         [SerializeField] private InputActionAsset inputActions;
 
         private GameContext _ctx;
         private CommandProcessor _processor;
         private InputAction _toggleAction;
+        private InputAction _closeAction;
         private CanvasGroup _canvasGroup;
         private bool _visible;
         private RectTransform _rowContainer;
@@ -44,6 +47,7 @@ namespace LastHope.UI.Map
             {
                 var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
                 _toggleAction = map?.FindAction("ToggleMap", throwIfNotFound: false);
+                _closeAction = map?.FindAction("Close", throwIfNotFound: false);
             }
 
             SetVisible(false);
@@ -57,22 +61,45 @@ namespace LastHope.UI.Map
             // Subscribing here relies on Start() actually running — it wouldn't have if Awake()
             // called gameObject.SetActive(false) directly (a GameObject deactivated from within
             // its own Awake() never gets its Start() called at all).
-            if (_ctx != null) _ctx.Events.Subscribe<WorldMapRequested>(_ => Open());
+            if (_ctx != null)
+            {
+                _ctx.Events.Subscribe<WorldMapRequested>(_ => Open());
+                _ctx.Events.Subscribe<ExclusivePanelOpened>(OnExclusivePanelOpened);
+            }
         }
 
-        private void OnEnable() => _toggleAction?.Enable();
-        private void OnDisable() => _toggleAction?.Disable();
+        private void OnEnable()
+        {
+            _toggleAction?.Enable();
+            _closeAction?.Enable();
+        }
+
+        private void OnDisable()
+        {
+            _toggleAction?.Disable();
+            _closeAction?.Disable();
+        }
 
         private void Update()
         {
             if (_toggleAction != null && _toggleAction.WasPressedThisFrame())
                 SetVisible(!_visible);
+            else if (_visible && _closeAction != null && _closeAction.WasPressedThisFrame())
+                SetVisible(false);
         }
 
         private void Open()
         {
             SetVisible(true);
             Rebuild();
+            _ctx.Events.Publish(new ExclusivePanelOpened(PanelName));
+        }
+
+        // Another focused panel (e.g. ContainerPanel) just opened — close so the two don't render
+        // on top of each other unreadably (bugfix 2026-07-24).
+        private void OnExclusivePanelOpened(ExclusivePanelOpened evt)
+        {
+            if (evt.PanelName != PanelName && _visible) SetVisible(false);
         }
 
         // CanvasGroup, not gameObject.SetActive(false): deactivating this GameObject would stop

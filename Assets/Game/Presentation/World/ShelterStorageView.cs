@@ -15,6 +15,8 @@ namespace LastHope.Presentation.World
 
         public string PromptText => "Storage";
 
+        private void Awake() => WorldLabel.Create(transform, "Storage");
+
         public bool CanInteract(GameContext ctx) => true;
 
         public void Interact(GameContext ctx, CommandProcessor processor)

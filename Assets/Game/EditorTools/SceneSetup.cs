@@ -206,7 +206,7 @@ namespace LastHope.EditorTools
             containerRect.sizeDelta = new Vector2(420, 0);
             containerRect.anchoredPosition = Vector2.zero;
             containerGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
-            containerGo.AddComponent<ContainerPanel>();
+            containerGo.AddComponent<ContainerPanel>().SetInputActions(inputActions);
 
             var mapGo = new GameObject("WorldMapPanel", typeof(RectTransform));
             mapGo.transform.SetParent(canvasGo.transform, false);
