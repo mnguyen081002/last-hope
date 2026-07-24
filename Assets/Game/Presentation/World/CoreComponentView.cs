@@ -12,6 +12,6 @@ namespace LastHope.Presentation.World
 
         public void SetCoreId(string id) => coreId = id;
 
-        private void Awake() => WorldLabel.Create(transform, coreId);
+        private void Awake() => WorldLabel.Create(transform, WorldLabel.Prettify(coreId));
     }
 }

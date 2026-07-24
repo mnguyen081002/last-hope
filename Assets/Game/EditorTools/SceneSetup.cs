@@ -328,6 +328,8 @@ namespace LastHope.EditorTools
             CreateBuildSlots(new Vector3(2.5f, 2.5f, -10f), "slot_roof_1");
             CreateCoreComponent("antenna_mount", new Vector3(3.5f, 2.5f, -10f));
 
+            CreateBoundaryWalls(-9f, 9f, -15f, 15f); // matches the Ground plane's (1.8,1,3) scale
+
             EditorSceneManager.SaveScene(scene, MainShelterScenePath);
         }
 
@@ -337,7 +339,7 @@ namespace LastHope.EditorTools
             go.name = "Zone_" + zoneId;
             go.transform.position = position;
             go.transform.localScale = new Vector3(1f, 0.1f, 1f);
-            WorldLabel.Create(go.transform, "Zone\n" + zoneId, heightOffset: 0.6f);
+            WorldLabel.Create(go.transform, "Zone\n" + WorldLabel.Prettify(zoneId), heightOffset: 0.6f);
         }
 
         private static void CreateCoreComponent(string coreId, Vector3 position)
@@ -376,6 +378,40 @@ namespace LastHope.EditorTools
             ramp.transform.position = (groundPoint + platformPoint) / 2f;
             ramp.transform.rotation = Quaternion.Euler(-pitch, yaw, 0f);
             ramp.transform.localScale = new Vector3(width, 0.3f, length);
+            // Default primitive grey blended into the equally-grey Ground/UpperFloor, and unlike
+            // every other marker in the scene it never got a WorldLabel — together that's why the
+            // 2026-07-24 playtest never spotted it at all.
+            ramp.GetComponent<Renderer>().material.color = new Color(0.55f, 0.35f, 0.15f);
+            WorldLabel.Create(ramp.transform, "Ramp", heightOffset: 1f);
+        }
+
+        /// <summary>Invisible perimeter (BoxCollider only, no renderer) around a scene's walkable
+        /// footprint — prevents walking off the edge in the first place, rather than only catching
+        /// the fall after it happens (2026-07-24 playtest: fell through the map with no floor
+        /// below and no way back). PlayerController's grounded-position fallback stays as a second
+        /// line of defense for any scene that doesn't call this, or any gap these walls miss.</summary>
+        private static void CreateBoundaryWalls(float minX, float maxX, float minZ, float maxZ)
+        {
+            const float height = 10f;
+            const float thickness = 1f;
+            float centerX = (minX + maxX) / 2f;
+            float centerZ = (minZ + maxZ) / 2f;
+            float sizeX = maxX - minX;
+            float sizeZ = maxZ - minZ;
+
+            CreateWall("Wall_North", new Vector3(centerX, height / 2f, maxZ + thickness / 2f), new Vector3(sizeX + thickness * 2f, height, thickness));
+            CreateWall("Wall_South", new Vector3(centerX, height / 2f, minZ - thickness / 2f), new Vector3(sizeX + thickness * 2f, height, thickness));
+            CreateWall("Wall_East", new Vector3(maxX + thickness / 2f, height / 2f, centerZ), new Vector3(thickness, height, sizeZ));
+            CreateWall("Wall_West", new Vector3(minX - thickness / 2f, height / 2f, centerZ), new Vector3(thickness, height, sizeZ));
+        }
+
+        private static void CreateWall(string name, Vector3 position, Vector3 size)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            go.transform.position = position;
+            go.transform.localScale = size;
+            Object.DestroyImmediate(go.GetComponent<MeshRenderer>()); // collider only — invisible
         }
 
         private static void BuildConvenienceStoreScene()
@@ -407,6 +443,8 @@ namespace LastHope.EditorTools
             var spawn = new GameObject("PlayerSpawnPoint");
             spawn.transform.position = new Vector3(0f, 0.1f, -5f);
             spawn.AddComponent<PlayerSpawnPoint>();
+
+            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
 
             EditorSceneManager.SaveScene(scene, ConvenienceStoreScenePath);
         }
