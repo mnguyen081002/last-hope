@@ -28,6 +28,7 @@ namespace LastHope.UI.Inventory
         private GameContext _ctx;
         private CommandProcessor _processor;
         private InputAction _toggleAction;
+        private InputAction _closeAction;
         private CanvasGroup _canvasGroup;
         private bool _visible;
 
@@ -53,6 +54,7 @@ namespace LastHope.UI.Inventory
             {
                 var map = inputActions.FindActionMap("Gameplay", throwIfNotFound: false);
                 _toggleAction = map?.FindAction("ToggleInventory", throwIfNotFound: false);
+                _closeAction = map?.FindAction("Close", throwIfNotFound: false);
             }
 
             SetVisible(false);
@@ -71,14 +73,21 @@ namespace LastHope.UI.Inventory
             }
         }
 
-        // Enable only, never Disable(): see ContainerPanel's OnEnable comment — "ToggleInventory"
-        // is a shared InputAction instance, and Disable() on it would affect every other consumer.
-        private void OnEnable() => _toggleAction?.Enable();
+        // Enable only, never Disable(): see ContainerPanel's OnEnable comment — "ToggleInventory"/
+        // "Close" are shared InputAction instances, and Disable() on either would affect every
+        // other consumer.
+        private void OnEnable()
+        {
+            _toggleAction?.Enable();
+            _closeAction?.Enable();
+        }
 
         private void Update()
         {
             if (_toggleAction != null && _toggleAction.WasPressedThisFrame())
                 SetVisible(!_visible);
+            else if (_visible && _closeAction != null && _closeAction.WasPressedThisFrame())
+                SetVisible(false);
         }
 
         // CanvasGroup, not gameObject.SetActive(false): deactivating this GameObject would stop
