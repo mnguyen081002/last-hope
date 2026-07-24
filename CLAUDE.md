@@ -43,4 +43,6 @@ Mọi implementation plan (kế hoạch code, không phải backlog item) lưu d
 
 Cuối plan / implementation, phải xác định người dùng cần test gì trên hệ thống mới hoàn thành.
 
+Trả lời bằng tiếng việt
+
 Tự xác định khi nào cần commit và tự thực hiện commit.
