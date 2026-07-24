@@ -86,6 +86,7 @@ namespace LastHope.UI.Hud
             var barGo = new GameObject("Bar", typeof(RectTransform), typeof(Image));
             barGo.transform.SetParent(row.transform, false);
             var image = barGo.GetComponent<Image>();
+            image.sprite = UiLayout.WhiteSprite();
             image.type = Image.Type.Filled;
             image.fillMethod = Image.FillMethod.Horizontal;
             image.color = color;

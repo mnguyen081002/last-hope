@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LastHope.UI
 {
@@ -31,6 +32,24 @@ namespace LastHope.UI
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = new Vector2(x, -yOffsetFromTop);
             rect.sizeDelta = new Vector2(width, height);
+        }
+
+        private static Sprite _whiteSprite;
+
+        /// <summary>A 1x1 white Sprite, lazily created and cached — required for any code-built
+        /// `Image` using `type = Image.Type.Filled` (stat bars, weight/volume bars): Unity's
+        /// Image.OnPopulateMesh falls back to always drawing the full rect, silently ignoring
+        /// `type`/`fillAmount` entirely, whenever `sprite` is null (2026-07-24 playtest — every
+        /// fill bar in the game looked static because none of them ever set a sprite).</summary>
+        public static Sprite WhiteSprite()
+        {
+            if (_whiteSprite != null) return _whiteSprite;
+
+            var texture = new Texture2D(1, 1);
+            texture.SetPixel(0, 0, Color.white);
+            texture.Apply();
+            _whiteSprite = Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
+            return _whiteSprite;
         }
     }
 }

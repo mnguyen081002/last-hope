@@ -193,6 +193,7 @@ namespace LastHope.UI.Inventory
             var go = new GameObject("Bar", typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<Image>();
+            image.sprite = UiLayout.WhiteSprite();
             image.type = Image.Type.Filled;
             image.fillMethod = Image.FillMethod.Horizontal;
             image.color = Color.green;

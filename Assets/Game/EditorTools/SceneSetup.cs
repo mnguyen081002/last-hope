@@ -146,8 +146,10 @@ namespace LastHope.EditorTools
             rig.SetInputActions(inputActions);
             rig.SetTarget(player.transform);
             playerController.SetCameraTransform(cameraGo.transform);
-            cameraGo.transform.position = player.transform.position + new Vector3(0f, 12f, -12f);
+            // Matches CameraRig.Awake()'s own offset formula (rotation * back * distance) so there's
+            // no visible snap on the first frame — CameraRig recomputes and takes over regardless.
             cameraGo.transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
+            cameraGo.transform.position = player.transform.position + cameraGo.transform.rotation * new Vector3(0f, 0f, -16.97f);
 
             BuildHudCanvas(inputActions, detector);
 
