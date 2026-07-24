@@ -33,7 +33,7 @@ namespace LastHope.Systems.Inventory
 
         private void Recompute(InventoryState inventory)
         {
-            OverloadState newOverload = InventoryRules.ComputeOverload(inventory, _ctx.Definitions.Balance);
+            OverloadState newOverload = InventoryRules.ComputeOverload(inventory, _ctx.Definitions.Balance, _ctx.Definitions);
             if (newOverload == inventory.Overload) return;
 
             inventory.Overload = newOverload;

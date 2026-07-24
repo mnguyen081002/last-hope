@@ -7,7 +7,22 @@ namespace LastHope.Core.State
     // (Hazard/Shelter/NPC/Event/Task) is implemented. Kept here because WorldState must
     // reference something serializable today; do not add fields speculatively beyond
     // what the current sprint's systems need.
-    public sealed class RouteState { public string Id { get; set; } public string StatusName { get; set; } = "Dry"; }
+
+    /// <summary>Cached hazard snapshot for display (World Map), recomputed by HazardSystem every
+    /// long tick (S8). Commands (BeginTravelCommand) recompute fresh via HazardRules at the exact
+    /// moment of travel rather than trusting this — it can be up to 9 minutes stale.
+    /// Electrical/Modifiers are reserved for P3+ systems (Power System, Shelter Events) and are
+    /// unused/inert this sprint.</summary>
+    public sealed class RouteState
+    {
+        public string Id { get; set; }
+        public int FloodLevel { get; set; }
+        public int CurrentLevel { get; set; }
+        public bool Contamination { get; set; }
+        public bool Closed { get; set; }
+        public bool Electrical { get; set; }
+        public Dictionary<string, float> Modifiers { get; set; } = new Dictionary<string, float>();
+    }
 
     /// <summary>SearchPointStates/DroppedItems added Sprint 6 (BL-P1-17) — search/drop containers
     /// for this location; both lazily created by InventoryOwnerResolver on first access.</summary>

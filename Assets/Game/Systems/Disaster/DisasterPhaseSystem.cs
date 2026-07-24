@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Data.Definitions;
@@ -17,12 +16,12 @@ namespace LastHope.Systems.Disaster
     public sealed class DisasterPhaseSystem
     {
         private readonly GameContext _ctx;
-        private readonly List<DisasterPhaseDefinition> _phasesByStart;
+        private readonly IReadOnlyList<DisasterPhaseDefinition> _phasesByStart;
 
         public DisasterPhaseSystem(GameContext ctx)
         {
             _ctx = ctx;
-            _phasesByStart = ctx.Definitions.DisasterPhases.Values.OrderBy(p => p.StartMinute).ToList();
+            _phasesByStart = ctx.Definitions.DisasterPhasesSorted;
 
             ctx.Events.Subscribe<WorldStateReloaded>(_ => Resync());
             Resync();

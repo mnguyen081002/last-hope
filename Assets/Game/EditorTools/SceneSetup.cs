@@ -8,6 +8,7 @@ using LastHope.DebugTools.Panel;
 using LastHope.Systems.Boot;
 using LastHope.UI.Container;
 using LastHope.UI.Inventory;
+using LastHope.UI.Map;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -196,6 +197,16 @@ namespace LastHope.EditorTools
             containerRect.anchoredPosition = Vector2.zero;
             containerGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
             containerGo.AddComponent<ContainerPanel>();
+
+            var mapGo = new GameObject("WorldMapPanel", typeof(RectTransform));
+            mapGo.transform.SetParent(canvasGo.transform, false);
+            var mapRect = mapGo.GetComponent<RectTransform>();
+            mapRect.anchorMin = new Vector2(0.2f, 0.2f);
+            mapRect.anchorMax = new Vector2(0.8f, 0.8f);
+            mapRect.offsetMin = Vector2.zero;
+            mapRect.offsetMax = Vector2.zero;
+            mapGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
+            mapGo.AddComponent<WorldMapPanel>().SetInputActions(inputActions);
         }
 
         private static void BuildMainShelterScene()
@@ -220,7 +231,7 @@ namespace LastHope.EditorTools
             var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             travelPoint.name = "TravelPoint_Store";
             travelPoint.transform.position = new Vector3(-3f, 0.5f, 3f);
-            travelPoint.AddComponent<TravelPointView>().SetRouteId("route_shelter_store");
+            travelPoint.AddComponent<TravelPointView>();
 
             var spawn = new GameObject("PlayerSpawnPoint");
             spawn.transform.position = new Vector3(0f, 0.1f, 0f);
@@ -253,7 +264,7 @@ namespace LastHope.EditorTools
             var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             travelPoint.name = "TravelPoint_Shelter";
             travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
-            travelPoint.AddComponent<TravelPointView>().SetRouteId("route_shelter_store");
+            travelPoint.AddComponent<TravelPointView>();
 
             var spawn = new GameObject("PlayerSpawnPoint");
             spawn.transform.position = new Vector3(0f, 0.1f, -5f);

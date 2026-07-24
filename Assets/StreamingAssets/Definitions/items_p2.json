@@ -1,0 +1,56 @@
+[
+  {
+    "id": "item_jacket",
+    "category": "equipment",
+    "base_weight_kg": 1.2,
+    "base_volume_liters": 2.0,
+    "max_stack_size": 1,
+    "equip_slot": "body",
+    "protection": { "wet_multiplier": 0.3 }
+  },
+  {
+    "id": "item_boots",
+    "category": "equipment",
+    "base_weight_kg": 0.9,
+    "base_volume_liters": 1.0,
+    "max_stack_size": 1,
+    "equip_slot": "feet",
+    "protection": { "exposure_block_level": 1, "exposure_medium_multiplier": 0.5 }
+  },
+  {
+    "id": "item_gloves",
+    "category": "equipment",
+    "base_weight_kg": 0.2,
+    "base_volume_liters": 0.3,
+    "max_stack_size": 1,
+    "equip_slot": "hands",
+    "protection": { "handles_contaminated": 1 }
+  },
+  {
+    "id": "item_rope",
+    "category": "equipment",
+    "base_weight_kg": 1.5,
+    "base_volume_liters": 2.0,
+    "max_stack_size": 1,
+    "equip_slot": "tool",
+    "protection": { "current_reduction": 1 }
+  },
+  {
+    "id": "item_dry_bag",
+    "category": "equipment",
+    "base_weight_kg": 2.0,
+    "base_volume_liters": 3.0,
+    "max_stack_size": 1,
+    "equip_slot": "back",
+    "protection": { "backpack_capacity_kg": 10, "backpack_capacity_liters": 18 }
+  },
+  {
+    "id": "item_medkit",
+    "category": "medical",
+    "base_weight_kg": 0.5,
+    "base_volume_liters": 0.6,
+    "max_stack_size": 3,
+    "tags": ["medical"],
+    "use_effects": { "health": 50 }
+  }
+]

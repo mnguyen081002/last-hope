@@ -77,9 +77,26 @@ namespace LastHope.Core.Commands
 
             InventoryOps.RecalculateLoad(source, ctx.Definitions);
             InventoryOps.RecalculateLoad(destination, ctx.Definitions);
+
+            if (DestinationOwnerId == ctx.World.Player.ActorId && item.Contamination == ContaminationState.Contaminated)
+                ApplyContaminatedHandlingCost(ctx, destination);
+
             ctx.Events.Publish(new InventoryChanged(ActorId));
             ctx.Events.Publish(new InventoryChanged(DestinationOwnerId));
             ctx.Events.Publish(new ItemTransferred(ActorId, DestinationOwnerId, item.ItemId, Quantity));
+        }
+
+        /// <summary>Cost-not-block philosophy (BL-P1 S8): picking up a contaminated item without
+        /// gloves is always allowed, but costs exposure. Gloves (ItemDefinition.Protection
+        /// "handles_contaminated") negate it entirely.</summary>
+        private static void ApplyContaminatedHandlingCost(GameContext ctx, InventoryState playerInventory)
+        {
+            if (EquipmentRules.HasProtection(playerInventory, ctx.Definitions, "handles_contaminated")) return;
+
+            PlayerConditionState condition = ctx.World.Player.Condition;
+            ConditionOps.AddExposure(condition, "black_water", ctx.Definitions.Balance.Hazard.ContaminatedHandlingExposureGain);
+            ConditionOps.ApplyExposureStatusChain(condition, "black_water", ctx.World.WorldTimeMinutes, ctx.Definitions.Balance.Condition);
+            ctx.Events.Publish(new ConditionChanged(ctx.World.Player.ActorId));
         }
     }
 }

@@ -44,6 +44,24 @@ namespace LastHope.Tests.EditMode
                     UseEffects = new Dictionary<string, float> { ["health"] = 50f },
                     Tags = new List<string> { "medical" },
                 },
+                ["item_gloves"] = new ItemDefinition
+                {
+                    Id = "item_gloves",
+                    BaseWeightKg = 0.2f,
+                    BaseVolumeLiters = 0.3f,
+                    MaxStackSize = 1,
+                    EquipSlot = "hands",
+                    Protection = new Dictionary<string, float> { ["handles_contaminated"] = 1f },
+                },
+                ["item_dry_bag"] = new ItemDefinition
+                {
+                    Id = "item_dry_bag",
+                    BaseWeightKg = 2f,
+                    BaseVolumeLiters = 3f,
+                    MaxStackSize = 1,
+                    EquipSlot = "back",
+                    Protection = new Dictionary<string, float> { ["backpack_capacity_kg"] = 10f, ["backpack_capacity_liters"] = 18f },
+                },
             };
             var registry = new DefinitionRegistry(
                 "test",
@@ -134,6 +152,121 @@ namespace LastHope.Tests.EditMode
             Assert.IsTrue(result.Success);
             Assert.AreEqual(53f, ctx.World.Player.Condition.Health, 0.001f);
             Assert.IsFalse(ConditionOps.IsIncapacitated(ctx.World.Player.Condition));
+        }
+
+        [Test]
+        public void EquipItem_CorrectSlot_Succeeds_AndPublishesEquipmentChanged()
+        {
+            var ctx = BuildContext();
+            var item = InventoryOps.AddItem(ctx.World.Player.Inventory, ctx.Definitions, "item_gloves", 1, () => "gloves_1");
+
+            EquipmentChanged? received = null;
+            ctx.Events.Subscribe<EquipmentChanged>(e => received = e);
+
+            var result = new CommandProcessor(ctx).Submit(new EquipItemCommand(ctx.World.Player.ActorId, item.InstanceId, "hands"));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("gloves_1", ctx.World.Player.Inventory.EquipmentSlots["hands"]);
+            Assert.IsTrue(received.HasValue);
+            Assert.AreEqual("hands", received.Value.Slot);
+        }
+
+        [Test]
+        public void EquipItem_WrongSlot_FailsSlotMismatch()
+        {
+            var ctx = BuildContext();
+            var item = InventoryOps.AddItem(ctx.World.Player.Inventory, ctx.Definitions, "item_gloves", 1, () => "gloves_1");
+
+            var result = new CommandProcessor(ctx).Submit(new EquipItemCommand(ctx.World.Player.ActorId, item.InstanceId, "feet"));
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(CommandErrorCode.SlotMismatch, result.Code);
+        }
+
+        [Test]
+        public void EquipItem_NonEquippableItem_FailsInvalidTarget()
+        {
+            var ctx = BuildContext();
+            var item = InventoryOps.AddItem(ctx.World.Player.Inventory, ctx.Definitions, "item_test", 1, () => "test_1");
+
+            var result = new CommandProcessor(ctx).Submit(new EquipItemCommand(ctx.World.Player.ActorId, item.InstanceId, "body"));
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(CommandErrorCode.InvalidTarget, result.Code);
+        }
+
+        [Test]
+        public void UnequipItem_RemovesSlot_AndPublishesEquipmentChanged()
+        {
+            var ctx = BuildContext();
+            var item = InventoryOps.AddItem(ctx.World.Player.Inventory, ctx.Definitions, "item_gloves", 1, () => "gloves_1");
+            new CommandProcessor(ctx).Submit(new EquipItemCommand(ctx.World.Player.ActorId, item.InstanceId, "hands"));
+
+            EquipmentChanged? received = null;
+            ctx.Events.Subscribe<EquipmentChanged>(e => received = e);
+            var result = new CommandProcessor(ctx).Submit(new UnequipItemCommand(ctx.World.Player.ActorId, "hands"));
+
+            Assert.IsTrue(result.Success);
+            Assert.IsFalse(ctx.World.Player.Inventory.EquipmentSlots.ContainsKey("hands"));
+            Assert.IsTrue(received.HasValue);
+            Assert.IsNull(received.Value.ItemInstanceId);
+        }
+
+        [Test]
+        public void UnequipItem_EmptySlot_FailsSlotMismatch()
+        {
+            var ctx = BuildContext();
+
+            var result = new CommandProcessor(ctx).Submit(new UnequipItemCommand(ctx.World.Player.ActorId, "hands"));
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(CommandErrorCode.SlotMismatch, result.Code);
+        }
+
+        [Test]
+        public void DryBagEquipped_OverridesBackpackCapacity()
+        {
+            var ctx = BuildContext();
+            var bag = InventoryOps.AddItem(ctx.World.Player.Inventory, ctx.Definitions, "item_dry_bag", 1, () => "bag_1");
+            new CommandProcessor(ctx).Submit(new EquipItemCommand(ctx.World.Player.ActorId, bag.InstanceId, "back"));
+
+            var (weightCap, volumeCap) = InventoryRules.EffectiveCapacity(ctx.World.Player.Inventory, ctx.Definitions, ctx.Definitions.Balance);
+
+            Assert.AreEqual(10f, weightCap);
+            Assert.AreEqual(18f, volumeCap);
+        }
+
+        [Test]
+        public void TransferItem_ContaminatedToPlayer_WithoutGloves_AddsExposure()
+        {
+            var ctx = BuildContext();
+            var dropped = new InventoryState { OwnerId = "location_dropped:loc" };
+            ctx.World.LocationStates["loc"] = new LocationState { Id = "loc", DroppedItems = dropped };
+            dropped.Items["dirty_1"] = new ItemInstanceState { InstanceId = "dirty_1", ItemId = "item_test", Quantity = 1, Contamination = ContaminationState.Contaminated };
+
+            var result = new CommandProcessor(ctx).Submit(
+                new TransferItemCommand("location_dropped:loc", "dirty_1", ctx.World.Player.ActorId, 1));
+
+            Assert.IsTrue(result.Success);
+            Assert.Greater(ConditionOps.GetExposure(ctx.World.Player.Condition, "black_water"), 0f);
+        }
+
+        [Test]
+        public void TransferItem_ContaminatedToPlayer_WithGloves_NoExposure()
+        {
+            var ctx = BuildContext();
+            var gloves = InventoryOps.AddItem(ctx.World.Player.Inventory, ctx.Definitions, "item_gloves", 1, () => "gloves_1");
+            new CommandProcessor(ctx).Submit(new EquipItemCommand(ctx.World.Player.ActorId, gloves.InstanceId, "hands"));
+
+            var dropped = new InventoryState { OwnerId = "location_dropped:loc" };
+            ctx.World.LocationStates["loc"] = new LocationState { Id = "loc", DroppedItems = dropped };
+            dropped.Items["dirty_1"] = new ItemInstanceState { InstanceId = "dirty_1", ItemId = "item_test", Quantity = 1, Contamination = ContaminationState.Contaminated };
+
+            var result = new CommandProcessor(ctx).Submit(
+                new TransferItemCommand("location_dropped:loc", "dirty_1", ctx.World.Player.ActorId, 1));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(0f, ConditionOps.GetExposure(ctx.World.Player.Condition, "black_water"));
         }
     }
 }

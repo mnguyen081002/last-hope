@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using LastHope.Data.Definitions;
 
 namespace LastHope.Data
@@ -17,6 +18,11 @@ namespace LastHope.Data
         public IReadOnlyDictionary<string, SearchPointDefinition> SearchPoints { get; }
         public IReadOnlyDictionary<string, DisasterPhaseDefinition> DisasterPhases { get; }
 
+        /// <summary>DisasterPhases ordered by StartMinute, computed once here so
+        /// DisasterPhaseSystem/HazardSystem/ReturnWindowCalculator/BeginTravelCommand all walk the
+        /// exact same sequence — never re-sorted independently, never drifts.</summary>
+        public IReadOnlyList<DisasterPhaseDefinition> DisasterPhasesSorted { get; }
+
         public DefinitionRegistry(
             string definitionVersion,
             BalanceConfig balance,
@@ -33,6 +39,7 @@ namespace LastHope.Data
             Routes = routes;
             SearchPoints = searchPoints;
             DisasterPhases = disasterPhases ?? new Dictionary<string, DisasterPhaseDefinition>();
+            DisasterPhasesSorted = DisasterPhases.Values.OrderBy(p => p.StartMinute).ToList();
         }
 
         public bool TryGetItem(string id, out ItemDefinition def) => Items.TryGetValue(id, out def);

@@ -29,6 +29,8 @@ namespace LastHope.DebugTools.Panel
         private string _statusMessage = "";
         private string _conditionStatName = "health";
         private string _conditionStatDelta = "10";
+        private string _equipItemInstanceId = "";
+        private string _equipSlot = "body";
 
         private string _travelRouteId = "route_shelter_store";
 
@@ -98,6 +100,30 @@ namespace LastHope.DebugTools.Panel
             _conditionStatDelta = GUILayout.TextField(_conditionStatDelta, GUILayout.Width(60));
             if (GUILayout.Button("Apply delta") && float.TryParse(_conditionStatDelta, out float delta))
                 ApplyConditionCheat(condition, _conditionStatName, delta);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(6);
+            GUILayout.Label("Equipment");
+            var inv = _ctx.World.Player.Inventory;
+            if (inv.EquipmentSlots.Count > 0)
+            {
+                var equipped = new List<string>();
+                foreach (var kvp in inv.EquipmentSlots) equipped.Add($"{kvp.Key}={kvp.Value}");
+                GUILayout.Label(string.Join(", ", equipped));
+            }
+            GUILayout.BeginHorizontal();
+            _equipItemInstanceId = GUILayout.TextField(_equipItemInstanceId, GUILayout.Width(180));
+            _equipSlot = GUILayout.TextField(_equipSlot, GUILayout.Width(80));
+            if (GUILayout.Button("Equip") && _processor != null)
+            {
+                var result = _processor.Submit(new EquipItemCommand(_ctx.World.Player.ActorId, _equipItemInstanceId, _equipSlot));
+                _statusMessage = result.Success ? $"Equipped to '{_equipSlot}'." : $"Equip failed: {result.Code}";
+            }
+            if (GUILayout.Button("Unequip") && _processor != null)
+            {
+                var result = _processor.Submit(new UnequipItemCommand(_ctx.World.Player.ActorId, _equipSlot));
+                _statusMessage = result.Success ? $"Unequipped '{_equipSlot}'." : $"Unequip failed: {result.Code}";
+            }
             GUILayout.EndHorizontal();
 
             GUILayout.Space(6);

@@ -159,4 +159,23 @@ namespace LastHope.Core.Events
             Severity = severity;
         }
     }
+
+    public readonly struct EquipmentChanged : IGameEvent
+    {
+        public readonly string ActorId;
+        public readonly string Slot;
+        public readonly string ItemInstanceId; // null when unequipped
+
+        public EquipmentChanged(string actorId, string slot, string itemInstanceId)
+        {
+            ActorId = actorId;
+            Slot = slot;
+            ItemInstanceId = itemInstanceId;
+        }
+    }
+
+    /// <summary>UI-routing event, not sim state: TravelPointView publishes this instead of
+    /// submitting BeginTravelCommand directly (S8) — WorldMapPanel opens and shows every route
+    /// connected to the player's current location.</summary>
+    public readonly struct WorldMapRequested : IGameEvent { }
 }

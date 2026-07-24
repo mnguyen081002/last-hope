@@ -12,6 +12,7 @@ namespace LastHope.Data
         public TravelBalance Travel { get; set; } = new TravelBalance();
         public NewGameBalance NewGame { get; set; } = new NewGameBalance();
         public ConditionBalance Condition { get; set; } = new ConditionBalance();
+        public HazardBalance Hazard { get; set; } = new HazardBalance();
     }
 
     public sealed class InventoryBalance
@@ -58,5 +59,16 @@ namespace LastHope.Data
         public float StarvationHealthFloor { get; set; } = 1f;
         public float SickHealthDecayPerLongTick { get; set; } = 0.5f;
         public float CollapsedHealthThreshold { get; set; } = 5f;
+    }
+
+    /// <summary>Crossing-cost table indexed by tier 0-3 (tier 4 = HazardRules.MaxLevel = Impassable,
+    /// blocked entirely — no cost to index). Tier = max(FloodLevel, effective CurrentLevel).</summary>
+    public sealed class HazardBalance
+    {
+        public float[] CrossingStaminaCost { get; set; } = { 0f, 5f, 15f, 30f };
+        public float[] CrossingExposureGain { get; set; } = { 0f, 5f, 15f, 30f };
+        public float[] CrossingWetGain { get; set; } = { 10f, 30f, 60f, 90f };
+        public float[] CrossingTimeFactor { get; set; } = { 1.0f, 1.2f, 1.5f, 2.0f };
+        public float ContaminatedHandlingExposureGain { get; set; } = 10f;
     }
 }

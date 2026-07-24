@@ -3,6 +3,7 @@ using LastHope.Core.Events;
 using LastHope.Core.Logging;
 using LastHope.Core.Rules;
 using LastHope.Core.State;
+using LastHope.Data.Definitions;
 
 namespace LastHope.Core.Commands
 {
@@ -92,6 +93,13 @@ namespace LastHope.Core.Commands
             if (current != route.FromLocationId && current != route.ToLocationId)
                 return CommandResult.Fail(CommandErrorCode.NotAtLocation, $"Player is not on route '{TargetId}'.");
 
+            if (ActorId == ctx.World.Player.ActorId && ConditionOps.IsIncapacitated(ctx.World.Player.Condition))
+                return CommandResult.Fail(CommandErrorCode.Incapacitated, "Player is incapacitated and cannot travel.");
+
+            var crossing = EvaluateCrossing(ctx, route);
+            if (!crossing.Passable)
+                return CommandResult.Fail(CommandErrorCode.RouteBlocked, string.Join(" ", crossing.Warnings));
+
             return CommandResult.Ok();
         }
 
@@ -101,13 +109,42 @@ namespace LastHope.Core.Commands
             string from = ctx.World.Player.CurrentLocationId;
             string to = from == route.FromLocationId ? route.ToLocationId : route.FromLocationId;
 
+            var crossing = EvaluateCrossing(ctx, route);
             float loadFactor = InventoryRules.LoadFactorFor(ctx.World.Player.Inventory.Overload, ctx.Definitions.Balance);
-            int minutes = (int)Math.Ceiling(route.TravelMinutes * loadFactor);
+            int minutes = (int)Math.Ceiling(route.TravelMinutes * loadFactor * crossing.TimeFactor);
 
             ctx.Events.Publish(new TravelStarted(TargetId, from, to, minutes));
             ctx.Clock.FastForward(minutes);
             ctx.World.Player.CurrentLocationId = to;
+
+            ApplyCrossingCost(ctx, crossing);
+
             ctx.Events.Publish(new TravelCompleted(TargetId, from, to, minutes));
+        }
+
+        private static CrossingEvaluation EvaluateCrossing(GameContext ctx, RouteDefinition route)
+        {
+            var hazard = HazardRules.EvaluateRoute(route, ctx.Definitions.DisasterPhasesSorted, ctx.World.WorldTimeMinutes);
+            var equipment = EquipmentRules.ResolveTravelProtection(ctx.World.Player.Inventory, ctx.Definitions);
+            return TravelRules.EvaluateCrossing(hazard, ctx.World.Player.Condition, ctx.Definitions.Balance.Hazard, equipment);
+        }
+
+        private static void ApplyCrossingCost(GameContext ctx, CrossingEvaluation crossing)
+        {
+            PlayerConditionState condition = ctx.World.Player.Condition;
+
+            float shortfall = Math.Max(0f, crossing.StaminaCost - condition.Stamina);
+            ConditionOps.ApplyStamina(condition, -crossing.StaminaCost);
+            if (shortfall > 0f) ConditionOps.ApplyFatigue(condition, shortfall);
+
+            ConditionOps.AddExposure(condition, "black_water", crossing.ExposureGain);
+            ConditionOps.ApplyExposureStatusChain(condition, "black_water", ctx.World.WorldTimeMinutes, ctx.Definitions.Balance.Condition);
+
+            float wet = ConditionOps.GetStatusSeverity(condition, ConditionOps.StatusWet);
+            ConditionOps.SetStatusSeverity(condition, ConditionOps.StatusWet, wet + crossing.WetGain, ctx.World.WorldTimeMinutes);
+
+            ConditionOps.RecomputeIncapacitation(condition, ctx.Definitions.Balance.Condition);
+            ctx.Events.Publish(new ConditionChanged(ctx.World.Player.ActorId));
         }
     }
 }

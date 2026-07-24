@@ -36,7 +36,7 @@ namespace LastHope.Core.Save
     /// </summary>
     public sealed class SaveService
     {
-        private const int CurrentSaveVersion = 2; // S7: PlayerConditionState added (additive)
+        private const int CurrentSaveVersion = 3; // S8: RouteState restructured (Flood/Current/Contamination/Closed)
         private const int AutosaveSlotCount = 3;
 
         private readonly string _saveDirectory;
