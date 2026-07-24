@@ -7,19 +7,22 @@ using LastHope.Data.Definitions;
 
 namespace LastHope.Core.Commands
 {
-    // Validate + minimal state flag only; full Task System behavior (progress, pause/resume,
-    // resource reservation) arrives with Shelter Task in Sprint 10+ (technical-specification.md §22).
-
+    /// <summary>Generic task creation (S11) — no material reservation (that's StartBuildCommand's
+    /// job); for task kinds that don't need it, e.g. a future Repair task. TargetId here is
+    /// whatever the task acts on (a build slot, a module instance...), NOT the task's own id — the
+    /// task's own id is generated fresh so multiple tasks can target different things concurrently.</summary>
     public sealed class StartTaskCommand : IGameCommand
     {
         public string ActorId { get; }
-        public string TargetId { get; } // task id
+        public string TargetId { get; } // what the task acts on
         public long WorldTime { get; set; }
+        private readonly TaskKind _kind;
 
-        public StartTaskCommand(string actorId, string taskId)
+        public StartTaskCommand(string actorId, string targetId, TaskKind kind)
         {
             ActorId = actorId;
-            TargetId = taskId;
+            TargetId = targetId;
+            _kind = kind;
         }
 
         public CommandResult Validate(GameContext ctx)
@@ -28,18 +31,29 @@ namespace LastHope.Core.Commands
             if (string.IsNullOrEmpty(TargetId)) return CommandResult.Fail(CommandErrorCode.InvalidTarget);
 
             foreach (var task in ctx.World.ActiveTasks)
-                if (task.Id == TargetId) return CommandResult.Fail(CommandErrorCode.AlreadyActive);
+                if (task.TargetId == TargetId) return CommandResult.Fail(CommandErrorCode.AlreadyActive);
 
             return CommandResult.Ok();
         }
 
         public void Execute(GameContext ctx)
         {
-            ctx.World.ActiveTasks.Add(new ActiveTaskState { Id = TargetId, StatusName = "Active" });
-            GameLog.Info(LogCategory.World, $"StartTaskCommand: '{TargetId}' marked Active (full Task System arrives later).");
+            string taskId = Guid.NewGuid().ToString("N");
+            ctx.World.ActiveTasks.Add(new ActiveTaskState
+            {
+                TaskId = taskId,
+                Kind = _kind,
+                TargetId = TargetId,
+                Progress = 0f,
+                Status = TaskStatus.Running,
+                RequiredWorker = _kind == TaskKind.Active ? ActorId : null,
+            });
+            ctx.Events.Publish(new TaskStateChanged(taskId));
         }
     }
 
+    /// <summary>Cancels a task by its own TaskId — refunds any reserved materials (owner
+    /// "task:&lt;TaskId&gt;") to shelter storage, then removes the task (S11).</summary>
     public sealed class CancelTaskCommand : IGameCommand
     {
         public string ActorId { get; }
@@ -55,14 +69,74 @@ namespace LastHope.Core.Commands
         public CommandResult Validate(GameContext ctx)
         {
             foreach (var task in ctx.World.ActiveTasks)
-                if (task.Id == TargetId) return CommandResult.Ok();
-            return CommandResult.Fail(CommandErrorCode.NotActive);
+                if (task.TaskId == TargetId) return CommandResult.Ok();
+            return CommandResult.Fail(CommandErrorCode.TaskNotFound);
         }
 
         public void Execute(GameContext ctx)
         {
-            ctx.World.ActiveTasks.RemoveAll(t => t.Id == TargetId);
-            GameLog.Info(LogCategory.World, $"CancelTaskCommand: '{TargetId}' removed.");
+            string shelterId = ctx.Definitions.Balance.NewGame.MainShelterId;
+            InventoryOwnerResolver.TryResolve(ctx, "task:" + TargetId, out var taskInv);
+            InventoryOwnerResolver.TryResolve(ctx, "shelter_storage:" + shelterId, out var storage);
+
+            if (taskInv.Items.Count > 0)
+            {
+                foreach (var kvp in taskInv.Items) kvp.Value.ContainerId = storage.OwnerId;
+                foreach (var instanceId in taskInv.Items.Keys) storage.Items[instanceId] = taskInv.Items[instanceId];
+                taskInv.Items.Clear();
+                InventoryOps.RecalculateLoad(storage, ctx.Definitions);
+                InventoryOps.RecalculateLoad(taskInv, ctx.Definitions);
+                ctx.Events.Publish(new InventoryChanged(storage.OwnerId));
+            }
+
+            ctx.World.ActiveTasks.RemoveAll(t => t.TaskId == TargetId);
+            ctx.Events.Publish(new TaskStateChanged(TargetId));
+        }
+    }
+
+    public sealed class PauseTaskCommand : IGameCommand
+    {
+        public string ActorId { get; }
+        public string TargetId { get; } // task id
+        public long WorldTime { get; set; }
+
+        public PauseTaskCommand(string actorId, string taskId) { ActorId = actorId; TargetId = taskId; }
+
+        public CommandResult Validate(GameContext ctx)
+        {
+            var task = ctx.World.ActiveTasks.Find(t => t.TaskId == TargetId);
+            if (task == null) return CommandResult.Fail(CommandErrorCode.TaskNotFound);
+            if (task.Status != TaskStatus.Running) return CommandResult.Fail(CommandErrorCode.TaskNotRunning);
+            return CommandResult.Ok();
+        }
+
+        public void Execute(GameContext ctx)
+        {
+            ctx.World.ActiveTasks.Find(t => t.TaskId == TargetId).Status = TaskStatus.Paused;
+            ctx.Events.Publish(new TaskStateChanged(TargetId));
+        }
+    }
+
+    public sealed class ResumeTaskCommand : IGameCommand
+    {
+        public string ActorId { get; }
+        public string TargetId { get; } // task id
+        public long WorldTime { get; set; }
+
+        public ResumeTaskCommand(string actorId, string taskId) { ActorId = actorId; TargetId = taskId; }
+
+        public CommandResult Validate(GameContext ctx)
+        {
+            var task = ctx.World.ActiveTasks.Find(t => t.TaskId == TargetId);
+            if (task == null) return CommandResult.Fail(CommandErrorCode.TaskNotFound);
+            if (task.Status != TaskStatus.Paused) return CommandResult.Fail(CommandErrorCode.TaskNotRunning);
+            return CommandResult.Ok();
+        }
+
+        public void Execute(GameContext ctx)
+        {
+            ctx.World.ActiveTasks.Find(t => t.TaskId == TargetId).Status = TaskStatus.Running;
+            ctx.Events.Publish(new TaskStateChanged(TargetId));
         }
     }
 

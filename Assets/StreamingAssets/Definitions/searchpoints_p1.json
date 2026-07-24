@@ -48,7 +48,12 @@
       { "item_id": "item_toolbox", "chance": 45, "min_quantity": 1, "max_quantity": 1 },
       { "item_id": "item_water_container_20l", "chance": 45, "min_quantity": 1, "max_quantity": 1 },
       { "item_id": "item_water_bottle", "chance": 70, "min_quantity": 2, "max_quantity": 2 },
-      { "item_id": "item_battery", "chance": 60, "min_quantity": 2, "max_quantity": 2 }
+      { "item_id": "item_battery", "chance": 60, "min_quantity": 2, "max_quantity": 2 },
+      { "item_id": "item_wood", "guaranteed": true, "min_quantity": 2, "max_quantity": 4 },
+      { "item_id": "item_scrap", "guaranteed": true, "min_quantity": 2, "max_quantity": 3 },
+      { "item_id": "item_pump_part", "chance": 40, "min_quantity": 1, "max_quantity": 1 },
+      { "item_id": "item_purifier_unit", "chance": 30, "min_quantity": 1, "max_quantity": 1 },
+      { "item_id": "item_filter", "chance": 50, "min_quantity": 1, "max_quantity": 2 }
     ]
   }
 ]

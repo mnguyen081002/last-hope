@@ -201,4 +201,30 @@ namespace LastHope.Core.Events
             Level = level;
         }
     }
+
+    /// <summary>Published by TaskSystem (S11) every long-tick a task's Progress changes, and by
+    /// Pause/Resume/Cancel commands — BuildPanel rebuilds its list on this.</summary>
+    public readonly struct TaskStateChanged : IGameEvent
+    {
+        public readonly string TaskId;
+        public TaskStateChanged(string taskId) { TaskId = taskId; }
+    }
+
+    /// <summary>Finer-grained than TaskStateChanged — just the Progress number, for a build
+    /// progress bar that doesn't need to know the whole task shape.</summary>
+    public readonly struct BuildProgressChanged : IGameEvent
+    {
+        public readonly string SlotId;
+        public readonly float Progress;
+        public BuildProgressChanged(string slotId, float progress) { SlotId = slotId; Progress = progress; }
+    }
+
+    /// <summary>Published by TaskSystem when a Build task reaches 100% and its ModuleState is
+    /// created.</summary>
+    public readonly struct ModuleCompleted : IGameEvent
+    {
+        public readonly string SlotId;
+        public readonly string ModuleInstanceId;
+        public ModuleCompleted(string slotId, string moduleInstanceId) { SlotId = slotId; ModuleInstanceId = moduleInstanceId; }
+    }
 }

@@ -18,6 +18,7 @@ namespace LastHope.Data
         public IReadOnlyDictionary<string, SearchPointDefinition> SearchPoints { get; }
         public IReadOnlyDictionary<string, DisasterPhaseDefinition> DisasterPhases { get; }
         public IReadOnlyDictionary<string, ShelterZoneDefinition> ShelterZones { get; }
+        public IReadOnlyDictionary<string, ModuleDefinition> Modules { get; }
 
         /// <summary>DisasterPhases ordered by StartMinute, computed once here so
         /// DisasterPhaseSystem/HazardSystem/ReturnWindowCalculator/BeginTravelCommand all walk the
@@ -32,7 +33,8 @@ namespace LastHope.Data
             Dictionary<string, RouteDefinition> routes,
             Dictionary<string, SearchPointDefinition> searchPoints,
             Dictionary<string, DisasterPhaseDefinition> disasterPhases = null,
-            Dictionary<string, ShelterZoneDefinition> shelterZones = null)
+            Dictionary<string, ShelterZoneDefinition> shelterZones = null,
+            Dictionary<string, ModuleDefinition> modules = null)
         {
             DefinitionVersion = definitionVersion;
             Balance = balance ?? new BalanceConfig();
@@ -43,6 +45,7 @@ namespace LastHope.Data
             DisasterPhases = disasterPhases ?? new Dictionary<string, DisasterPhaseDefinition>();
             DisasterPhasesSorted = DisasterPhases.Values.OrderBy(p => p.StartMinute).ToList();
             ShelterZones = shelterZones ?? new Dictionary<string, ShelterZoneDefinition>();
+            Modules = modules ?? new Dictionary<string, ModuleDefinition>();
         }
 
         public bool TryGetItem(string id, out ItemDefinition def) => Items.TryGetValue(id, out def);
@@ -51,5 +54,6 @@ namespace LastHope.Data
         public bool TryGetSearchPoint(string id, out SearchPointDefinition def) => SearchPoints.TryGetValue(id, out def);
         public bool TryGetDisasterPhase(string id, out DisasterPhaseDefinition def) => DisasterPhases.TryGetValue(id, out def);
         public bool TryGetShelterZone(string id, out ShelterZoneDefinition def) => ShelterZones.TryGetValue(id, out def);
+        public bool TryGetModule(string id, out ModuleDefinition def) => Modules.TryGetValue(id, out def);
     }
 }

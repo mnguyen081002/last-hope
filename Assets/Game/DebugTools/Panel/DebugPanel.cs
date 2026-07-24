@@ -156,6 +156,7 @@ namespace LastHope.DebugTools.Panel
             {
                 GUILayout.Label($"Structural {shelter.StructuralIntegrity:0}  Water {shelter.WaterIntrusion.Level} ({shelter.WaterIntrusion.Units:0}/100)");
                 GUILayout.Label($"Clean Water {shelter.WaterStocks.Clean:0}  Untreated {shelter.WaterStocks.Untreated:0}  Living {shelter.Occupants}/{shelter.LivingCapacity}");
+                GUILayout.Label($"Modules built: {shelter.Modules.Count}  Active build tasks: {_ctx.World.ActiveTasks.Count}");
                 if (shelter.EventFlags.Count > 0)
                     GUILayout.Label("Flags: " + string.Join(", ", shelter.EventFlags));
                 GUILayout.BeginHorizontal();
@@ -326,6 +327,7 @@ namespace LastHope.DebugTools.Panel
             into.NpcStates = from.NpcStates;
             into.ActiveEvents = from.ActiveEvents;
             into.ActiveTasks = from.ActiveTasks;
+            into.TaskInventories = from.TaskInventories;
             into.PersistentFlags = from.PersistentFlags;
             into.RandomSeed = from.RandomSeed;
             into.RngStreams = from.RngStreams;

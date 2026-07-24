@@ -96,9 +96,13 @@ namespace LastHope.Data
         public float BackflowInflow { get; set; } = 6f;
         public float PassiveDrainPerLongTick { get; set; } = 2f;
 
-        /// <summary>Applied once per active Portable Pump module (arrives S11); requires
-        /// PumpPowerDemand power allocated (arrives S12) — S10 always passes 0 active pumps.</summary>
+        /// <summary>Applied once per active Portable Pump module (S11+); ungated by power until
+        /// S12's PowerSystem starts flipping Module.Active based on allocation.</summary>
         public float PumpOutputPerLongTick { get; set; } = 6f;
+
+        /// <summary>Fraction of table inflow an active, undamaged Barrier module blocks (S11).</summary>
+        public float BarrierBlockFraction { get; set; } = 0.7f;
+        public float BarrierDurabilityDecayPerLongTick { get; set; } = 2f;
 
         public float InitialStructuralIntegrity { get; set; } = 85f;
         public int InitialLivingCapacity { get; set; } = 2;

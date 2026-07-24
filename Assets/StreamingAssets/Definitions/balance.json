@@ -57,6 +57,8 @@
     "backflow_inflow": 6,
     "passive_drain_per_long_tick": 2,
     "pump_output_per_long_tick": 6,
+    "barrier_block_fraction": 0.7,
+    "barrier_durability_decay_per_long_tick": 2,
     "initial_structural_integrity": 85,
     "initial_living_capacity": 2,
     "initial_clean_water": 3,

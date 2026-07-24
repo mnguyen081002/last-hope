@@ -10,6 +10,7 @@ using LastHope.UI.Container;
 using LastHope.UI.Hud;
 using LastHope.UI.Inventory;
 using LastHope.UI.Map;
+using LastHope.UI.Shelter;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -230,6 +231,16 @@ namespace LastHope.EditorTools
             mapRect.offsetMax = Vector2.zero;
             mapGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
             mapGo.AddComponent<WorldMapPanel>().SetInputActions(inputActions);
+
+            var buildGo = new GameObject("BuildPanel", typeof(RectTransform));
+            buildGo.transform.SetParent(canvasGo.transform, false);
+            var buildRect = buildGo.GetComponent<RectTransform>();
+            buildRect.anchorMin = new Vector2(0.15f, 0.15f);
+            buildRect.anchorMax = new Vector2(0.85f, 0.85f);
+            buildRect.offsetMin = Vector2.zero;
+            buildRect.offsetMax = Vector2.zero;
+            buildGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
+            buildGo.AddComponent<BuildPanel>().SetInputActions(inputActions);
         }
 
         private static void BuildMainShelterScene()

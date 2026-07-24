@@ -1,0 +1,47 @@
+[
+  {
+    "id": "module_barrier",
+    "allowed_zone_ids": ["shelter_entrance"],
+    "materials": { "item_wood": 4, "item_scrap": 2 },
+    "build_minutes": 60,
+    "power_demand": 0,
+    "max_durability": 100,
+    "tags": ["barrier"]
+  },
+  {
+    "id": "module_pump",
+    "allowed_zone_ids": ["utility_area"],
+    "materials": { "item_pump_part": 1, "item_scrap": 2 },
+    "build_minutes": 45,
+    "power_demand": 2,
+    "max_durability": 100,
+    "tags": ["pump"]
+  },
+  {
+    "id": "module_elevated_storage",
+    "allowed_zone_ids": ["upper_living", "ground_storage"],
+    "materials": { "item_wood": 3 },
+    "build_minutes": 40,
+    "power_demand": 0,
+    "max_durability": 100,
+    "tags": ["elevated_storage"]
+  },
+  {
+    "id": "module_purifier",
+    "allowed_zone_ids": ["water_processing"],
+    "materials": { "item_purifier_unit": 1, "item_filter": 1 },
+    "build_minutes": 50,
+    "power_demand": 2,
+    "max_durability": 100,
+    "tags": ["purifier"]
+  },
+  {
+    "id": "module_battery_bank",
+    "allowed_zone_ids": ["utility_area"],
+    "materials": { "item_battery": 2, "item_scrap": 1 },
+    "build_minutes": 30,
+    "power_demand": 0,
+    "max_durability": 100,
+    "tags": ["battery_bank"]
+  }
+]

@@ -75,8 +75,15 @@ namespace LastHope.Systems.Shelter
                 ? phase.RainIntensity : 0;
             bool backflowActive = false; // wired to EventFlags by S13's Drain Backflow event
 
-            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity, backflowActive, activePumpCount: 0, cfg);
+            int activePumpCount = CountActiveModulesByTag(shelter, "pump");
+            ModuleState barrier = FindActiveModuleByTag(shelter, "barrier");
+            bool hasActiveBarrier = barrier != null;
+
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity, backflowActive, activePumpCount, hasActiveBarrier, cfg);
             shelter.WaterIntrusion.Units = WaterIntrusionRules.Clamp01To100(shelter.WaterIntrusion.Units + delta);
+
+            if (barrier != null && shelter.WaterIntrusion.Level > WaterIntrusionLevel.Dry)
+                DecayBarrier(barrier, cfg);
 
             WaterIntrusionLevel newLevel = WaterIntrusionRules.LevelFor(shelter.WaterIntrusion.Units, cfg);
             if (newLevel == shelter.WaterIntrusion.Level) return;
@@ -84,6 +91,37 @@ namespace LastHope.Systems.Shelter
             shelter.WaterIntrusion.Level = newLevel;
             UpdateFlags(shelter, newLevel);
             _ctx.Events.Publish(new ShelterWaterChanged(shelterId, newLevel));
+        }
+
+        private void DecayBarrier(ModuleState barrier, ShelterBalance cfg)
+        {
+            barrier.Durability -= cfg.BarrierDurabilityDecayPerLongTick;
+            if (barrier.Durability <= 0f)
+            {
+                barrier.Durability = 0f;
+                barrier.Active = false; // destroyed — no longer blocks inflow
+            }
+        }
+
+        private int CountActiveModulesByTag(ShelterState shelter, string tag)
+        {
+            int count = 0;
+            foreach (var module in shelter.Modules.Values)
+            {
+                if (!module.Active) continue;
+                if (_ctx.Definitions.TryGetModule(module.ModuleId, out var def) && def.Tags.Contains(tag)) count++;
+            }
+            return count;
+        }
+
+        private ModuleState FindActiveModuleByTag(ShelterState shelter, string tag)
+        {
+            foreach (var module in shelter.Modules.Values)
+            {
+                if (!module.Active) continue;
+                if (_ctx.Definitions.TryGetModule(module.ModuleId, out var def) && def.Tags.Contains(tag)) return module;
+            }
+            return null;
         }
 
         private static void UpdateFlags(ShelterState shelter, WaterIntrusionLevel level)

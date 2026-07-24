@@ -58,11 +58,24 @@ namespace LastHope.Core.State
         public float Untreated { get; set; }
     }
 
+    /// <summary>One built (or building) Module occupying a BuildSlot (S11). Active gates whether
+    /// its effect (Pump drain, Purifier batch, etc.) currently applies — S11 defaults it true the
+    /// moment construction completes (ungated); S12's PowerSystem starts flipping it false when
+    /// the module can't be powered.</summary>
+    public sealed class ModuleState
+    {
+        public string InstanceId { get; set; }
+        public string ModuleId { get; set; }
+        public string SlotId { get; set; }
+        public float Durability { get; set; }
+        public bool Active { get; set; }
+    }
+
     /// <summary>Storage added Sprint 6 (BL-P1-18) — unlimited-capacity shelter container,
     /// lazily created by InventoryOwnerResolver on first access. S10 adds the real shelter
     /// simulation fields (WaterIntrusionSystem owns seeding + upkeep of this shelter's state —
-    /// see WaterIntrusionSystem.Resync). PowerState/Modules arrive with S12/S11 respectively —
-    /// not declared here yet, their owning system doesn't exist.</summary>
+    /// see WaterIntrusionSystem.Resync). S11 adds Modules. PowerState arrives with S12 — not
+    /// declared here yet, its owning system doesn't exist.</summary>
     public sealed class ShelterState
     {
         public string Id { get; set; }
@@ -74,6 +87,7 @@ namespace LastHope.Core.State
         public int LivingCapacity { get; set; }
         public int Occupants { get; set; }
         public Dictionary<string, BuildSlotState> BuildSlots { get; set; } = new Dictionary<string, BuildSlotState>();
+        public Dictionary<string, ModuleState> Modules { get; set; } = new Dictionary<string, ModuleState>();
         public WaterStocksState WaterStocks { get; set; } = new WaterStocksState();
 
         /// <summary>Named boolean flags for shelter-scoped conditions no dedicated field exists
@@ -84,7 +98,34 @@ namespace LastHope.Core.State
 
     public sealed class NpcState { public string Id { get; set; } public string StatusName { get; set; } = "Unknown"; }
     public sealed class ActiveEventState { public string Id { get; set; } public string StatusName { get; set; } = "Active"; }
-    public sealed class ActiveTaskState { public string Id { get; set; } public string StatusName { get; set; } = "Queued"; }
+
+    /// <summary>Passive tasks (Build) advance every LongTick regardless of player location/sleep —
+    /// they're work the shelter itself is doing. Active tasks (S12+: Purify batch, Repair) also
+    /// require RequiredWorker to be present at the shelter to advance. S11 only ever creates
+    /// Passive tasks (StartBuildCommand); the Active branch exists now so TaskSystem doesn't need
+    /// re-architecting when S12 adds the first Active task type.</summary>
+    public enum TaskKind { Active, Passive }
+    public enum TaskStatus { Running, Paused }
+
+    public sealed class ActiveTaskState
+    {
+        public string TaskId { get; set; }
+        public TaskKind Kind { get; set; }
+
+        /// <summary>What the task acts on — a Build task's TargetId is the BuildSlot id.</summary>
+        public string TargetId { get; set; }
+
+        /// <summary>ModuleDefinition id being built — only set for Build tasks (null for other
+        /// Passive/Active task kinds S12+ adds).</summary>
+        public string ModuleId { get; set; }
+
+        public float Progress { get; set; }
+        public TaskStatus Status { get; set; } = TaskStatus.Running;
+
+        /// <summary>Actor id that must be present at the shelter for an Active task to advance;
+        /// null/empty for Passive tasks.</summary>
+        public string RequiredWorker { get; set; }
+    }
 
     /// <summary>
     /// Single root Runtime World State (technical-specification.md mục 9/§6).
@@ -101,6 +142,11 @@ namespace LastHope.Core.State
         public Dictionary<string, NpcState> NpcStates { get; set; } = new Dictionary<string, NpcState>();
         public List<ActiveEventState> ActiveEvents { get; set; } = new List<ActiveEventState>();
         public List<ActiveTaskState> ActiveTasks { get; set; } = new List<ActiveTaskState>();
+
+        /// <summary>Reserved-materials pile per task, owner id "task:&lt;TaskId&gt;" (S11) — the
+        /// single source of truth for what a Build task has reserved; lazily created by
+        /// InventoryOwnerResolver, consumed/returned by TaskSystem/CancelTaskCommand.</summary>
+        public Dictionary<string, InventoryState> TaskInventories { get; set; } = new Dictionary<string, InventoryState>();
 
         public Dictionary<string, bool> PersistentFlags { get; set; } = new Dictionary<string, bool>();
 

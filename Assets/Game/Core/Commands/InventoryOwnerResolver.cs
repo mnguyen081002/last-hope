@@ -10,6 +10,10 @@ namespace LastHope.Core.Commands
     ///                                    must already be opened via OpenSearchPointCommand)
     ///   "shelter_storage:&lt;id&gt;"      -> that shelter's storage (lazily created)
     ///   "location_dropped:&lt;id&gt;"     -> that location's dropped-item pile (lazily created)
+    ///   "task:&lt;taskId&gt;"             -> that task's reserved-materials pile (lazily created,
+    ///                                    S11 — StartBuildCommand moves materials here for the
+    ///                                    task's duration; TaskSystem consumes/CancelTaskCommand
+    ///                                    returns them on completion/cancel)
     /// Reserved for later: "npc:&lt;id&gt;". New owner kinds are added here, not by changing
     /// command signatures — commands stay plain ids. Public (not internal) so UI code can use the
     /// same resolution for read-only display (ContainerPanel) — only commands mutate state.
@@ -19,6 +23,7 @@ namespace LastHope.Core.Commands
         private const string SearchPointPrefix = "searchpoint:";
         private const string ShelterStoragePrefix = "shelter_storage:";
         private const string LocationDroppedPrefix = "location_dropped:";
+        private const string TaskPrefix = "task:";
 
         public static bool TryResolve(GameContext ctx, string ownerId, out InventoryState inventory)
         {
@@ -38,6 +43,9 @@ namespace LastHope.Core.Commands
 
                 if (ownerId.StartsWith(LocationDroppedPrefix, StringComparison.Ordinal))
                     return TryResolveLocationDropped(ctx, ownerId.Substring(LocationDroppedPrefix.Length), out inventory);
+
+                if (ownerId.StartsWith(TaskPrefix, StringComparison.Ordinal))
+                    return TryResolveTask(ctx, ownerId.Substring(TaskPrefix.Length), out inventory);
             }
 
             inventory = null;
@@ -78,6 +86,16 @@ namespace LastHope.Core.Commands
             location.DroppedItems ??= new InventoryState { OwnerId = LocationDroppedPrefix + locationId };
 
             inventory = location.DroppedItems;
+            return true;
+        }
+
+        private static bool TryResolveTask(GameContext ctx, string taskId, out InventoryState inventory)
+        {
+            if (!ctx.World.TaskInventories.TryGetValue(taskId, out inventory))
+            {
+                inventory = new InventoryState { OwnerId = TaskPrefix + taskId };
+                ctx.World.TaskInventories[taskId] = inventory;
+            }
             return true;
         }
     }

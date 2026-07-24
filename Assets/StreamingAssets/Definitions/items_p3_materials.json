@@ -1,0 +1,42 @@
+[
+  {
+    "id": "item_wood",
+    "category": "material",
+    "base_weight_kg": 1.0,
+    "base_volume_liters": 1.0,
+    "max_stack_size": 10,
+    "tags": ["material"]
+  },
+  {
+    "id": "item_scrap",
+    "category": "material",
+    "base_weight_kg": 0.5,
+    "base_volume_liters": 0.5,
+    "max_stack_size": 15,
+    "tags": ["material"]
+  },
+  {
+    "id": "item_pump_part",
+    "category": "material",
+    "base_weight_kg": 2.0,
+    "base_volume_liters": 2.0,
+    "max_stack_size": 3,
+    "tags": ["material"]
+  },
+  {
+    "id": "item_purifier_unit",
+    "category": "material",
+    "base_weight_kg": 3.0,
+    "base_volume_liters": 3.0,
+    "max_stack_size": 1,
+    "tags": ["material"]
+  },
+  {
+    "id": "item_filter",
+    "category": "material",
+    "base_weight_kg": 0.3,
+    "base_volume_liters": 0.3,
+    "max_stack_size": 5,
+    "tags": ["material"]
+  }
+]

@@ -53,11 +53,13 @@ namespace LastHope.Data
             var searchPoints = LoadTyped<SearchPointDefinition>(directoryPath, "searchpoints_", result.Errors);
             var disasterPhases = LoadTyped<DisasterPhaseDefinition>(directoryPath, "phases_", result.Errors);
             var shelterZones = LoadTyped<ShelterZoneDefinition>(directoryPath, "shelterzones_", result.Errors);
+            var modules = LoadTyped<ModuleDefinition>(directoryPath, "modules_", result.Errors);
 
             Validate(items, locations, routes, searchPoints, result.Errors);
             ValidateDisasterPhases(disasterPhases, result.Errors);
+            ValidateModules(modules, items, shelterZones, result.Errors);
 
-            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones);
+            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules);
             result.Success = result.Errors.Count == 0;
             return result;
         }
@@ -184,6 +186,24 @@ namespace LastHope.Data
                     if (loot.Chance < 0 || loot.Chance > 100)
                         errors.Add($"SearchPoint '{searchPoint.Id}' loot entry '{loot.ItemId}' has chance {loot.Chance}, must be 0-100.");
                 }
+            }
+        }
+
+        private static void ValidateModules(
+            Dictionary<string, ModuleDefinition> modules,
+            Dictionary<string, ItemDefinition> items,
+            Dictionary<string, ShelterZoneDefinition> shelterZones,
+            List<string> errors)
+        {
+            foreach (var module in modules.Values)
+            {
+                foreach (string itemId in module.Materials.Keys)
+                    if (!items.ContainsKey(itemId))
+                        errors.Add($"Module '{module.Id}' materials reference missing item '{itemId}'.");
+
+                foreach (string zoneId in module.AllowedZoneIds)
+                    if (!shelterZones.ContainsKey(zoneId))
+                        errors.Add($"Module '{module.Id}' references missing shelter zone '{zoneId}'.");
             }
         }
 

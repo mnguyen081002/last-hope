@@ -36,7 +36,7 @@ namespace LastHope.Core.Save
     /// </summary>
     public sealed class SaveService
     {
-        private const int CurrentSaveVersion = 5; // S10: ShelterState water intrusion/build slot/stock fields added (additive)
+        private const int CurrentSaveVersion = 6; // S11: ShelterState.Modules, WorldState.TaskInventories, ActiveTaskState real fields added (additive)
         private const int AutosaveSlotCount = 3;
 
         private readonly string _saveDirectory;

@@ -17,41 +17,56 @@ namespace LastHope.Tests.EditMode
             BackflowInflow = 6f,
             PassiveDrainPerLongTick = 2f,
             PumpOutputPerLongTick = 6f,
+            BarrierBlockFraction = 0.7f,
         };
 
         [Test]
         public void ComputeDelta_NoRain_OnlyPassiveDrain()
         {
-            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 0, backflowActive: false, activePumpCount: 0, Cfg());
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 0, backflowActive: false, activePumpCount: 0, hasActiveBarrier: false, Cfg());
             Assert.AreEqual(-2f, delta); // 0 inflow - 2 passive drain
         }
 
         [Test]
         public void ComputeDelta_RainIntensity_ReadsTableByIndex()
         {
-            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 2, backflowActive: false, activePumpCount: 0, Cfg());
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 2, backflowActive: false, activePumpCount: 0, hasActiveBarrier: false, Cfg());
             Assert.AreEqual(2f, delta); // 4 inflow - 2 passive drain
         }
 
         [Test]
         public void ComputeDelta_RainIntensityBeyondTable_ClampsToLastEntry()
         {
-            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 99, backflowActive: false, activePumpCount: 0, Cfg());
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 99, backflowActive: false, activePumpCount: 0, hasActiveBarrier: false, Cfg());
             Assert.AreEqual(4f, delta); // last entry (6) - 2 passive drain
         }
 
         [Test]
         public void ComputeDelta_Backflow_AddsInflow_AndZeroesPassiveDrain()
         {
-            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 0, backflowActive: true, activePumpCount: 0, Cfg());
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 0, backflowActive: true, activePumpCount: 0, hasActiveBarrier: false, Cfg());
             Assert.AreEqual(6f, delta); // 0 + 6 backflow - 0 passive drain (suppressed during backflow)
         }
 
         [Test]
         public void ComputeDelta_ActivePump_SubtractsPumpOutput()
         {
-            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 3, backflowActive: false, activePumpCount: 1, Cfg());
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 3, backflowActive: false, activePumpCount: 1, hasActiveBarrier: false, Cfg());
             Assert.AreEqual(-2f, delta); // 6 inflow - 2 passive drain - 6 pump
+        }
+
+        [Test]
+        public void ComputeDelta_ActiveBarrier_BlocksMostOfTableInflow()
+        {
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 2, backflowActive: false, activePumpCount: 0, hasActiveBarrier: true, Cfg());
+            Assert.AreEqual(4f * 0.3f - 2f, delta, 0.001f); // 4 inflow * 30% through - 2 passive drain
+        }
+
+        [Test]
+        public void ComputeDelta_ActiveBarrier_DoesNotBlockBackflow()
+        {
+            float delta = WaterIntrusionRules.ComputeDelta(rainIntensity: 0, backflowActive: true, activePumpCount: 0, hasActiveBarrier: true, Cfg());
+            Assert.AreEqual(6f, delta); // 0 table inflow (blocked, still 0) + 6 backflow (unblocked) - 0 passive drain
         }
 
         [TestCase(0f, WaterIntrusionLevel.Dry)]
