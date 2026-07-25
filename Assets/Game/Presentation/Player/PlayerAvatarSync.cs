@@ -10,17 +10,19 @@ namespace LastHope.Presentation.Player
     /// Binds simulation state to the player's Transform. This is the presentation-write
     /// exemption: continuous position data is not a gameplay rule, so it bypasses the Command
     /// Layer by design — unlike discrete mutations, which always still go through commands.
+    /// 2026-07-25: Rigidbody2D replaces CharacterController (3D->2D migration); PositionZ
+    /// dropped from PlayerState — 2D world position is X/Y only.
     /// </summary>
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(Rigidbody2D))]
     public sealed class PlayerAvatarSync : MonoBehaviour
     {
         private GameContext _ctx;
-        private CharacterController _controller;
+        private Rigidbody2D _rigidbody;
         private PlayerController _playerController;
 
         private void Awake()
         {
-            _controller = GetComponent<CharacterController>();
+            _rigidbody = GetComponent<Rigidbody2D>();
             _playerController = GetComponent<PlayerController>();
         }
 
@@ -52,10 +54,9 @@ namespace LastHope.Presentation.Player
             // raced SceneFlowController's placement check and left new-game players stranded at
             // their pre-scene-load coordinates with no floor under them (BL-P1-19 bug fix).
             var player = _ctx.World.Player;
-            Vector3 pos = transform.position;
+            Vector2 pos = transform.position;
             player.PositionX = pos.x;
             player.PositionY = pos.y;
-            player.PositionZ = pos.z;
         }
 
         private void OnWorldStateReloaded(WorldStateReloaded evt) => ApplyFromState();
@@ -68,10 +69,9 @@ namespace LastHope.Presentation.Player
             // PlayerSpawnPoint handles cross-scene placement; nothing to do here yet.
             if (player.PositionLocationId != player.CurrentLocationId) return;
 
-            var target = new Vector3(player.PositionX, player.PositionY, player.PositionZ);
-            _controller.enabled = false;
+            var target = new Vector2(player.PositionX, player.PositionY);
+            _rigidbody.position = target;
             transform.position = target;
-            _controller.enabled = true;
         }
 
         private void OnOverloadStateChanged(OverloadStateChanged evt)

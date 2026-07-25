@@ -6,10 +6,12 @@
 Engine: Unity 6000.5.4f1
 Primary Platform: Windows PC 64-bit
 Programming Language: C#
-Rendering Pipeline: Universal Render Pipeline
-Project Type: 3D
+Rendering Pipeline: Universal Render Pipeline (2D Renderer)
+Project Type: 2D
 Game Mode: Single-player
 ```
+
+> **ADR 2026-07-25:** Đổi từ 3D sang 2D isometric (kiểu Project Zomboid — sprite phẳng trên lưới iso). Lý do: không có khả năng dựng/render asset 3D (không có Blender/3D pipeline khả dụng cho 1 dev); art 2D dễ tạo hơn nhiều. `LastHope.Core`/`Data`/`Systems` không đổi (C# thuần, không phụ thuộc UnityEngine 3D API) — chỉ `LastHope.Presentation`/`EditorTools` đổi.
 
 Linux và macOS không thuộc phạm vi build đầu tiên, nhưng không được sử dụng API chỉ hoạt động trên Windows nếu không cần thiết.
 
@@ -18,19 +20,17 @@ Linux và macOS không thuộc phạm vi build đầu tiên, nhưng không đư�
 ## 2. Camera và góc nhìn
 
 ```text
-View: Isometric 3D
+View: Isometric 2D (art vẽ theo góc chiếu iso, camera không xoay)
 Projection: Orthographic
-Camera Rotation: Fixed
-Camera Pitch: 35.264°
-Camera Yaw: 45°
+Camera Rotation: Không có — camera nhìn thẳng trục Z, không pitch/yaw
 ```
 
 Quy tắc:
 
-- Không cho phép người chơi xoay camera trong MVP.
-- Có thể zoom trong một khoảng giới hạn.
-- Điều khiển di chuyển được tính theo hướng màn hình.
-- Tường che nhân vật phải được ẩn hoặc làm mờ.
+- Camera không xoay, không nghiêng — góc "isometric" nằm ở cách vẽ sprite/tile, không phải góc camera.
+- Có thể zoom trong một khoảng giới hạn (qua `orthographicSize`).
+- Điều khiển di chuyển ánh xạ thẳng theo trục world X/Y — không còn khái niệm "theo hướng màn hình" vì camera không xoay nên world và màn hình luôn cùng hướng.
+- Vật thể che nhân vật xử lý bằng **Y-sort** (`Camera.transparencySortMode = CustomAxis`), không phải ẩn/làm mờ theo raycast 3D.
 - Camera không trực tiếp chứa gameplay state.
 
 Prototype sử dụng Camera Rig tự triển khai, chưa cần Cinemachine.
@@ -62,15 +62,14 @@ Controller support chưa thuộc phạm vi prototype đầu tiên nhưng Action 
 
 ## 4. Render Pipeline
 
-Sử dụng **Universal Render Pipeline**.
+Sử dụng **Universal Render Pipeline — 2D Renderer** (`Renderer2DData`).
 
 Thiết lập:
 
 - Linear Color Space.
-- Baked Lighting là nguồn sáng chính.
-- Realtime Light giới hạn.
-- Shadow Distance ngắn, phù hợp camera isometric.
-- Stylized low/mid-poly material.
+- Light2D (Global/Point/Freeform) là nguồn sáng chính — thay Baked Lighting 3D, dùng cho hiệu ứng mưa/đêm/Black Rain.
+- Shadow Caster 2D giới hạn, chỉ dùng khi cần tín hiệu gameplay rõ (không phải thẩm mỹ).
+- Sprite pixel-art hoặc flat-shaded, vẽ theo góc chiếu isometric (footprint diamond).
 - Không dùng HDRP.
 - Không dùng ray tracing.
 - Không sử dụng fluid simulation toàn bản đồ.
@@ -78,13 +77,13 @@ Thiết lập:
 Nước ngập được thể hiện bằng:
 
 ```text
-Water Plane
+Sprite/Tile nước
 +
-Hazard Volume
+Trigger Collider2D (Hazard Volume)
 +
 Flood State
 +
-Local Shader Effect
+Sprite animation hoặc shader 2D
 ```
 
 Gameplay State của nước không được đọc trực tiếp từ shader.
@@ -118,27 +117,26 @@ UI Toolkit chỉ được dùng cho Editor Tool nếu cần.
 Sử dụng:
 
 ```text
-CharacterController
+Rigidbody2D (Kinematic) + Collider2D
 ```
 
 Player movement phải:
 
 - Độc lập framerate.
-- Hỗ trợ slope và step.
+- Không có khái niệm slope/step/gravity — top-down 2D di chuyển tự do trên mặt phẳng X/Y.
 - Có vận tốc gameplay riêng.
 - Nhận Modifier từ Flood, Carry Load và Condition.
 - Không phụ thuộc animation root motion.
 
 ### NPC
 
-Sử dụng:
+Chưa có Presentation/visual cho NPC (chỉ có `NpcState` mô phỏng, không có GameObject trong scene). Khi cần dựng visual:
 
 ```text
-Unity AI Navigation
-NavMeshAgent
+Di chuyển đơn giản tới target (steering trực tiếp)
 ```
 
-NPC ngoài Scene không dùng NavMesh.
+Hoãn pathfinding phức tạp (A*/grid-based) tới khi content thật sự cần NPC né vật cản/đi qua nhiều phòng. Không phụ thuộc NavMeshAgent hay plugin pathfinding 2D ngoài trong giai đoạn này.
 
 NPC off-screen chỉ lưu:
 
@@ -151,8 +149,8 @@ NPC off-screen chỉ lưu:
 
 Sử dụng kết hợp:
 
-- Trigger hoặc Overlap để tìm đối tượng gần.
-- Raycast từ camera hoặc con trỏ để chọn.
+- `Physics2D.OverlapCircleNonAlloc` để tìm đối tượng gần.
+- `Camera.ScreenToWorldPoint` + `Physics2D.OverlapPoint` từ con trỏ để chọn.
 - Interface chung cho Interactable.
 
 ---
@@ -571,24 +569,24 @@ Mỗi commit phải:
 ### Scale
 
 ```text
-1 Unity Unit = 1 meter
+Pixel-per-unit: xác định khi có art thật (khởi điểm gợi ý 64–128 PPU)
+Tile iso: kích thước cụ thể điền khi có art thật (vd 64×32 px cho tile diamond)
 ```
 
 ### Pivot
 
-- Prop: đáy giữa.
-- Cửa: tại bản lề.
-- Module: đáy giữa hoặc điểm snap được định nghĩa.
-- Tường: góc dưới của modular grid.
-- Nhân vật: giữa hai chân.
+- Sprite prop: đáy giữa (đúng ô tile đứng trên).
+- Cửa: tại bản lề, sprite đủ 1-2 ô tile.
+- Module: đáy giữa, snap theo lưới tile.
+- Tường: góc dưới của ô tile.
+- Nhân vật: chân, giữa 2 ô ngang.
 
 ### Modular Grid
 
 ```text
-Base Grid: 0.5 meter
-Wall Width: bội số của 1 meter
-Standard Floor Height: 3 meter
-Standard Door Height: 2.2 meter
+Grid.CellLayout: Isometric (Tilemap)
+Wall Width: bội số 1 ô tile
+Floor/tầng: chuyển bằng tile cầu thang (đổi sorting layer/floor index), không phải cao độ vật lý
 ```
 
 ### Asset Pipeline
@@ -596,21 +594,15 @@ Standard Door Height: 2.2 meter
 ```text
 AI Concept
 ↓
-AI 3D Generation hoặc Blender Blockout
+AI 2D Generation hoặc pixel-art thủ công
 ↓
-Blender Cleanup
+Cleanup (crop, palette, outline)
 ↓
-Scale
+Pivot + slice (Sprite Editor)
 ↓
-Pivot
+Import vào Unity (Sprite 2D/Tile)
 ↓
-Topology
-↓
-UV và Material
-↓
-Collider
-↓
-Unity Import
+Gán Collider2D / TilemapCollider2D
 ↓
 Isometric Camera Review
 ```
@@ -748,16 +740,17 @@ Fullscreen Window
 Các package cần dùng trong giai đoạn đầu:
 
 ```text
-Universal Render Pipeline
+Universal Render Pipeline (2D Renderer)
 Input System
-AI Navigation
+Tilemap (com.unity.modules.tilemap)
+2D Sprite (com.unity.2d.sprite)
+Physics2D (com.unity.modules.physics2d)
 TextMeshPro
 Unity Test Framework
 Newtonsoft JSON (com.unity.nuget.newtonsoft-json)
-Physics module 3D (com.unity.modules.physics — cần cho CharacterController)
 ```
 
-> Ghi chú hiện trạng 2026-07-23: manifest hiện tại chưa có URP, Input System, physics 3D và Newtonsoft — được thêm trong Sprint 1 (KAN-15). Module `physics2d` không dùng cho gameplay 3D.
+> Ghi chú hiện trạng 2026-07-25: đổi sang 2D isometric — bỏ `Physics module 3D` (`com.unity.modules.physics`, dùng cho `CharacterController`, không còn dùng) và `AI Navigation` (chưa từng được implement, không có NPC visual nào tồn tại) khỏi baseline. `physics2d` từ giờ dùng thật (trước chỉ khai báo sẵn, chưa dùng).
 
 Chưa thêm:
 
@@ -768,6 +761,7 @@ Cinemachine
 Behavior Tree Framework
 Third-party Save Framework
 Third-party Dependency Injection Framework
+Pathfinding plugin 2D (A*/NavMeshAgent2D ngoài) — hoãn tới khi content cần
 ```
 
 Chỉ thêm package mới khi có use case đã được kiểm chứng.
@@ -787,10 +781,10 @@ Language:
 C#
 
 Rendering:
-Universal Render Pipeline
+Universal Render Pipeline (2D Renderer)
 
 Camera:
-Fixed orthographic isometric
+Fixed orthographic 2D, không xoay — isometric nằm ở art + Y-sort
 
 Input:
 Unity Input System
@@ -799,10 +793,10 @@ Runtime UI:
 uGUI và TextMeshPro
 
 Player Movement:
-CharacterController
+Rigidbody2D (Kinematic) + Collider2D
 
 NPC Navigation:
-Unity AI Navigation
+Chưa implement — khi cần, steering đơn giản trước, hoãn pathfinding phức tạp
 
 Definition Data:
 JSON thuần (Newtonsoft) — xem ADR mục 9

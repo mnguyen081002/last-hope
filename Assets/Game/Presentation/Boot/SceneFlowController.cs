@@ -83,10 +83,9 @@ namespace LastHope.Presentation.Boot
                 return;
             }
 
-            var controller = playerGo.GetComponent<CharacterController>();
-            if (controller != null) controller.enabled = false;
+            var body = playerGo.GetComponent<Rigidbody2D>();
             playerGo.transform.position = spawn.transform.position;
-            if (controller != null) controller.enabled = true;
+            if (body != null) body.position = spawn.transform.position;
 
             // Only NOW is the position actually valid for CurrentLocationId — stamp it so
             // PlayerAvatarSync's per-frame sync (which no longer touches this field itself)

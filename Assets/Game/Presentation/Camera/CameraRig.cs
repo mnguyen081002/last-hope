@@ -4,19 +4,27 @@ using UnityEngine.InputSystem;
 namespace LastHope.Presentation.CameraRig
 {
     /// <summary>
-    /// Fixed isometric orthographic camera per technical-specification.md mục 2:
-    /// pitch 35.264°, yaw 45°, no rotation, zoom clamped via orthographicSize.
+    /// Fixed 2D isometric orthographic camera (2026-07-25 migration from 3D): no rotation — the
+    /// camera looks straight down -Z, the isometric look comes entirely from the sprite art and
+    /// from CustomAxis transparency sorting, not from a tilted camera. Follows target in X/Y,
+    /// zoom clamped via orthographicSize.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class CameraRig : MonoBehaviour
     {
         [SerializeField] private InputActionAsset inputActions;
         [SerializeField] private Transform target;
-        [SerializeField] private float followDistance = 16.97f;
+        [SerializeField] private float followDistance = 10f;
         [SerializeField] private float minOrthoSize = 4f;
         [SerializeField] private float maxOrthoSize = 12f;
         [SerializeField] private float zoomSpeed = 1f;
         [SerializeField] private float followSmoothing = 12f;
+
+        // Matches the diamond-tile projection ratio (2:1 width:height) typical of 2D isometric
+        // art — tune once real tile art exists. Drives sprite draw order: two sprites at the
+        // same screen position but different world Y must still sort "further back" vs
+        // "closer to camera" correctly.
+        [SerializeField] private Vector3 transparencySortAxis = new Vector3(0f, 1f, 0.26f);
 
         private Camera _camera;
         private InputAction _zoomAction;
@@ -29,14 +37,10 @@ namespace LastHope.Presentation.CameraRig
         {
             _camera = GetComponent<Camera>();
             _camera.orthographic = true;
-            transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
+            _camera.transparencySortMode = TransparencySortMode.CustomAxis;
+            _camera.transparencySortAxis = transparencySortAxis;
 
-            // Must be derived from the fixed rotation, not hand-picked (the old (0,12,-12) offset
-            // didn't actually point back along this rotation's forward axis, so the player rendered
-            // off-center — 2026-07-24 playtest). transform.forward for this exact pitch/yaw is
-            // (~0.577, -0.577, 0.577); the camera must sit at target - forward*distance to look
-            // straight at it.
-            _offset = transform.rotation * new Vector3(0f, 0f, -followDistance);
+            _offset = new Vector3(0f, 0f, -followDistance);
 
             if (inputActions != null)
             {
@@ -51,8 +55,7 @@ namespace LastHope.Presentation.CameraRig
         private void LateUpdate()
         {
             // Mouse scroll is a per-frame impulse (a whole notch arrives in one frame), not a held
-            // analog axis — scaling it by Time.deltaTime (as before) shrank it to near-zero, which
-            // is why zoom felt almost unresponsive (2026-07-24 playtest).
+            // analog axis — scaling it by Time.deltaTime shrinks it to near-zero.
             float zoomInput = _zoomAction != null ? _zoomAction.ReadValue<float>() : 0f;
             if (Mathf.Abs(zoomInput) > 0.0001f)
             {

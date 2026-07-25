@@ -9,7 +9,7 @@ namespace LastHope.Presentation.Interaction
     /// <summary>
     /// Finds the nearest IInteractable within range around the player, preferring one the
     /// cursor points at. Polls on an interval rather than every frame (interactables don't
-    /// move fast enough to need per-frame detection).
+    /// move fast enough to need per-frame detection). 2026-07-25: Physics2D (3D->2D migration).
     /// </summary>
     public sealed class InteractionDetector : MonoBehaviour
     {
@@ -21,7 +21,7 @@ namespace LastHope.Presentation.Interaction
         private CommandProcessor _processor;
         private InputAction _interactAction;
         private float _pollTimer;
-        private readonly Collider[] _overlapBuffer = new Collider[16];
+        private readonly Collider2D[] _overlapBuffer = new Collider2D[16];
 
         public IInteractable Current { get; private set; }
         public event Action<IInteractable> TargetChanged;
@@ -64,29 +64,29 @@ namespace LastHope.Presentation.Interaction
 
         private void Rescan()
         {
-            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, _overlapBuffer);
+            int count = Physics2D.OverlapCircleNonAlloc(transform.position, radius, _overlapBuffer);
 
             IInteractable best = null;
             float bestDistSqr = float.MaxValue;
 
             Camera cam = Camera.main;
-            Ray cursorRay = default;
-            bool hasCursorRay = cam != null && Mouse.current != null;
-            if (hasCursorRay) cursorRay = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+            bool hasCursorPoint = cam != null && Mouse.current != null;
+            Vector2 cursorWorldPoint = default;
+            if (hasCursorPoint)
+                cursorWorldPoint = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
 
             for (int i = 0; i < count; i++)
             {
                 var candidate = _overlapBuffer[i].GetComponentInParent<IInteractable>();
                 if (candidate == null) continue;
 
-                if (hasCursorRay && Physics.Raycast(cursorRay, out var hit, radius * 2f) &&
-                    hit.collider == _overlapBuffer[i])
+                if (hasCursorPoint && _overlapBuffer[i].OverlapPoint(cursorWorldPoint))
                 {
                     best = candidate;
                     break; // cursor tiebreak wins outright over distance
                 }
 
-                float distSqr = (_overlapBuffer[i].transform.position - transform.position).sqrMagnitude;
+                float distSqr = ((Vector2)_overlapBuffer[i].transform.position - (Vector2)transform.position).sqrMagnitude;
                 if (distSqr < bestDistSqr)
                 {
                     bestDistSqr = distSqr;

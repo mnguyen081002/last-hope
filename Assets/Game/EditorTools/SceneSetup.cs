@@ -1,3 +1,4 @@
+using System.IO;
 using LastHope.Core.Text;
 using LastHope.Presentation.Boot;
 using LastHope.Presentation.CameraRig;
@@ -22,6 +23,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 
 namespace LastHope.EditorTools
@@ -31,6 +33,18 @@ namespace LastHope.EditorTools
     /// so they can be regenerated deterministically. Player/Camera/HUD live in 10_GamePersistent
     /// (persistent avatar — prerequisite for Sprint 6 scene switching); gameplay scenes contain
     /// only environment/interactables/spawn markers.
+    ///
+    /// 2026-07-25: rebuilt for 2D isometric (3D->2D migration). World positions carried over from
+    /// the old 3D layout as (x, oldZ) — old Z (world depth) becomes the 2D Y axis; old Y (physical
+    /// elevation, cosmetic-only in 3D) is dropped entirely, top-down 2D has no vertical axis.
+    /// Ground/prop meshes are replaced by SpriteRenderer + Collider2D using solid-color sprite
+    /// assets generated once into Assets/Game/Generated (same "blockout by color" spirit as the
+    /// old primitives — not blocked on real art). Colliders are added only where the 3D collider
+    /// actually blocked the player in practice (furniture-sized props, structural CoreComponents);
+    /// Zone/BuildSlot markers and the stairs marker stay collider-less on purpose — in 3D their
+    /// thin collider sat below the CharacterController capsule and never blocked movement, but a
+    /// full-footprint Collider2D in top-down 2D would, so carrying that collider over verbatim
+    /// would newly block walking across zones/slots that must stay walkable.
     /// </summary>
     public static class SceneSetup
     {
@@ -77,35 +91,122 @@ namespace LastHope.EditorTools
             Debug.Log("[SceneSetup] Scenes built and registered in Build Settings.");
         }
 
+        // ---------------------------------------------------------------
+        // Generated placeholder art (solid-color sprites/tiles, persisted
+        // as real asset files so Tilemap/SpriteRenderer references survive
+        // scene save/reload — a runtime-only Sprite or Tile does not).
+        // ---------------------------------------------------------------
+
+        private const string GeneratedSpritesFolder = "Assets/Game/Generated/Sprites";
+        private const string GeneratedTilesFolder = "Assets/Game/Generated/Tiles";
+
+        private static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+            string parent = Path.GetDirectoryName(path)?.Replace('\\', '/');
+            string leaf = Path.GetFileName(path);
+            if (!string.IsNullOrEmpty(parent) && !AssetDatabase.IsValidFolder(parent)) EnsureFolder(parent);
+            AssetDatabase.CreateFolder(parent, leaf);
+        }
+
+        private static Sprite GetOrCreateSolidSprite(string name, Color color)
+        {
+            EnsureFolder(GeneratedSpritesFolder);
+            string pngPath = $"{GeneratedSpritesFolder}/{name}.png";
+
+            var existing = AssetDatabase.LoadAssetAtPath<Sprite>(pngPath);
+            if (existing != null) return existing;
+
+            const int size = 32;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var pixels = new Color32[size * size];
+            Color32 c32 = color;
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = c32;
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            File.WriteAllBytes(pngPath, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+
+            AssetDatabase.ImportAsset(pngPath);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(pngPath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = size;
+            importer.filterMode = FilterMode.Point;
+            importer.SaveAndReimport();
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(pngPath);
+        }
+
+        private static Tile GetOrCreateSolidTile(string name, Color color)
+        {
+            EnsureFolder(GeneratedTilesFolder);
+            string assetPath = $"{GeneratedTilesFolder}/{name}.asset";
+
+            var existing = AssetDatabase.LoadAssetAtPath<Tile>(assetPath);
+            if (existing != null) return existing;
+
+            var sprite = GetOrCreateSolidSprite("tile_" + name, color);
+            var tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = sprite;
+            tile.color = Color.white; // tint already baked into the sprite, keep tile neutral
+            AssetDatabase.CreateAsset(tile, assetPath);
+            return tile;
+        }
+
+        /// <summary>Marker/prop GameObject: SpriteRenderer sized via transform.localScale (same
+        /// role localScale played on the old primitives) + optional BoxCollider2D.</summary>
+        private static GameObject CreateSpriteMarker(string name, Vector2 position, Vector2 scale, Color color, bool solid)
+        {
+            var go = new GameObject(name);
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(scale.x, scale.y, 1f);
+
+            var renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = GetOrCreateSolidSprite("marker_" + ColorUtility.ToHtmlStringRGB(color), color);
+
+            if (solid) go.AddComponent<BoxCollider2D>();
+
+            return go;
+        }
+
+        private static void CreateGroundTilemap(string cellName, Color color, int minX, int maxX, int minY, int maxY)
+        {
+            var gridGo = new GameObject("Ground_Grid");
+            var grid = gridGo.AddComponent<Grid>();
+            grid.cellLayout = GridLayout.CellLayout.Isometric;
+            grid.cellSize = new Vector3(1f, 0.5f, 1f);
+
+            var tilemapGo = new GameObject("Ground");
+            tilemapGo.transform.SetParent(gridGo.transform, false);
+            var tilemap = tilemapGo.AddComponent<Tilemap>();
+            tilemapGo.AddComponent<TilemapRenderer>();
+
+            var tile = GetOrCreateSolidTile("ground_" + cellName, color);
+            for (int x = minX; x <= maxX; x++)
+                for (int y = minY; y <= maxY; y++)
+                    tilemap.SetTile(new Vector3Int(x, y, 0), tile);
+        }
+
+        // ---------------------------------------------------------------
+
         private static void BuildTestSystemsScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // Ground: default Plane primitive is 10x10 units, scale (2,1,2) -> 20x20m.
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.localScale = new Vector3(2f, 1f, 2f);
+            CreateGroundTilemap("test", new Color(0.5f, 0.5f, 0.5f), -10, 10, -10, 10);
 
-            // Scale reference cubes: 1m, 2m, 3m cubes in a row.
-            CreateScaleCube("ScaleRef_1m", 1f, -3f);
-            CreateScaleCube("ScaleRef_2m", 2f, 0f);
-            CreateScaleCube("ScaleRef_3m", 3f, 4f);
-
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.2f;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            CreateScaleMarker("ScaleRef_1m", 1f, -3f);
+            CreateScaleMarker("ScaleRef_2m", 2f, 0f);
+            CreateScaleMarker("ScaleRef_3m", 3f, 4f);
 
             EditorSceneManager.SaveScene(scene, TestSystemsScenePath);
         }
 
-        private static void CreateScaleCube(string name, float size, float xPosition)
+        private static void CreateScaleMarker(string name, float size, float xPosition)
         {
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = name;
-            cube.transform.localScale = new Vector3(size, size, size);
-            cube.transform.position = new Vector3(xPosition, size / 2f, 4f);
+            CreateSpriteMarker(name, new Vector2(xPosition, 4f), new Vector2(size, size),
+                new Color(0.8f, 0.8f, 0.8f), solid: false);
         }
 
         private static void BuildGamePersistentScene(InputActionAsset inputActions)
@@ -123,21 +224,23 @@ namespace LastHope.EditorTools
             // Player (persistent avatar; survives gameplay scene switches from Sprint 6 onward).
             var player = new GameObject("Player");
             player.tag = "Player";
-            player.transform.position = new Vector3(0f, 0.1f, -6f);
-            var controller = player.AddComponent<CharacterController>();
-            controller.height = 1.7f;
-            controller.radius = 0.3f;
-            controller.center = new Vector3(0f, 0.85f, 0f);
+            player.transform.position = new Vector3(0f, -6f, 0f);
+
+            var body = player.AddComponent<Rigidbody2D>();
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            var footCollider = player.AddComponent<CircleCollider2D>();
+            footCollider.radius = 0.3f;
 
             var playerController = player.AddComponent<PlayerController>();
             playerController.SetInputActions(inputActions);
 
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            visual.name = "Visual";
+            var visual = new GameObject("Visual");
             visual.transform.SetParent(player.transform, false);
-            visual.transform.localPosition = new Vector3(0f, 0.85f, 0f);
-            visual.transform.localScale = new Vector3(0.6f, 0.85f, 0.6f);
-            Object.DestroyImmediate(visual.GetComponent<CapsuleCollider>());
+            var visualRenderer = visual.AddComponent<SpriteRenderer>();
+            var playerColor = new Color(0.2f, 0.5f, 0.9f);
+            visualRenderer.sprite = GetOrCreateSolidSprite("marker_" + ColorUtility.ToHtmlStringRGB(playerColor), playerColor);
+            visual.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
 
             player.AddComponent<PlayerAvatarSync>();
             var detector = player.AddComponent<InteractionDetector>();
@@ -154,11 +257,9 @@ namespace LastHope.EditorTools
             var rig = cameraGo.AddComponent<CameraRig>();
             rig.SetInputActions(inputActions);
             rig.SetTarget(player.transform);
-            playerController.SetCameraTransform(cameraGo.transform);
-            // Matches CameraRig.Awake()'s own offset formula (rotation * back * distance) so there's
-            // no visible snap on the first frame — CameraRig recomputes and takes over regardless.
-            cameraGo.transform.rotation = Quaternion.Euler(35.264f, 45f, 0f);
-            cameraGo.transform.position = player.transform.position + cameraGo.transform.rotation * new Vector3(0f, 0f, -16.97f);
+            // Matches CameraRig's own follow offset so there's no visible snap on the first frame
+            // — CameraRig recomputes and takes over regardless.
+            cameraGo.transform.position = player.transform.position + new Vector3(0f, 0f, -10f);
 
             BuildHudCanvas(inputActions, detector);
 
@@ -298,192 +399,147 @@ namespace LastHope.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            // (1.5,1.5) = 15x15m (±7.5) used to leave the ramp/Upper Floor platform (z down to
-            // -13) entirely off the edge — walking past z=-7.5 meant no floor at all, an
-            // unrecoverable fall (2026-07-24 playtest). (1.8,3) = 18x30m (x:±9, z:±15) comfortably
-            // covers the whole layout with margin.
-            ground.transform.localScale = new Vector3(1.8f, 1f, 3f);
+            // Ground floor + upper floor land in visually separate regions of the same 2D map
+            // (old Z=-10 for Upper vs Z range -6..6 for ground rooms carries straight over to a Y
+            // split here) — no floor-hide system needed, exactly like a Project Zomboid building
+            // blueprint shows both floors as distinct connected areas.
+            CreateGroundTilemap("shelter", new Color(0.55f, 0.55f, 0.5f), -9, 9, -15, 15);
 
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.2f;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-
-            var storage = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            storage.name = "ShelterStorage";
-            storage.transform.position = new Vector3(3f, 0.5f, 3f);
+            var storage = CreateSpriteMarker("ShelterStorage", new Vector2(3f, 3f), Vector2.one,
+                new Color(0.6f, 0.4f, 0.2f), solid: true);
             storage.AddComponent<ShelterStorageView>().SetShelterId("shelter_main");
 
-            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            travelPoint.name = "TravelPoint_Store";
-            travelPoint.transform.position = new Vector3(-3f, 0.5f, 3f);
+            var travelPoint = CreateSpriteMarker("TravelPoint_Store", new Vector2(-3f, 3f), Vector2.one,
+                new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
             var spawn = new GameObject("PlayerSpawnPoint");
-            spawn.transform.position = new Vector3(0f, 0.1f, 0f);
+            spawn.transform.position = new Vector3(0f, 0f, 0f);
             spawn.AddComponent<PlayerSpawnPoint>();
 
             // S10 blockout: 6 ground-floor/upper zones + Fixed Core Component anchors
-            // (main-shelter-design.md §6-14). Roof is co-located on the Upper platform (single
-            // zone/1 slot — a third physical elevation isn't worth the extra ramp for a blockout).
-            CreateZoneMarker("shelter_entrance", new Vector3(-6f, 0.5f, -6f));
-            CreateBuildSlots(new Vector3(-6f, 0.5f, -6f), "slot_shelter_entrance_1", "slot_shelter_entrance_2");
+            // (main-shelter-design.md §6-14). Roof is co-located on the Upper area (single
+            // zone/1 slot — a third physical elevation isn't worth a second connector for a blockout).
+            CreateZoneMarker("shelter_entrance", new Vector2(-6f, -6f));
+            CreateBuildSlots(new Vector2(-6f, -6f), "slot_shelter_entrance_1", "slot_shelter_entrance_2");
 
-            CreateZoneMarker("central_hall", new Vector3(0f, 0.5f, -4f));
-            CreateCoreComponent("main_staircase", new Vector3(1f, 0.5f, -4f));
+            CreateZoneMarker("central_hall", new Vector2(0f, -4f));
+            CreateCoreComponent("main_staircase", new Vector2(1f, -4f));
 
-            CreateZoneMarker("ground_storage", new Vector3(-6f, 0.5f, 3f));
-            CreateBuildSlots(new Vector3(-6f, 0.5f, 3f), "slot_ground_storage_1", "slot_ground_storage_2");
+            CreateZoneMarker("ground_storage", new Vector2(-6f, 3f));
+            CreateBuildSlots(new Vector2(-6f, 3f), "slot_ground_storage_1", "slot_ground_storage_2");
 
-            CreateZoneMarker("utility_area", new Vector3(6f, 0.5f, -4f));
-            CreateBuildSlots(new Vector3(6f, 0.5f, -4f), "slot_utility_area_1", "slot_utility_area_2");
-            CreateCoreComponent("structural_pillars", new Vector3(6f, 0.5f, -6f));
-            CreateCoreComponent("electrical_backbone", new Vector3(7f, 0.5f, -4f));
-            var drainCore = new GameObject("DrainCore");
-            drainCore.transform.position = new Vector3(5f, 0.5f, -3f);
+            CreateZoneMarker("utility_area", new Vector2(6f, -4f));
+            CreateBuildSlots(new Vector2(6f, -4f), "slot_utility_area_1", "slot_utility_area_2");
+            CreateCoreComponent("structural_pillars", new Vector2(6f, -6f));
+            CreateCoreComponent("electrical_backbone", new Vector2(7f, -4f));
+            var drainCore = CreateSpriteMarker("DrainCore", new Vector2(5f, -3f), Vector2.one,
+                new Color(0.2f, 0.6f, 0.8f), solid: true);
             drainCore.AddComponent<DrainCoreView>();
 
-            CreateZoneMarker("water_processing", new Vector3(6f, 0.5f, 2f));
-            CreateBuildSlots(new Vector3(6f, 0.5f, 2f), "slot_water_processing_1", "slot_water_processing_2");
-            CreateCoreComponent("water_intake", new Vector3(7f, 0.5f, 2f));
+            CreateZoneMarker("water_processing", new Vector2(6f, 2f));
+            CreateBuildSlots(new Vector2(6f, 2f), "slot_water_processing_1", "slot_water_processing_2");
+            CreateCoreComponent("water_intake", new Vector2(7f, 2f));
 
-            CreateZoneMarker("workshop", new Vector3(6f, 0.5f, 6f));
-            CreateBuildSlots(new Vector3(6f, 0.5f, 6f), "slot_workshop_1");
+            CreateZoneMarker("workshop", new Vector2(6f, 6f));
+            CreateBuildSlots(new Vector2(6f, 6f), "slot_workshop_1");
 
-            // Upper Floor: raised platform reached by a ramp from Central Hall (Main Staircase).
-            var upperPlatform = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            upperPlatform.name = "UpperFloor";
-            upperPlatform.transform.position = new Vector3(0f, 2.4f, -10f);
-            upperPlatform.transform.localScale = new Vector3(8f, 0.2f, 6f);
-            CreateRamp(new Vector3(0f, 0.15f, -5f), new Vector3(0f, 2.5f, -8f), width: 2.5f);
+            // Stairs signpost connecting Central Hall to the Upper area — 2026-07-25: replaces the
+            // 3D ramp's continuous slope geometry. Purely a visual/wayfinding marker (walkable, no
+            // collider) since 2D has no physical elevation to climb; both floors are simply drawn
+            // as separate connected rooms on the same map.
+            var stairs = CreateSpriteMarker("Stairs_UpperFloor", new Vector2(0f, -6.5f), new Vector2(2.5f, 1f),
+                new Color(0.55f, 0.35f, 0.15f), solid: false);
+            WorldLabel.Create(stairs.transform, "Stairs", heightOffset: 0.8f);
 
-            CreateZoneMarker("upper_living", new Vector3(-2f, 2.5f, -10f));
-            CreateBuildSlots(new Vector3(-2f, 2.5f, -10f), "slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3");
+            CreateZoneMarker("upper_living", new Vector2(-2f, -10f));
+            CreateBuildSlots(new Vector2(-2f, -10f), "slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3");
 
-            CreateZoneMarker("roof", new Vector3(2.5f, 2.5f, -10f));
-            CreateBuildSlots(new Vector3(2.5f, 2.5f, -10f), "slot_roof_1");
-            CreateCoreComponent("antenna_mount", new Vector3(3.5f, 2.5f, -10f));
+            CreateZoneMarker("roof", new Vector2(2.5f, -10f));
+            CreateBuildSlots(new Vector2(2.5f, -10f), "slot_roof_1");
+            CreateCoreComponent("antenna_mount", new Vector2(3.5f, -10f));
 
-            CreateBoundaryWalls(-9f, 9f, -15f, 15f); // matches the Ground plane's (1.8,1,3) scale
+            CreateBoundaryWalls(-9f, 9f, -15f, 15f); // matches the ground tilemap bounds above
 
             EditorSceneManager.SaveScene(scene, MainShelterScenePath);
         }
 
-        private static void CreateZoneMarker(string zoneId, Vector3 position)
+        private static void CreateZoneMarker(string zoneId, Vector2 position)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = "Zone_" + zoneId;
-            go.transform.position = position;
-            go.transform.localScale = new Vector3(1f, 0.1f, 1f);
+            // No collider by design: a Zone marker is a walkable area label, not an obstacle — see
+            // class doc for why this differs from the old 3D primitive (which had a collider too
+            // thin to ever actually block the CharacterController).
+            var go = CreateSpriteMarker("Zone_" + zoneId, position, new Vector2(1f, 1f),
+                new Color(0.3f, 0.3f, 0.3f), solid: false);
             WorldLabel.Create(go.transform, "Zone\n" + DisplayName.Prettify(zoneId), heightOffset: 0.6f);
         }
 
-        private static void CreateCoreComponent(string coreId, Vector3 position)
+        private static void CreateCoreComponent(string coreId, Vector2 position)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            go.name = "Core_" + coreId;
-            go.transform.position = position;
-            go.transform.localScale = new Vector3(0.4f, 0.5f, 0.4f);
+            var go = CreateSpriteMarker("Core_" + coreId, position, new Vector2(0.4f, 0.4f),
+                new Color(0.4f, 0.4f, 0.45f), solid: true);
             go.AddComponent<CoreComponentView>().SetCoreId(coreId);
         }
 
-        private static void CreateBuildSlots(Vector3 zoneCenter, params string[] slotIds)
+        private static void CreateBuildSlots(Vector2 zoneCenter, params string[] slotIds)
         {
             for (int i = 0; i < slotIds.Length; i++)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.name = "BuildSlot_" + slotIds[i];
-                go.transform.position = zoneCenter + new Vector3(0.8f * (i + 1), 0.1f, 0.8f);
-                go.transform.localScale = new Vector3(0.5f, 0.05f, 0.5f);
+                // No collider by design — an empty build slot must stay walkable until a module is
+                // actually built on it (see class doc).
+                var go = CreateSpriteMarker("BuildSlot_" + slotIds[i],
+                    zoneCenter + new Vector2(0.8f * (i + 1), 0.8f), new Vector2(0.5f, 0.5f),
+                    new Color(0.7f, 0.7f, 0.2f), solid: false);
                 go.AddComponent<BuildSlotView>().SetSlotId(slotIds[i]);
             }
         }
 
-        /// <summary>Boxy walkable ramp connecting a ground point to a raised platform point —
-        /// rotation computed from the two points so callers never hand-tune angles.</summary>
-        private static void CreateRamp(Vector3 groundPoint, Vector3 platformPoint, float width)
+        /// <summary>Invisible perimeter (Collider2D only, no renderer) around a scene's walkable
+        /// footprint — prevents walking off the edge of the designed layout.</summary>
+        private static void CreateBoundaryWalls(float minX, float maxX, float minY, float maxY)
         {
-            Vector3 diff = platformPoint - groundPoint;
-            float horizontalRun = new Vector2(diff.x, diff.z).magnitude;
-            float length = diff.magnitude;
-            float pitch = Mathf.Atan2(diff.y, horizontalRun) * Mathf.Rad2Deg;
-            float yaw = Mathf.Atan2(diff.x, diff.z) * Mathf.Rad2Deg;
-
-            var ramp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ramp.name = "Ramp_UpperFloor";
-            ramp.transform.position = (groundPoint + platformPoint) / 2f;
-            ramp.transform.rotation = Quaternion.Euler(-pitch, yaw, 0f);
-            ramp.transform.localScale = new Vector3(width, 0.3f, length);
-            // Default primitive grey blended into the equally-grey Ground/UpperFloor, and unlike
-            // every other marker in the scene it never got a WorldLabel — together that's why the
-            // 2026-07-24 playtest never spotted it at all.
-            ramp.GetComponent<Renderer>().material.color = new Color(0.55f, 0.35f, 0.15f);
-            WorldLabel.Create(ramp.transform, "Ramp", heightOffset: 1f);
-        }
-
-        /// <summary>Invisible perimeter (BoxCollider only, no renderer) around a scene's walkable
-        /// footprint — prevents walking off the edge in the first place, rather than only catching
-        /// the fall after it happens (2026-07-24 playtest: fell through the map with no floor
-        /// below and no way back). PlayerController's grounded-position fallback stays as a second
-        /// line of defense for any scene that doesn't call this, or any gap these walls miss.</summary>
-        private static void CreateBoundaryWalls(float minX, float maxX, float minZ, float maxZ)
-        {
-            const float height = 10f;
             const float thickness = 1f;
             float centerX = (minX + maxX) / 2f;
-            float centerZ = (minZ + maxZ) / 2f;
+            float centerY = (minY + maxY) / 2f;
             float sizeX = maxX - minX;
-            float sizeZ = maxZ - minZ;
+            float sizeY = maxY - minY;
 
-            CreateWall("Wall_North", new Vector3(centerX, height / 2f, maxZ + thickness / 2f), new Vector3(sizeX + thickness * 2f, height, thickness));
-            CreateWall("Wall_South", new Vector3(centerX, height / 2f, minZ - thickness / 2f), new Vector3(sizeX + thickness * 2f, height, thickness));
-            CreateWall("Wall_East", new Vector3(maxX + thickness / 2f, height / 2f, centerZ), new Vector3(thickness, height, sizeZ));
-            CreateWall("Wall_West", new Vector3(minX - thickness / 2f, height / 2f, centerZ), new Vector3(thickness, height, sizeZ));
+            CreateWall("Wall_North", new Vector2(centerX, maxY + thickness / 2f), new Vector2(sizeX + thickness * 2f, thickness));
+            CreateWall("Wall_South", new Vector2(centerX, minY - thickness / 2f), new Vector2(sizeX + thickness * 2f, thickness));
+            CreateWall("Wall_East", new Vector2(maxX + thickness / 2f, centerY), new Vector2(thickness, sizeY));
+            CreateWall("Wall_West", new Vector2(minX - thickness / 2f, centerY), new Vector2(thickness, sizeY));
         }
 
-        private static void CreateWall(string name, Vector3 position, Vector3 size)
+        private static void CreateWall(string name, Vector2 position, Vector2 size)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = name;
+            var go = new GameObject(name);
             go.transform.position = position;
-            go.transform.localScale = size;
-            Object.DestroyImmediate(go.GetComponent<MeshRenderer>()); // collider only — invisible
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.size = size;
         }
 
         private static void BuildConvenienceStoreScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+            CreateGroundTilemap("store", new Color(0.55f, 0.5f, 0.45f), -8, 8, -8, 8);
 
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.2f;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            CreateSearchPoint("searchpoint_drink_shelf_1", new Vector2(-4f, 2f));
+            CreateSearchPoint("searchpoint_drink_shelf_2", new Vector2(-4f, -2f));
+            CreateSearchPoint("searchpoint_dry_shelf_1", new Vector2(-1f, 2f));
+            CreateSearchPoint("searchpoint_dry_shelf_2", new Vector2(-1f, -2f));
+            CreateSearchPoint("searchpoint_counter", new Vector2(2f, 0f));
+            CreateSearchPoint("searchpoint_back_room", new Vector2(5f, 0f));
 
-            CreateSearchPoint("searchpoint_drink_shelf_1", new Vector3(-4f, 0.5f, 2f));
-            CreateSearchPoint("searchpoint_drink_shelf_2", new Vector3(-4f, 0.5f, -2f));
-            CreateSearchPoint("searchpoint_dry_shelf_1", new Vector3(-1f, 0.5f, 2f));
-            CreateSearchPoint("searchpoint_dry_shelf_2", new Vector3(-1f, 0.5f, -2f));
-            CreateSearchPoint("searchpoint_counter", new Vector3(2f, 0.5f, 0f));
-            CreateSearchPoint("searchpoint_back_room", new Vector3(5f, 0.5f, 0f));
-
-            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            travelPoint.name = "TravelPoint_Shelter";
-            travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
+            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", new Vector2(0f, -6f), Vector2.one,
+                new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
             var spawn = new GameObject("PlayerSpawnPoint");
-            spawn.transform.position = new Vector3(0f, 0.1f, -5f);
+            spawn.transform.position = new Vector3(0f, -5f, 0f);
             spawn.AddComponent<PlayerSpawnPoint>();
 
-            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
+            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the ground tilemap bounds above
 
             EditorSceneManager.SaveScene(scene, ConvenienceStoreScenePath);
         }
@@ -492,29 +548,20 @@ namespace LastHope.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+            CreateGroundTilemap("garage", new Color(0.55f, 0.5f, 0.45f), -8, 8, -8, 8);
 
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.2f;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            CreateSearchPoint("searchpoint_garage_workbench", new Vector2(-3f, 2f));
+            CreateSearchPoint("searchpoint_garage_shelf", new Vector2(3f, 2f));
 
-            CreateSearchPoint("searchpoint_garage_workbench", new Vector3(-3f, 0.5f, 2f));
-            CreateSearchPoint("searchpoint_garage_shelf", new Vector3(3f, 0.5f, 2f));
-
-            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            travelPoint.name = "TravelPoint_Shelter";
-            travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
+            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", new Vector2(0f, -6f), Vector2.one,
+                new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
             var spawn = new GameObject("PlayerSpawnPoint");
-            spawn.transform.position = new Vector3(0f, 0.1f, -5f);
+            spawn.transform.position = new Vector3(0f, -5f, 0f);
             spawn.AddComponent<PlayerSpawnPoint>();
 
-            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
+            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the ground tilemap bounds above
 
             EditorSceneManager.SaveScene(scene, UtilityGarageScenePath);
         }
@@ -523,39 +570,28 @@ namespace LastHope.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+            CreateGroundTilemap("school", new Color(0.55f, 0.5f, 0.45f), -8, 8, -8, 8);
 
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.2f;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            CreateSearchPoint("searchpoint_school_nurse", new Vector2(-3f, 2f));
+            CreateSearchPoint("searchpoint_school_classroom", new Vector2(3f, 2f));
 
-            CreateSearchPoint("searchpoint_school_nurse", new Vector3(-3f, 0.5f, 2f));
-            CreateSearchPoint("searchpoint_school_classroom", new Vector3(3f, 0.5f, 2f));
-
-            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            travelPoint.name = "TravelPoint_Shelter";
-            travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
+            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", new Vector2(0f, -6f), Vector2.one,
+                new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
             var spawn = new GameObject("PlayerSpawnPoint");
-            spawn.transform.position = new Vector3(0f, 0.1f, -5f);
+            spawn.transform.position = new Vector3(0f, -5f, 0f);
             spawn.AddComponent<PlayerSpawnPoint>();
 
-            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
+            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the ground tilemap bounds above
 
             EditorSceneManager.SaveScene(scene, SchoolScenePath);
         }
 
-        private static void CreateSearchPoint(string id, Vector3 position)
+        private static void CreateSearchPoint(string id, Vector2 position)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = id;
-            go.transform.position = position;
-            go.transform.localScale = new Vector3(1.5f, 1f, 0.5f);
+            var go = CreateSpriteMarker(id, position, new Vector2(1.5f, 0.5f),
+                new Color(0.45f, 0.6f, 0.35f), solid: true);
             go.AddComponent<SearchPointView>().SetSearchPointId(id);
         }
 

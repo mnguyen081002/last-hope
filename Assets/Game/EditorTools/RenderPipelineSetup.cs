@@ -7,7 +7,9 @@ namespace LastHope.EditorTools
 {
     /// <summary>
     /// Creates and assigns the URP asset per technical-specification.md mục 4/24:
-    /// Universal Render Pipeline, Linear color space. Sprint 1 (BL-P1-01).
+    /// Universal Render Pipeline 2D Renderer, Linear color space. Sprint 1 (BL-P1-01);
+    /// switched to Renderer2DData for the 2026-07-25 2D isometric migration (Light2D/Shadow
+    /// Caster 2D support for rain/night mood — the 3D UniversalRendererData has no 2D lighting).
     /// </summary>
     public static class RenderPipelineSetup
     {
@@ -21,10 +23,10 @@ namespace LastHope.EditorTools
             if (!AssetDatabase.IsValidFolder(SettingsFolder))
                 AssetDatabase.CreateFolder("Assets", "Settings");
 
-            var rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererDataPath);
+            var rendererData = AssetDatabase.LoadAssetAtPath<Renderer2DData>(RendererDataPath);
             if (rendererData == null)
             {
-                rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+                rendererData = ScriptableObject.CreateInstance<Renderer2DData>();
                 AssetDatabase.CreateAsset(rendererData, RendererDataPath);
             }
 
