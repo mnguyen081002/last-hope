@@ -20,6 +20,7 @@ namespace LastHope.Data
         public IReadOnlyDictionary<string, ShelterZoneDefinition> ShelterZones { get; }
         public IReadOnlyDictionary<string, ModuleDefinition> Modules { get; }
         public IReadOnlyDictionary<string, EventDefinition> Events { get; }
+        public IReadOnlyDictionary<string, NpcDefinition> Npcs { get; }
 
         /// <summary>DisasterPhases ordered by StartMinute, computed once here so
         /// DisasterPhaseSystem/HazardSystem/ReturnWindowCalculator/BeginTravelCommand all walk the
@@ -36,7 +37,8 @@ namespace LastHope.Data
             Dictionary<string, DisasterPhaseDefinition> disasterPhases = null,
             Dictionary<string, ShelterZoneDefinition> shelterZones = null,
             Dictionary<string, ModuleDefinition> modules = null,
-            Dictionary<string, EventDefinition> events = null)
+            Dictionary<string, EventDefinition> events = null,
+            Dictionary<string, NpcDefinition> npcs = null)
         {
             DefinitionVersion = definitionVersion;
             Balance = balance ?? new BalanceConfig();
@@ -49,6 +51,7 @@ namespace LastHope.Data
             ShelterZones = shelterZones ?? new Dictionary<string, ShelterZoneDefinition>();
             Modules = modules ?? new Dictionary<string, ModuleDefinition>();
             Events = events ?? new Dictionary<string, EventDefinition>();
+            Npcs = npcs ?? new Dictionary<string, NpcDefinition>();
         }
 
         public bool TryGetItem(string id, out ItemDefinition def) => Items.TryGetValue(id, out def);
@@ -59,5 +62,6 @@ namespace LastHope.Data
         public bool TryGetShelterZone(string id, out ShelterZoneDefinition def) => ShelterZones.TryGetValue(id, out def);
         public bool TryGetModule(string id, out ModuleDefinition def) => Modules.TryGetValue(id, out def);
         public bool TryGetEvent(string id, out EventDefinition def) => Events.TryGetValue(id, out def);
+        public bool TryGetNpc(string id, out NpcDefinition def) => Npcs.TryGetValue(id, out def);
     }
 }

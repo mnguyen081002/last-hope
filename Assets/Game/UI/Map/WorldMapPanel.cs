@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Core.Rules;
+using LastHope.Core.State;
+using LastHope.Data;
 using LastHope.Data.Definitions;
+using LastHope.Systems.Intel;
 using LastHope.Systems.Registry;
 using LastHope.UI;
 using TMPro;
@@ -15,9 +18,13 @@ namespace LastHope.UI.Map
 {
     /// <summary>
     /// Opened by WorldMapRequested (TravelPointView, S8) or toggled directly with M. Lists every
-    /// route connected to the player's current location with ETA/flood/current/return-window, and
-    /// a Travel button that submits BeginTravelCommand — the player picks among routes here instead
-    /// of a TravelPointView being bound to one hardcoded route (S6 behavior).
+    /// route connected to the player's current location, but only shows real numbers for what the
+    /// player actually knows (S15, IntelState) — routes without a record show "?" instead of live
+    /// ETA/flood/current. A route connects directly to the player's current position, so it's
+    /// re-observed Confirmed-fresh every time this panel opens (standing right at its mouth);
+    /// routes intel was gathered on elsewhere decay by information age (IntelRules). A Travel
+    /// button submits BeginTravelCommand regardless of what's shown — the command validates
+    /// against real state, intel is display-only.
     /// </summary>
     public sealed class WorldMapPanel : MonoBehaviour
     {
@@ -125,6 +132,12 @@ namespace LastHope.UI.Map
             foreach (string routeId in location.ConnectedRouteIds)
             {
                 if (!_ctx.Definitions.TryGetRoute(routeId, out var route)) continue;
+
+                // Standing at the mouth of a connected route counts as direct observation —
+                // always refresh it to Confirmed-now before rendering, so the map never shows a
+                // stale "?" for the route the player is looking straight at.
+                IntelSystem.RecordRouteObservation(_ctx, routeId, IntelConfidence.Confirmed);
+
                 _rows.Add(BuildRouteRow(routeId, route, index));
                 index++;
             }
@@ -132,19 +145,11 @@ namespace LastHope.UI.Map
 
         private GameObject BuildRouteRow(string routeId, RouteDefinition route, int index)
         {
-            var hazard = HazardRules.EvaluateRoute(route, _ctx.Definitions.DisasterPhasesSorted, _ctx.World.WorldTimeMinutes);
-            var equipment = EquipmentRules.ResolveTravelProtection(_ctx.World.Player.Inventory, _ctx.Definitions);
-            var crossing = TravelRules.EvaluateCrossing(hazard, _ctx.World.Player.Condition, _ctx.Definitions.Balance.Hazard, equipment);
-            var window = ReturnWindowCalculator.Evaluate(route, _ctx.Definitions.DisasterPhasesSorted, _ctx.World.WorldTimeMinutes);
-
             string destinationId = _ctx.World.Player.CurrentLocationId == route.FromLocationId ? route.ToLocationId : route.FromLocationId;
-            float loadFactor = InventoryRules.LoadFactorFor(_ctx.World.Player.Inventory.Overload, _ctx.Definitions.Balance);
-            int eta = (int)Math.Ceiling(route.TravelMinutes * loadFactor * crossing.TimeFactor);
 
-            string label = $"{destinationId}   ETA {eta}m   Flood {hazard.FloodLevel} Current {hazard.CurrentLevel}";
-            if (!crossing.Passable) label += "   IMPASSABLE";
-            if (window.MinutesUntilImpassable.HasValue) label += $"   closes in {window.MinutesUntilImpassable}m";
-            else if (window.MinutesUntilWorse.HasValue) label += $"   worsens in {window.MinutesUntilWorse}m";
+            string label = _ctx.World.Intel.Records.TryGetValue(routeId, out var record)
+                ? IntelRouteLabel(destinationId, record)
+                : $"{destinationId}   ?";
 
             var row = new GameObject(routeId, typeof(RectTransform));
             row.transform.SetParent(_rowContainer, false);
@@ -158,6 +163,18 @@ namespace LastHope.UI.Map
             }, 800f, 4f);
 
             return row;
+        }
+
+        /// <summary>Renders from the IntelRecord only — never live RouteState/HazardRules. Age and
+        /// confidence make stale memory visibly stale instead of silently wrong.</summary>
+        private string IntelRouteLabel(string destinationId, IntelRecord record)
+        {
+            var confidence = IntelRules.EffectiveConfidence(record, _ctx.World.WorldTimeMinutes, _ctx.Definitions.Balance.Intel);
+            long ageMinutes = _ctx.World.WorldTimeMinutes - record.ObservedAtMinute;
+
+            string label = $"{destinationId}   Flood {record.FloodLevel} Current {record.CurrentLevel}   [{confidence}, {ageMinutes}' ago]";
+            if (record.Closed == true) label += "   CLOSED (as last seen)";
+            return label;
         }
 
         private void BuildLayout()

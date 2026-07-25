@@ -14,9 +14,12 @@ namespace LastHope.Core.Commands
     ///                                    S11 — StartBuildCommand moves materials here for the
     ///                                    task's duration; TaskSystem consumes/CancelTaskCommand
     ///                                    returns them on completion/cancel)
-    /// Reserved for later: "npc:&lt;id&gt;". New owner kinds are added here, not by changing
-    /// command signatures — commands stay plain ids. Public (not internal) so UI code can use the
-    /// same resolution for read-only display (ContainerPanel) — only commands mutate state.
+    ///   "npc:&lt;id&gt;"                   -> that NPC's personal inventory (lazily created, S15 —
+    ///                                    requires an existing NpcState; NpcState itself is only
+    ///                                    created by RecruitNpcCommand, S16)
+    /// New owner kinds are added here, not by changing command signatures — commands stay plain
+    /// ids. Public (not internal) so UI code can use the same resolution for read-only display
+    /// (ContainerPanel) — only commands mutate state.
     /// </summary>
     public static class InventoryOwnerResolver
     {
@@ -24,6 +27,7 @@ namespace LastHope.Core.Commands
         private const string ShelterStoragePrefix = "shelter_storage:";
         private const string LocationDroppedPrefix = "location_dropped:";
         private const string TaskPrefix = "task:";
+        private const string NpcPrefix = "npc:";
 
         public static bool TryResolve(GameContext ctx, string ownerId, out InventoryState inventory)
         {
@@ -46,6 +50,9 @@ namespace LastHope.Core.Commands
 
                 if (ownerId.StartsWith(TaskPrefix, StringComparison.Ordinal))
                     return TryResolveTask(ctx, ownerId.Substring(TaskPrefix.Length), out inventory);
+
+                if (ownerId.StartsWith(NpcPrefix, StringComparison.Ordinal))
+                    return TryResolveNpc(ctx, ownerId.Substring(NpcPrefix.Length), out inventory);
             }
 
             inventory = null;
@@ -96,6 +103,19 @@ namespace LastHope.Core.Commands
                 inventory = new InventoryState { OwnerId = TaskPrefix + taskId };
                 ctx.World.TaskInventories[taskId] = inventory;
             }
+            return true;
+        }
+
+        /// <summary>Unlike the other owner kinds, this does NOT lazily create the NpcState itself
+        /// — only RecruitNpcCommand (S16) does that. It lazily creates the Inventory field on an
+        /// already-existing NpcState, same as ShelterState.Storage.</summary>
+        private static bool TryResolveNpc(GameContext ctx, string npcId, out InventoryState inventory)
+        {
+            inventory = null;
+            if (!ctx.World.NpcStates.TryGetValue(npcId, out var npc)) return false;
+
+            npc.Inventory ??= new InventoryState { OwnerId = NpcPrefix + npcId };
+            inventory = npc.Inventory;
             return true;
         }
     }

@@ -289,6 +289,14 @@ namespace LastHope.Core.Events
         public EventExpired(string eventInstanceId, string eventId) { EventInstanceId = eventInstanceId; EventId = eventId; }
     }
 
+    /// <summary>Published by IntelSystem (S15) whenever a subject's IntelRecord is written or
+    /// replaced — WorldMapPanel rebuilds on this while open.</summary>
+    public readonly struct IntelUpdated : IGameEvent
+    {
+        public readonly string SubjectId;
+        public IntelUpdated(string subjectId) { SubjectId = subjectId; }
+    }
+
     /// <summary>Published by ResolveEventCommand (S13) when a player response resolves an Active event.</summary>
     public readonly struct EventResolved : IGameEvent
     {

@@ -12,6 +12,7 @@ using LastHope.Systems.Condition;
 using LastHope.Systems.Disaster;
 using LastHope.Systems.Events;
 using LastHope.Systems.Hazard;
+using LastHope.Systems.Intel;
 using LastHope.Systems.Inventory;
 using LastHope.Systems.Registry;
 using LastHope.Systems.Shelter;
@@ -77,6 +78,7 @@ namespace LastHope.Systems.Boot
             var waterIntrusionSystem = new WaterIntrusionSystem(ctx);
             var waterSystem = new WaterSystem(ctx);
             var eventSystem = new EventSystem(ctx);
+            var intelSystem = new IntelSystem(ctx);
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
@@ -93,6 +95,7 @@ namespace LastHope.Systems.Boot
             GameServiceRegistry.Register(powerSystem);
             GameServiceRegistry.Register(waterSystem);
             GameServiceRegistry.Register(eventSystem);
+            GameServiceRegistry.Register(intelSystem);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");

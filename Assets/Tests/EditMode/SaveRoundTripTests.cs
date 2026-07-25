@@ -45,6 +45,24 @@ namespace LastHope.Tests.EditMode
                 BuildSlots = { ["slot_utility_area_1"] = new BuildSlotState { Locked = false, ModuleInstanceId = null } },
                 EventFlags = { "lower_floor_power_locked" },
             };
+            world.NpcStates["npc_minh"] = new NpcState
+            {
+                Id = "npc_minh",
+                LocationId = "location_shelter",
+                Health = NpcHealthState.Injured,
+                Trust = 35,
+                Flags = { "recruited" },
+            };
+            world.Intel.Records["route_shelter_store"] = new IntelRecord
+            {
+                SubjectId = "route_shelter_store",
+                Kind = "route",
+                Confidence = IntelConfidence.Confirmed,
+                ObservedAtMinute = 120,
+                FloodLevel = 1,
+                CurrentLevel = 0,
+                Closed = false,
+            };
             return world;
         }
 

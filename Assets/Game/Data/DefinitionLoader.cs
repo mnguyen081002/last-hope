@@ -55,13 +55,15 @@ namespace LastHope.Data
             var shelterZones = LoadTyped<ShelterZoneDefinition>(directoryPath, "shelterzones_", result.Errors);
             var modules = LoadTyped<ModuleDefinition>(directoryPath, "modules_", result.Errors);
             var events = LoadTyped<EventDefinition>(directoryPath, "events_", result.Errors);
+            var npcs = LoadTyped<NpcDefinition>(directoryPath, "npcs_", result.Errors);
 
             Validate(items, locations, routes, searchPoints, result.Errors);
             ValidateDisasterPhases(disasterPhases, result.Errors);
             ValidateModules(modules, items, shelterZones, result.Errors);
             ValidateEvents(events, result.Errors);
+            ValidateNpcs(npcs, locations, result.Errors);
 
-            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules, events);
+            result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules, events, npcs);
             result.Success = result.Errors.Count == 0;
             return result;
         }
@@ -216,6 +218,17 @@ namespace LastHope.Data
             {
                 if (!string.IsNullOrEmpty(evt.NextEventId) && !events.ContainsKey(evt.NextEventId))
                     errors.Add($"Event '{evt.Id}' references missing next_event_id '{evt.NextEventId}'.");
+            }
+        }
+
+        /// <summary>NpcDefinition.StartingLocationId, when set, must reference an existing
+        /// location (empty is valid — S15 ships no NPC content yet).</summary>
+        private static void ValidateNpcs(Dictionary<string, NpcDefinition> npcs, Dictionary<string, LocationDefinition> locations, List<string> errors)
+        {
+            foreach (var npc in npcs.Values)
+            {
+                if (!string.IsNullOrEmpty(npc.StartingLocationId) && !locations.ContainsKey(npc.StartingLocationId))
+                    errors.Add($"Npc '{npc.Id}' references missing starting_location_id '{npc.StartingLocationId}'.");
             }
         }
 

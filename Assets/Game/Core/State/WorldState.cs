@@ -122,7 +122,57 @@ namespace LastHope.Core.State
         public HashSet<string> EventFlags { get; set; } = new HashSet<string>();
     }
 
-    public sealed class NpcState { public string Id { get; set; } public string StatusName { get; set; } = "Unknown"; }
+    /// <summary>Ordered healthy-to-dead so callers can compare with &lt;/&gt; (npc-framework §3).</summary>
+    public enum NpcHealthState { Healthy, Injured, Critical, Dead }
+
+    /// <summary>Replaces the S2-era Id/StatusName stub (S15) — reduced npc-framework §3 shape.
+    /// Simulation (consumption, trust drift, task work) arrives with S16's NpcSystem; S15 only
+    /// establishes the state + owner "npc:&lt;id&gt;" so save/load and commands have something real
+    /// to hold.</summary>
+    public sealed class NpcState
+    {
+        public string Id { get; set; }
+        public string LocationId { get; set; }
+        public NpcHealthState Health { get; set; } = NpcHealthState.Healthy;
+        public float Hunger { get; set; }
+        public float Thirst { get; set; }
+
+        /// <summary>0-100 (npc-framework trust model); starting value comes from NpcDefinition.</summary>
+        public int Trust { get; set; }
+
+        public bool Recruited { get; set; }
+        public string CurrentTaskId { get; set; }
+        public HashSet<string> Flags { get; set; } = new HashSet<string>();
+
+        /// <summary>Owner id "npc:&lt;id&gt;" — lazily created by InventoryOwnerResolver.</summary>
+        public InventoryState Inventory { get; set; }
+    }
+
+    /// <summary>Information confidence, ordered low-to-high so callers can compare (S15,
+    /// world-map intel). Stored on the record as observed; IntelRules.EffectiveConfidence decays
+    /// it by information age at read time.</summary>
+    public enum IntelConfidence { Unverified, Uncertain, Reliable, Confirmed }
+
+    /// <summary>One remembered observation about a subject (route/location). Flat payload —
+    /// route hazard fields are null for non-route subjects; a free-form payload dict isn't
+    /// warranted until a subject kind actually needs one.</summary>
+    public sealed class IntelRecord
+    {
+        public string SubjectId { get; set; }
+        public string Kind { get; set; } // "route" | "location"
+        public IntelConfidence Confidence { get; set; }
+        public long ObservedAtMinute { get; set; }
+        public int? FloodLevel { get; set; }
+        public int? CurrentLevel { get; set; }
+        public bool? Closed { get; set; }
+    }
+
+    /// <summary>What the player actually knows about the world (S15) — the World Map renders
+    /// from this, never from live RouteStates. Keyed by subject id.</summary>
+    public sealed class IntelState
+    {
+        public Dictionary<string, IntelRecord> Records { get; set; } = new Dictionary<string, IntelRecord>();
+    }
 
     /// <summary>Full 8-state lifecycle from event-system-design.md §5. S14 walks
     /// Undiscovered→Active (discovery), Active→Resolved (ResolveEventCommand), Active→Expired/
@@ -204,6 +254,9 @@ namespace LastHope.Core.State
         public Dictionary<string, InventoryState> TaskInventories { get; set; } = new Dictionary<string, InventoryState>();
 
         public Dictionary<string, bool> PersistentFlags { get; set; } = new Dictionary<string, bool>();
+
+        /// <summary>Player knowledge layer (S15) — written by IntelSystem, read by World Map.</summary>
+        public IntelState Intel { get; set; } = new IntelState();
 
         public ulong RandomSeed { get; set; }
         public Dictionary<string, RngStreamState> RngStreams { get; set; } = new Dictionary<string, RngStreamState>();

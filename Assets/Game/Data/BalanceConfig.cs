@@ -16,6 +16,7 @@ namespace LastHope.Data
         public ShelterBalance Shelter { get; set; } = new ShelterBalance();
         public PowerBalance Power { get; set; } = new PowerBalance();
         public WaterBalance Water { get; set; } = new WaterBalance();
+        public IntelBalance Intel { get; set; } = new IntelBalance();
     }
 
     public sealed class InventoryBalance
@@ -133,5 +134,13 @@ namespace LastHope.Data
         public float FilterWearPerBatch { get; set; } = 33.34f;
 
         public float IntakeUntreatedPerHour { get; set; } = 1f;
+    }
+
+    /// <summary>Information Age decay (S15, baseline plan: Confirmed→Reliable 60',
+    /// →Uncertain 180') — read by IntelRules.EffectiveConfidence.</summary>
+    public sealed class IntelBalance
+    {
+        public int ConfirmedToReliableMinutes { get; set; } = 60;
+        public int ReliableToUncertainMinutes { get; set; } = 180;
     }
 }

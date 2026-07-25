@@ -399,6 +399,7 @@ namespace LastHope.DebugTools.Panel
             into.LocationStates = from.LocationStates;
             into.ShelterStates = from.ShelterStates;
             into.NpcStates = from.NpcStates;
+            into.Intel = from.Intel;
             into.ActiveEvents = from.ActiveEvents;
             into.ActiveTasks = from.ActiveTasks;
             into.TaskInventories = from.TaskInventories;
