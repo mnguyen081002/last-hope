@@ -113,6 +113,9 @@ namespace LastHope.UI.Shelter
             int index = 0;
             _rows.Add(SummaryRow(shelter, index++));
 
+            if (shelter.EventFlags.Contains(ShelterEventFlags.GroundFloorLost))
+                _rows.Add(EvacuateRow(index++));
+
             foreach (var module in shelter.Modules.Values)
             {
                 if (!_ctx.Definitions.TryGetModule(module.ModuleId, out var def)) continue;
@@ -133,6 +136,19 @@ namespace LastHope.UI.Shelter
         {
             var row = NewRow(index);
             AddLabel(row.transform, $"Battery {shelter.Power.BatteryCharge:0}/{_ctx.Definitions.Balance.Power.BatteryMaxCharge:0}   Clean Water {shelter.WaterStocks.Clean:0}   Untreated {shelter.WaterStocks.Untreated:0}   Flood {shelter.WaterIntrusion.Level} ({shelter.WaterIntrusion.Units:0}/100)   Occupants {shelter.Occupants}/{shelter.LivingCapacity}", 12f, 6f, 1000f, 28f);
+            return row;
+        }
+
+        private GameObject EvacuateRow(int index)
+        {
+            var row = NewRow(index);
+            AddLabel(row.transform, "Ground floor lost — shelter unsafe.", 12f, 6f, 400f, 28f);
+            AddButton(row.transform, "Evacuate (leave storage behind)", () =>
+            {
+                var result = _processor.Submit(new EvacuateCommand(_ctx.World.Player.ActorId));
+                if (!result.Success) Debug.Log($"[Shelter] Evacuate failed: {result.Code}");
+                Rebuild();
+            }, 420f, 4f);
             return row;
         }
 

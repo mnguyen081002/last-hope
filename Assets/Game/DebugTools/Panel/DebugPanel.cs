@@ -400,6 +400,7 @@ namespace LastHope.DebugTools.Panel
             into.ShelterStates = from.ShelterStates;
             into.NpcStates = from.NpcStates;
             into.Intel = from.Intel;
+            into.DecisionLog = from.DecisionLog;
             into.ActiveEvents = from.ActiveEvents;
             into.ActiveTasks = from.ActiveTasks;
             into.TaskInventories = from.TaskInventories;

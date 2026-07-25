@@ -18,6 +18,7 @@ namespace LastHope.Data
         public WaterBalance Water { get; set; } = new WaterBalance();
         public IntelBalance Intel { get; set; } = new IntelBalance();
         public NpcBalance Npc { get; set; } = new NpcBalance();
+        public SliceBalance Slice { get; set; } = new SliceBalance();
     }
 
     public sealed class InventoryBalance
@@ -163,5 +164,15 @@ namespace LastHope.Data
         /// NPC's location before Health drops one step (Healthy→Injured→Critical→Dead).</summary>
         public int StarvingLongTicksPerHealthDrop { get; set; } = 6; // 1 hour
         public int FloodLongTicksPerHealthDrop { get; set; } = 3; // 30 minutes
+    }
+
+    /// <summary>Slice-ending model (S18, OutcomeRules) — the only shelter the player can
+    /// successfully evacuate to (S17 scope-cut the school out of being a fully-simulated second
+    /// shelter, so evacuation just means "reached this location"), and the resource floor for a
+    /// Stable Survival ending.</summary>
+    public sealed class SliceBalance
+    {
+        public string EvacuationLocationId { get; set; } = "location_school";
+        public float MinCleanWaterForStableSurvival { get; set; } = 1f;
     }
 }

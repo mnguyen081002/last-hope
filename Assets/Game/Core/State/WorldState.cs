@@ -180,6 +180,22 @@ namespace LastHope.Core.State
         public Dictionary<string, IntelRecord> Records { get; set; } = new Dictionary<string, IntelRecord>();
     }
 
+    /// <summary>Causal Outcome Report v1 source data (S18) — one entry per major decision,
+    /// appended by ResolveEventCommand/StartBuildCommand/RecruitNpcCommand/EvacuateCommand.
+    /// Payload is a plain string (response id, module id, npc id, location id) — no need for a
+    /// typed union at this scale (4 call sites, 1 consumer: OutcomeReportPanel).</summary>
+    public sealed class DecisionLogEntry
+    {
+        public long Minute { get; set; }
+        public string DecisionId { get; set; }
+        public string Payload { get; set; }
+    }
+
+    /// <summary>Slice ending classification (S18). Collapse covers both "player incapacitated"
+    /// and "shelter lost with no successful evacuation" — the game has no separate player-death
+    /// state, only Incapacitated (ConditionOps), so that's the terminal signal Collapse checks.</summary>
+    public enum Outcome { StableSurvival, ForcedEvacuation, Collapse }
+
     /// <summary>Full 8-state lifecycle from event-system-design.md §5. S14 walks
     /// Undiscovered→Active (discovery), Active→Resolved (ResolveEventCommand), Active→Expired/
     /// PersistentConsequence (hard deadline). Dormant/Triggered/Discovered remain transient
@@ -263,6 +279,10 @@ namespace LastHope.Core.State
 
         /// <summary>Player knowledge layer (S15) — written by IntelSystem, read by World Map.</summary>
         public IntelState Intel { get; set; } = new IntelState();
+
+        /// <summary>Causal Outcome Report source (S18) — appended by DecisionLog.Append, read by
+        /// OutcomeReportPanel.</summary>
+        public List<DecisionLogEntry> DecisionLog { get; set; } = new List<DecisionLogEntry>();
 
         public ulong RandomSeed { get; set; }
         public Dictionary<string, RngStreamState> RngStreams { get; set; } = new Dictionary<string, RngStreamState>();

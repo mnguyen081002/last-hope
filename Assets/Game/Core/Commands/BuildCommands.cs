@@ -81,6 +81,7 @@ namespace LastHope.Core.Commands
                 Status = TaskStatus.Running,
             });
 
+            DecisionLog.Append(ctx, "build", _moduleId);
             ctx.Events.Publish(new InventoryChanged(ActorId));
             ctx.Events.Publish(new InventoryChanged("task:" + taskId));
             ctx.Events.Publish(new TaskStateChanged(taskId));

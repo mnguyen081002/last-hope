@@ -15,6 +15,7 @@ using LastHope.Systems.Hazard;
 using LastHope.Systems.Intel;
 using LastHope.Systems.Inventory;
 using LastHope.Systems.Npc;
+using LastHope.Systems.Outcome;
 using LastHope.Systems.Registry;
 using LastHope.Systems.Shelter;
 using LastHope.Systems.Tasks;
@@ -81,6 +82,7 @@ namespace LastHope.Systems.Boot
             var eventSystem = new EventSystem(ctx);
             var intelSystem = new IntelSystem(ctx);
             var npcSystem = new NpcSystem(ctx);
+            var outcomeSystem = new OutcomeSystem(ctx);
 
             GameServiceRegistry.Register(ctx);
             GameServiceRegistry.Register(tickScheduler);
@@ -99,6 +101,7 @@ namespace LastHope.Systems.Boot
             GameServiceRegistry.Register(eventSystem);
             GameServiceRegistry.Register(intelSystem);
             GameServiceRegistry.Register(npcSystem);
+            GameServiceRegistry.Register(outcomeSystem);
 
             GameLog.Info(LogCategory.Boot,
                 $"GameBootstrapper: ready. Seed={world.RandomSeed}, DefinitionVersion={loadResult.Registry.DefinitionVersion}.");

@@ -63,6 +63,7 @@ namespace LastHope.Core.Commands
 
             shelter.Occupants++;
 
+            DecisionLog.Append(ctx, "recruit", TargetId);
             ctx.Events.Publish(new NpcRecruited(TargetId));
             ctx.Events.Publish(new NpcStateChanged(TargetId));
         }

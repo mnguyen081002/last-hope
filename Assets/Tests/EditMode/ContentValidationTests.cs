@@ -16,7 +16,7 @@ namespace LastHope.Tests.EditMode
             var result = DefinitionLoader.Load(path);
 
             Assert.IsTrue(result.Success, string.Join("; ", result.Errors));
-            Assert.AreEqual("0.13.0", result.Registry.DefinitionVersion);
+            Assert.AreEqual("0.14.0", result.Registry.DefinitionVersion);
             Assert.AreEqual(16, result.Registry.Items.Count);
             Assert.AreEqual(4, result.Registry.Locations.Count);
             Assert.AreEqual(3, result.Registry.Routes.Count);

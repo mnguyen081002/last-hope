@@ -88,5 +88,9 @@
     "trust_loss_on_hungry": 2,
     "starving_long_ticks_per_health_drop": 6,
     "flood_long_ticks_per_health_drop": 3
+  },
+  "slice": {
+    "evacuation_location_id": "location_school",
+    "min_clean_water_for_stable_survival": 1
   }
 }

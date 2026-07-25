@@ -36,7 +36,7 @@ namespace LastHope.Core.Save
     /// </summary>
     public sealed class SaveService
     {
-        private const int CurrentSaveVersion = 11; // S16: NpcState +StarvingLongTicks/FloodExposureLongTicks (additive)
+        private const int CurrentSaveVersion = 12; // S18: WorldState.DecisionLog (additive)
         private const int AutosaveSlotCount = 3;
 
         private readonly string _saveDirectory;

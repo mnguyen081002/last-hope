@@ -82,6 +82,7 @@ namespace LastHope.Core.Commands
 
             instance.ChosenResponse = _responseId;
             instance.State = EventLifecycleState.Resolved;
+            DecisionLog.Append(ctx, "event:" + instance.EventId, _responseId);
             ctx.Events.Publish(new EventResolved(instance.EventInstanceId, instance.EventId, _responseId));
         }
     }

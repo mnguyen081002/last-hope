@@ -289,6 +289,18 @@ namespace LastHope.Core.Events
         public EventExpired(string eventInstanceId, string eventId) { EventInstanceId = eventInstanceId; EventId = eventId; }
     }
 
+    /// <summary>Published by EvacuateCommand (S18) when the player commits to abandoning the
+    /// main shelter.</summary>
+    public readonly struct EvacuationDeclared : IGameEvent { }
+
+    /// <summary>Published once by OutcomeSystem (S18) when the slice ends — early on player
+    /// Incapacitated, or at the final DisasterPhase.</summary>
+    public readonly struct OutcomeReached : IGameEvent
+    {
+        public readonly Core.State.Outcome Outcome;
+        public OutcomeReached(Core.State.Outcome outcome) { Outcome = outcome; }
+    }
+
     /// <summary>Published by RecruitNpcCommand (S16) when an NPC joins the shelter.</summary>
     public readonly struct NpcRecruited : IGameEvent
     {

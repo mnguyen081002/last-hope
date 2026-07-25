@@ -12,6 +12,7 @@ using LastHope.UI.Events;
 using LastHope.UI.Hud;
 using LastHope.UI.Inventory;
 using LastHope.UI.Map;
+using LastHope.UI.Outcome;
 using LastHope.UI.Shelter;
 using TMPro;
 using UnityEditor;
@@ -281,6 +282,16 @@ namespace LastHope.EditorTools
             toastRect.sizeDelta = new Vector2(600f, 44f);
             toastRect.anchoredPosition = new Vector2(0f, -56f);
             toastGo.AddComponent<EventToast>();
+
+            var outcomeGo = new GameObject("OutcomeReportPanel", typeof(RectTransform));
+            outcomeGo.transform.SetParent(canvasGo.transform, false);
+            var outcomeRect = outcomeGo.GetComponent<RectTransform>();
+            outcomeRect.anchorMin = new Vector2(0.1f, 0.1f);
+            outcomeRect.anchorMax = new Vector2(0.9f, 0.9f);
+            outcomeRect.offsetMin = Vector2.zero;
+            outcomeRect.offsetMax = Vector2.zero;
+            outcomeGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.85f);
+            outcomeGo.AddComponent<OutcomeReportPanel>().SetInputActions(inputActions);
         }
 
         private static void BuildMainShelterScene()
