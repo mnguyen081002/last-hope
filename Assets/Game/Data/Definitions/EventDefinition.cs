@@ -45,9 +45,24 @@ namespace LastHope.Data.Definitions
         /// discovery, not trigger.</summary>
         public bool RequiresDiscovery { get; set; }
 
+        /// <summary>Discovery source for RequiresDiscovery events (S16): the LocationDefinition id
+        /// the player must be standing at to discover this instance. Null/empty defaults to S14's
+        /// original assumption — any location with IsShelter true (shelter-scope events like Pump
+        /// Jam). Set this for world/npc-scope events discovered somewhere specific, e.g. meeting
+        /// an NPC at their location.</summary>
+        public string DiscoveryLocationId { get; set; }
+
         /// <summary>Event Chain (S14): this event id is force-triggered (bypassing its trigger
-        /// conditions) when the current event is Resolved or Expired; null/empty = no chain.</summary>
+        /// conditions) when the current event is Resolved (and no matching entry exists in
+        /// NextEventIdByResponse) or Expired; null/empty = no chain.</summary>
         public string NextEventId { get; set; }
+
+        /// <summary>Per-response branching chain (S16): resolving with a response id found here
+        /// force-triggers the mapped event instead of NextEventId — lets one event's outcome
+        /// diverge by what the player chose (e.g. Nguyễn Minh's missing-relative event: helping vs
+        /// turning away chain to different consequence events). Falls back to NextEventId when the
+        /// chosen response has no entry here.</summary>
+        public Dictionary<string, string> NextEventIdByResponse { get; set; } = new Dictionary<string, string>();
 
         /// <summary>Persistent Consequence on expiration (S14): flag names added to
         /// ShelterState.EventFlags / set true in WorldState.PersistentFlags when the hard deadline

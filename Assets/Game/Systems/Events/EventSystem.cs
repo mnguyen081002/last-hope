@@ -10,14 +10,15 @@ namespace LastHope.Systems.Events
 {
     /// <summary>
     /// Evaluates every EventDefinition against current world/shelter state each long-tick and
-    /// runs the full instance lifecycle (S13 trigger core + S14 completion,
+    /// runs the full instance lifecycle (S13 trigger core + S14 completion + S16 branching,
     /// event-system-design.md §5-6/§14): trigger → Active (or Undiscovered when
-    /// RequiresDiscovery), discovery (being at a shelter — radio/NPC sources arrive with S15),
-    /// soft deadline warning, hard-deadline expiration with Persistent Consequence flags, and
-    /// event chains (NextEventId force-triggered on resolve/expire). Deadlines are checked every
-    /// long-tick rather than via TickScheduler.RegisterThreshold — threshold registrations aren't
-    /// serialized, so they'd be lost on save/load. Off-scene by default: nothing here reads
-    /// player position except the discovery check.
+    /// RequiresDiscovery), discovery (any shelter by default, or DiscoveryLocationId for a
+    /// specific location — S16), soft deadline warning, hard-deadline expiration with Persistent
+    /// Consequence flags, and event chains (NextEventId, or NextEventIdByResponse on resolve for
+    /// branching consequences — S16). Deadlines are checked every long-tick rather than via
+    /// TickScheduler.RegisterThreshold — threshold registrations aren't serialized, so they'd be
+    /// lost on save/load. Off-scene by default: nothing here reads player position except the
+    /// discovery check.
     /// </summary>
     public sealed class EventSystem
     {
@@ -104,7 +105,7 @@ namespace LastHope.Systems.Events
 
                 if (instance.State == EventLifecycleState.Undiscovered)
                 {
-                    if (!playerAtShelter) continue;
+                    if (!IsDiscovered(def, playerAtShelter)) continue;
                     instance.State = EventLifecycleState.Active;
                     ArmDeadlines(instance, def);
                     _ctx.Events.Publish(new EventDiscovered(instance.EventId));
@@ -124,6 +125,14 @@ namespace LastHope.Systems.Events
             }
         }
 
+        /// <summary>S16: RequiresDiscovery events can name a specific DiscoveryLocationId (e.g. an
+        /// NPC's location) instead of S14's original "any shelter" default.</summary>
+        private bool IsDiscovered(EventDefinition def, bool playerAtShelter)
+        {
+            if (string.IsNullOrEmpty(def.DiscoveryLocationId)) return playerAtShelter;
+            return _ctx.World.Player.CurrentLocationId == def.DiscoveryLocationId;
+        }
+
         private void Expire(ActiveEventState instance, EventDefinition def, ShelterState shelter)
         {
             bool persistent = def.ExpirationShelterFlags.Count > 0 || def.ExpirationPersistentFlags.Count > 0;
@@ -133,7 +142,9 @@ namespace LastHope.Systems.Events
             instance.State = persistent ? EventLifecycleState.PersistentConsequence : EventLifecycleState.Expired;
             _ctx.Events.Publish(new EventExpired(instance.EventInstanceId, instance.EventId));
 
-            ChainNext(def, shelter);
+            // Expiry never had a chosen response, so it always chains via NextEventId (the
+            // "didn't act in time" branch) — never NextEventIdByResponse.
+            ChainNext(shelter, def.NextEventId);
         }
 
         private void OnEventResolved(EventResolved evt)
@@ -143,15 +154,20 @@ namespace LastHope.Systems.Events
             string shelterId = _ctx.Definitions.Balance.NewGame.MainShelterId;
             if (!_ctx.World.ShelterStates.TryGetValue(shelterId, out var shelter)) return;
 
-            ChainNext(def, shelter);
+            // S16: the chosen response can pick a different chain target (branching consequences)
+            // — falls back to the flat NextEventId when this response has no specific entry.
+            string nextId = def.NextEventIdByResponse.TryGetValue(evt.ResponseId, out var byResponse)
+                ? byResponse
+                : def.NextEventId;
+            ChainNext(shelter, nextId);
         }
 
         /// <summary>Event Chain: the next event is force-triggered, bypassing its own trigger
         /// conditions — the chain IS its trigger. Dedup still applies.</summary>
-        private void ChainNext(EventDefinition def, ShelterState shelter)
+        private void ChainNext(ShelterState shelter, string nextEventId)
         {
-            if (string.IsNullOrEmpty(def.NextEventId)) return;
-            if (!_ctx.Definitions.TryGetEvent(def.NextEventId, out var next)) return;
+            if (string.IsNullOrEmpty(nextEventId)) return;
+            if (!_ctx.Definitions.TryGetEvent(nextEventId, out var next)) return;
             if (_ctx.World.ActiveEvents.Exists(e => e.EventId == next.Id && e.State != EventLifecycleState.Resolved)) return;
 
             Trigger(next, shelter);

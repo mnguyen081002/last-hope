@@ -144,6 +144,12 @@ namespace LastHope.Core.State
         public string CurrentTaskId { get; set; }
         public HashSet<string> Flags { get; set; } = new HashSet<string>();
 
+        /// <summary>NpcSystem pressure counters (S16) — consecutive long-ticks of unmet Hunger/
+        /// Thirst, and of standing in a Deep+ flooded shelter, before Health drops a step. Reset
+        /// to 0 whenever the condition clears.</summary>
+        public int StarvingLongTicks { get; set; }
+        public int FloodExposureLongTicks { get; set; }
+
         /// <summary>Owner id "npc:&lt;id&gt;" — lazily created by InventoryOwnerResolver.</summary>
         public InventoryState Inventory { get; set; }
     }

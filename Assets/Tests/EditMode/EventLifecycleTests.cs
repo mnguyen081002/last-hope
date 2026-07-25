@@ -18,6 +18,7 @@ namespace LastHope.Tests.EditMode
     {
         private const string Shelter = "location_shelter";
         private const string Away = "location_away";
+        private const string Store = "location_store";
 
         private static GameContext BuildContext(Dictionary<string, EventDefinition> events, string playerAt = Shelter)
         {
@@ -28,6 +29,7 @@ namespace LastHope.Tests.EditMode
             {
                 [Shelter] = new LocationDefinition { Id = Shelter, IsShelter = true },
                 [Away] = new LocationDefinition { Id = Away },
+                [Store] = new LocationDefinition { Id = Store },
             };
             var registry = new DefinitionRegistry(
                 "test", new BalanceConfig(), new Dictionary<string, ItemDefinition>(),
@@ -303,6 +305,87 @@ namespace LastHope.Tests.EditMode
             Sleep(ctx, 480, out bool interrupted, out _);
 
             Assert.IsTrue(interrupted);
+        }
+
+        // --- S16: custom discovery location + per-response branching chain ---
+
+        [Test]
+        public void RequiresDiscovery_WithDiscoveryLocationId_IgnoresShelter_RequiresExactLocation()
+        {
+            var def = AutoEvent("event_at_store");
+            def.RequiresDiscovery = true;
+            def.DiscoveryLocationId = Store;
+            var ctx = BuildContext(new Dictionary<string, EventDefinition> { [def.Id] = def }, playerAt: Shelter);
+
+            ctx.Clock.FastForward(10); // triggers Undiscovered; player at Shelter, not Store
+            Assert.AreEqual(EventLifecycleState.Undiscovered, ctx.World.ActiveEvents[0].State);
+
+            ctx.World.Player.CurrentLocationId = Store;
+            ctx.Clock.FastForward(10);
+
+            Assert.AreEqual(EventLifecycleState.Active, ctx.World.ActiveEvents[0].State);
+        }
+
+        private static Dictionary<string, EventDefinition> BranchingPair(string responseThatChains, string chainTarget)
+        {
+            var a = AutoEvent("event_a");
+            a.HardDeadlineMinutes = 0;
+            a.AvailableResponses = new List<string> { responseThatChains };
+            a.NextEventId = "event_fallback"; // should be ignored when the response has a specific entry
+            a.NextEventIdByResponse = new Dictionary<string, string> { [responseThatChains] = chainTarget };
+            // TriggerPhaseId pointing at a phase that never exists = never triggers on its own
+            // (no phase definitions are registered in this test context) — these only ever appear
+            // via the chain, same pattern as EventCommandsTests' ChainPair.
+            var b = new EventDefinition { Id = chainTarget, Priority = "Standard", TriggerPhaseId = "phase_never", AvailableResponses = new List<string> { "ack" } };
+            var fallback = new EventDefinition { Id = "event_fallback", Priority = "Standard", TriggerPhaseId = "phase_never", AvailableResponses = new List<string> { "ack" } };
+            return new Dictionary<string, EventDefinition> { [a.Id] = a, [b.Id] = b, [fallback.Id] = fallback };
+        }
+
+        [Test]
+        public void Chain_ByResponse_OverridesFlatNextEventId()
+        {
+            var events = BranchingPair("help", "event_helped");
+            var ctx = BuildContext(events);
+            ctx.Clock.FastForward(10);
+            string instanceA = ctx.World.ActiveEvents[0].EventInstanceId;
+
+            new CommandProcessor(ctx).Submit(new ResolveEventCommand("player", instanceA, "help"));
+
+            Assert.IsNotNull(ctx.World.ActiveEvents.Find(e => e.EventId == "event_helped"));
+            Assert.IsNull(ctx.World.ActiveEvents.Find(e => e.EventId == "event_fallback"));
+        }
+
+        [Test]
+        public void Chain_ResponseWithoutSpecificEntry_FallsBackToNextEventId()
+        {
+            var def = AutoEvent("event_a");
+            def.HardDeadlineMinutes = 0;
+            def.AvailableResponses = new List<string> { "other" };
+            def.NextEventId = "event_fallback";
+            def.NextEventIdByResponse = new Dictionary<string, string> { ["help"] = "event_helped" };
+            var fallback = new EventDefinition { Id = "event_fallback", Priority = "Standard", TriggerPhaseId = "phase_never", AvailableResponses = new List<string> { "ack" } };
+            var ctx = BuildContext(new Dictionary<string, EventDefinition> { [def.Id] = def, ["event_fallback"] = fallback });
+            ctx.Clock.FastForward(10);
+            string instanceA = ctx.World.ActiveEvents[0].EventInstanceId;
+
+            new CommandProcessor(ctx).Submit(new ResolveEventCommand("player", instanceA, "other"));
+
+            Assert.IsNotNull(ctx.World.ActiveEvents.Find(e => e.EventId == "event_fallback"));
+        }
+
+        [Test]
+        public void Chain_OnExpire_AlwaysUsesFlatNextEventId_NeverByResponse()
+        {
+            var def = AutoEvent("event_a");
+            def.HardDeadlineMinutes = 20;
+            def.NextEventId = "event_fallback";
+            def.NextEventIdByResponse = new Dictionary<string, string> { ["help"] = "event_helped" };
+            var fallback = new EventDefinition { Id = "event_fallback", Priority = "Standard", TriggerPhaseId = "phase_never", AvailableResponses = new List<string> { "ack" } };
+            var ctx = BuildContext(new Dictionary<string, EventDefinition> { [def.Id] = def, ["event_fallback"] = fallback });
+
+            ctx.Clock.FastForward(40); // trigger at 10, expire at 30
+
+            Assert.IsNotNull(ctx.World.ActiveEvents.Find(e => e.EventId == "event_fallback"));
         }
     }
 }

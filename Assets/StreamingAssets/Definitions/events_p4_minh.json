@@ -1,0 +1,54 @@
+[
+  {
+    "id": "event_minh_intro",
+    "event_type": "npc",
+    "priority": "Standard",
+    "scope": "world",
+    "requires_discovery": true,
+    "discovery_location_id": "location_convenience_store",
+    "trigger_chance_percent_per_long_tick": 2,
+    "available_responses": ["greet"],
+    "next_event_id": "event_minh_missing",
+    "tags": ["minh_chain"]
+  },
+  {
+    "id": "event_minh_missing",
+    "event_type": "npc",
+    "priority": "Major",
+    "scope": "world",
+    "soft_deadline_minutes": 60,
+    "hard_deadline_minutes": 120,
+    "available_responses": ["help_search", "turn_away"],
+    "next_event_id": "event_minh_consequence_expired",
+    "next_event_id_by_response": {
+      "help_search": "event_minh_consequence_helped",
+      "turn_away": "event_minh_consequence_ignored"
+    },
+    "expiration_persistent_flags": ["minh_relative_lost"],
+    "tags": ["minh_chain"]
+  },
+  {
+    "id": "event_minh_consequence_helped",
+    "event_type": "npc",
+    "priority": "Standard",
+    "scope": "world",
+    "available_responses": ["ack"],
+    "tags": ["minh_chain"]
+  },
+  {
+    "id": "event_minh_consequence_ignored",
+    "event_type": "npc",
+    "priority": "Standard",
+    "scope": "world",
+    "available_responses": ["ack"],
+    "tags": ["minh_chain"]
+  },
+  {
+    "id": "event_minh_consequence_expired",
+    "event_type": "npc",
+    "priority": "Standard",
+    "scope": "world",
+    "available_responses": ["ack"],
+    "tags": ["minh_chain"]
+  }
+]

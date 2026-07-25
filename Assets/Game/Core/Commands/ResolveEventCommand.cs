@@ -59,6 +59,19 @@ namespace LastHope.Core.Commands
                     // Best-effort move to safety — S13 doesn't yet simulate the "left unresolved"
                     // failure case (no auto-expire), so resolving is the whole effect for now.
                     break;
+                case "greet":
+                    ctx.World.PersistentFlags["minh_met"] = true;
+                    break;
+                case "help_search":
+                    ctx.World.PersistentFlags["minh_relative_found"] = true;
+                    break;
+                case "turn_away":
+                    ctx.World.PersistentFlags["minh_relative_abandoned"] = true;
+                    break;
+                case "ack":
+                    // Acknowledgement only — the consequence already happened via the flags set
+                    // above (or via ExpirationPersistentFlags for the "didn't act" branch).
+                    break;
             }
 
             instance.ChosenResponse = _responseId;

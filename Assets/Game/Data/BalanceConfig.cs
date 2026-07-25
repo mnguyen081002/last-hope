@@ -17,6 +17,7 @@ namespace LastHope.Data
         public PowerBalance Power { get; set; } = new PowerBalance();
         public WaterBalance Water { get; set; } = new WaterBalance();
         public IntelBalance Intel { get; set; } = new IntelBalance();
+        public NpcBalance Npc { get; set; } = new NpcBalance();
     }
 
     public sealed class InventoryBalance
@@ -142,5 +143,25 @@ namespace LastHope.Data
     {
         public int ConfirmedToReliableMinutes { get; set; } = 60;
         public int ReliableToUncertainMinutes { get; set; } = 180;
+    }
+
+    /// <summary>NPC consumption/pressure model (S16, npc-framework baseline: "2 nước + 1.5 food/
+    /// ngày"). Discrete, not continuous: Hunger/Thirst accrue every long-tick but only trigger a
+    /// feed attempt once they hit 100 — one feed clears the meter, approximating "roughly once a
+    /// day" rather than metering exact fractional consumption like the player's UseItemCommand
+    /// flow (NPCs aren't player-controlled, so there's no command to hang partial consumption on).</summary>
+    public sealed class NpcBalance
+    {
+        public float ThirstPerLongTick { get; set; } = 0.7f; // ~100 over ~1 day (144 long-ticks)
+        public float HungerPerLongTick { get; set; } = 0.65f;
+        public float WaterConsumedPerFeed { get; set; } = 2f; // from ShelterState.WaterStocks.Clean
+
+        public int TrustGainOnFed { get; set; } = 2;
+        public int TrustLossOnHungry { get; set; } = 2;
+
+        /// <summary>Consecutive long-ticks of unmet Hunger OR Thirst / shelter flooded Deep+ at the
+        /// NPC's location before Health drops one step (Healthy→Injured→Critical→Dead).</summary>
+        public int StarvingLongTicksPerHealthDrop { get; set; } = 6; // 1 hour
+        public int FloodLongTicksPerHealthDrop { get; set; } = 3; // 30 minutes
     }
 }

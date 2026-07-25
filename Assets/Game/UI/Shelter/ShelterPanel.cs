@@ -64,6 +64,7 @@ namespace LastHope.UI.Shelter
                 _ctx.Events.Subscribe<PowerStateChanged>(_ => { if (_visible) Rebuild(); });
                 _ctx.Events.Subscribe<WaterStocksChanged>(_ => { if (_visible) Rebuild(); });
                 _ctx.Events.Subscribe<ShelterWaterChanged>(_ => { if (_visible) Rebuild(); });
+                _ctx.Events.Subscribe<NpcStateChanged>(_ => { if (_visible) Rebuild(); });
                 _ctx.Events.Subscribe<TaskStateChanged>(_ => { if (_visible) Rebuild(); });
             }
         }
@@ -119,6 +120,11 @@ namespace LastHope.UI.Shelter
                 if (def.Tags.Contains("purifier")) _rows.Add(PurifierRow(module, index++));
             }
 
+            foreach (var npc in _ctx.World.NpcStates.Values)
+            {
+                if (npc.Recruited) _rows.Add(NpcRow(npc, index++));
+            }
+
             _rows.Add(CollectWaterRow(index++));
             _rows.Add(TaskSummaryRow(index++));
         }
@@ -126,7 +132,15 @@ namespace LastHope.UI.Shelter
         private GameObject SummaryRow(ShelterState shelter, int index)
         {
             var row = NewRow(index);
-            AddLabel(row.transform, $"Battery {shelter.Power.BatteryCharge:0}/{_ctx.Definitions.Balance.Power.BatteryMaxCharge:0}   Clean Water {shelter.WaterStocks.Clean:0}   Untreated {shelter.WaterStocks.Untreated:0}   Flood {shelter.WaterIntrusion.Level} ({shelter.WaterIntrusion.Units:0}/100)", 12f, 6f, 900f, 28f);
+            AddLabel(row.transform, $"Battery {shelter.Power.BatteryCharge:0}/{_ctx.Definitions.Balance.Power.BatteryMaxCharge:0}   Clean Water {shelter.WaterStocks.Clean:0}   Untreated {shelter.WaterStocks.Untreated:0}   Flood {shelter.WaterIntrusion.Level} ({shelter.WaterIntrusion.Units:0}/100)   Occupants {shelter.Occupants}/{shelter.LivingCapacity}", 12f, 6f, 1000f, 28f);
+            return row;
+        }
+
+        private GameObject NpcRow(NpcState npc, int index)
+        {
+            var row = NewRow(index);
+            string name = _ctx.Definitions.TryGetNpc(npc.Id, out var def) ? def.DisplayName : DisplayName.Prettify(npc.Id);
+            AddLabel(row.transform, $"{name} [{npc.Health}]  Trust {npc.Trust}  Hunger {npc.Hunger:0}  Thirst {npc.Thirst:0}", 12f, 6f, 700f, 28f);
             return row;
         }
 

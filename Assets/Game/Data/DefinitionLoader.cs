@@ -60,7 +60,7 @@ namespace LastHope.Data
             Validate(items, locations, routes, searchPoints, result.Errors);
             ValidateDisasterPhases(disasterPhases, result.Errors);
             ValidateModules(modules, items, shelterZones, result.Errors);
-            ValidateEvents(events, result.Errors);
+            ValidateEvents(events, locations, result.Errors);
             ValidateNpcs(npcs, locations, result.Errors);
 
             result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules, events, npcs);
@@ -211,13 +211,22 @@ namespace LastHope.Data
             }
         }
 
-        /// <summary>Event chains (S14): next_event_id must reference an existing event.</summary>
-        private static void ValidateEvents(Dictionary<string, EventDefinition> events, List<string> errors)
+        /// <summary>Event chains (S14/S16): next_event_id and every next_event_id_by_response
+        /// value must reference an existing event; discovery_location_id (S16), when set, must
+        /// reference an existing location.</summary>
+        private static void ValidateEvents(Dictionary<string, EventDefinition> events, Dictionary<string, LocationDefinition> locations, List<string> errors)
         {
             foreach (var evt in events.Values)
             {
                 if (!string.IsNullOrEmpty(evt.NextEventId) && !events.ContainsKey(evt.NextEventId))
                     errors.Add($"Event '{evt.Id}' references missing next_event_id '{evt.NextEventId}'.");
+
+                foreach (var kvp in evt.NextEventIdByResponse)
+                    if (!events.ContainsKey(kvp.Value))
+                        errors.Add($"Event '{evt.Id}' next_event_id_by_response['{kvp.Key}'] references missing event '{kvp.Value}'.");
+
+                if (!string.IsNullOrEmpty(evt.DiscoveryLocationId) && !locations.ContainsKey(evt.DiscoveryLocationId))
+                    errors.Add($"Event '{evt.Id}' references missing discovery_location_id '{evt.DiscoveryLocationId}'.");
             }
         }
 

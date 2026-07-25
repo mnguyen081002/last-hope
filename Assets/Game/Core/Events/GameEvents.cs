@@ -289,6 +289,20 @@ namespace LastHope.Core.Events
         public EventExpired(string eventInstanceId, string eventId) { EventInstanceId = eventInstanceId; EventId = eventId; }
     }
 
+    /// <summary>Published by RecruitNpcCommand (S16) when an NPC joins the shelter.</summary>
+    public readonly struct NpcRecruited : IGameEvent
+    {
+        public readonly string NpcId;
+        public NpcRecruited(string npcId) { NpcId = npcId; }
+    }
+
+    /// <summary>Published by NpcSystem (S16) when an NPC's Health reaches Dead.</summary>
+    public readonly struct NpcDied : IGameEvent
+    {
+        public readonly string NpcId;
+        public NpcDied(string npcId) { NpcId = npcId; }
+    }
+
     /// <summary>Published by IntelSystem (S15) whenever a subject's IntelRecord is written or
     /// replaced — WorldMapPanel rebuilds on this while open.</summary>
     public readonly struct IntelUpdated : IGameEvent

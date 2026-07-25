@@ -36,6 +36,9 @@ namespace LastHope.Core.Commands
         EventNotActive,
         ResponseUnavailable,
         EventNotDiscovered,
+        NpcUnavailable,
+        NpcNotRecruited,
+        CapacityFull,
     }
 
     public readonly struct CommandResult

@@ -79,5 +79,14 @@
   "intel": {
     "confirmed_to_reliable_minutes": 60,
     "reliable_to_uncertain_minutes": 180
+  },
+  "npc": {
+    "thirst_per_long_tick": 0.7,
+    "hunger_per_long_tick": 0.65,
+    "water_consumed_per_feed": 2,
+    "trust_gain_on_fed": 2,
+    "trust_loss_on_hungry": 2,
+    "starving_long_ticks_per_health_drop": 6,
+    "flood_long_ticks_per_health_drop": 3
   }
 }

@@ -46,10 +46,19 @@ namespace LastHope.Systems.Tasks
             if (task.Progress >= 100f) CompleteBuild(task, moduleDef);
         }
 
+        /// <summary>S16: an Active task's worker can be the player or a recruited NPC
+        /// (AssignNpcTaskCommand) — both need to be physically at a shelter to advance the task.</summary>
         private bool IsWorkerAtShelter(string workerId)
         {
-            if (string.IsNullOrEmpty(workerId) || workerId != _ctx.World.Player.ActorId) return false;
-            return _ctx.Definitions.TryGetLocation(_ctx.World.Player.CurrentLocationId, out var loc) && loc.IsShelter;
+            if (string.IsNullOrEmpty(workerId)) return false;
+
+            if (workerId == _ctx.World.Player.ActorId)
+                return _ctx.Definitions.TryGetLocation(_ctx.World.Player.CurrentLocationId, out var loc) && loc.IsShelter;
+
+            if (_ctx.World.NpcStates.TryGetValue(workerId, out var npc) && npc.Recruited)
+                return _ctx.Definitions.TryGetLocation(npc.LocationId, out var npcLoc) && npcLoc.IsShelter;
+
+            return false;
         }
 
         private void CompleteBuild(ActiveTaskState task, ModuleDefinition moduleDef)

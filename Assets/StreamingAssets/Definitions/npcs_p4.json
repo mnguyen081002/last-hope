@@ -1,0 +1,10 @@
+[
+  {
+    "id": "npc_minh",
+    "display_name": "Nguyễn Minh",
+    "skill": "electric",
+    "skill_multiplier": 1.5,
+    "starting_trust": 30,
+    "starting_location_id": "location_convenience_store"
+  }
+]
