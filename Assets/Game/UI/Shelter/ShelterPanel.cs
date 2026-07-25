@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Core.State;
+using LastHope.Core.Text;
 using LastHope.Systems.Registry;
 using LastHope.UI;
 using TMPro;
@@ -132,7 +133,9 @@ namespace LastHope.UI.Shelter
         {
             var row = NewRow(index);
             var priority = shelter.Power.Priorities.TryGetValue(module.InstanceId, out var p) ? p : PowerPriority.Normal;
-            AddLabel(row.transform, $"{module.ModuleId} [{module.SlotId}]  {(module.Active ? "powered" : "unpowered")}", 12f, 6f, 420f, 28f);
+            string moduleName = DisplayName.Prettify(module.ModuleId);
+            string slotName = DisplayName.PrettifyWithoutPrefix(module.SlotId, "slot_");
+            AddLabel(row.transform, $"{moduleName} [{slotName}]  {(module.Active ? "powered" : "unpowered")}", 12f, 6f, 420f, 28f);
             AddButton(row.transform, $"Priority: {priority}", () =>
             {
                 var next = (PowerPriority)(((int)priority + 1) % 4);

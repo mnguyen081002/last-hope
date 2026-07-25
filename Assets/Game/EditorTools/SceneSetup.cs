@@ -1,3 +1,4 @@
+using LastHope.Core.Text;
 using LastHope.Presentation.Boot;
 using LastHope.Presentation.CameraRig;
 using LastHope.Presentation.Interaction;
@@ -339,7 +340,7 @@ namespace LastHope.EditorTools
             go.name = "Zone_" + zoneId;
             go.transform.position = position;
             go.transform.localScale = new Vector3(1f, 0.1f, 1f);
-            WorldLabel.Create(go.transform, "Zone\n" + WorldLabel.Prettify(zoneId), heightOffset: 0.6f);
+            WorldLabel.Create(go.transform, "Zone\n" + DisplayName.Prettify(zoneId), heightOffset: 0.6f);
         }
 
         private static void CreateCoreComponent(string coreId, Vector3 position)

@@ -40,20 +40,5 @@ namespace LastHope.Presentation.World
             label._text.color = Color.white;
             return label;
         }
-
-        /// <summary>"shelter_entrance" -> "Shelter Entrance" — every label in the blockout was
-        /// showing the raw snake_case definition id verbatim until 2026-07-24 feedback.</summary>
-        public static string Prettify(string snakeCaseId)
-        {
-            if (string.IsNullOrEmpty(snakeCaseId)) return snakeCaseId;
-
-            string[] words = snakeCaseId.Split('_');
-            for (int i = 0; i < words.Length; i++)
-            {
-                if (words[i].Length == 0) continue;
-                words[i] = char.ToUpperInvariant(words[i][0]) + words[i].Substring(1);
-            }
-            return string.Join(" ", words);
-        }
     }
 }

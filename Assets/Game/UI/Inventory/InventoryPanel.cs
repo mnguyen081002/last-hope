@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Core.State;
+using LastHope.Core.Text;
 using LastHope.Data;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Registry;
@@ -148,7 +149,9 @@ namespace LastHope.UI.Inventory
             row.transform.SetParent(_rowContainer, false);
             UiLayout.StretchTop(row.GetComponent<RectTransform>(), index * RowHeight, RowHeight);
 
-            string label = def?.DisplayNameKey ?? item.ItemId;
+            string label = def != null && !string.IsNullOrEmpty(def.DisplayNameKey)
+                ? def.DisplayNameKey
+                : DisplayName.PrettifyWithoutPrefix(item.ItemId, "item_");
             AddLabel(row.transform, $"{label} x{item.Quantity}", 12f, 4f, 280f, 26f);
 
             AddButton(row.transform, "Use", () =>

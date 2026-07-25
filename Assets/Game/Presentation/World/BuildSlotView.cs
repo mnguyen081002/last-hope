@@ -1,3 +1,4 @@
+using LastHope.Core.Text;
 using UnityEngine;
 
 namespace LastHope.Presentation.World
@@ -12,10 +13,6 @@ namespace LastHope.Presentation.World
 
         public void SetSlotId(string id) => slotId = id;
 
-        private void Awake()
-        {
-            string displayId = slotId.StartsWith("slot_") ? slotId.Substring("slot_".Length) : slotId;
-            WorldLabel.Create(transform, $"Slot\n{WorldLabel.Prettify(displayId)}");
-        }
+        private void Awake() => WorldLabel.Create(transform, $"Slot\n{DisplayName.PrettifyWithoutPrefix(slotId, "slot_")}");
     }
 }

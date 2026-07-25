@@ -4,6 +4,7 @@ using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Core.Rules;
 using LastHope.Core.State;
+using LastHope.Core.Text;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Registry;
 using LastHope.UI;
@@ -121,16 +122,18 @@ namespace LastHope.UI.Shelter
             row.transform.SetParent(_rowContainer, false);
             UiLayout.StretchTop(row.GetComponent<RectTransform>(), index * RowHeight, RowHeight);
 
+            string slotName = DisplayName.PrettifyWithoutPrefix(slotId, "slot_");
             var activeTask = _ctx.World.ActiveTasks.Find(t => t.TargetId == slotId);
 
             if (slot.Locked)
             {
-                AddLabel(row.transform, $"{slotId}: Locked", 12f, 6f, 780f, 28f);
+                AddLabel(row.transform, $"{slotName}: Locked", 12f, 6f, 780f, 28f);
             }
             else if (!string.IsNullOrEmpty(slot.ModuleInstanceId))
             {
                 var module = shelter.Modules[slot.ModuleInstanceId];
-                AddLabel(row.transform, $"{slotId}: {module.ModuleId} (durability {module.Durability:0}, {(module.Active ? "active" : "inactive")})", 12f, 6f, 620f, 28f);
+                string moduleName = DisplayName.Prettify(module.ModuleId);
+                AddLabel(row.transform, $"{slotName}: {moduleName} (durability {module.Durability:0}, {(module.Active ? "active" : "inactive")})", 12f, 6f, 620f, 28f);
                 AddButton(row.transform, "Dismantle", () =>
                 {
                     _processor.Submit(new DismantleModuleCommand(_ctx.World.Player.ActorId, slotId));
@@ -139,7 +142,8 @@ namespace LastHope.UI.Shelter
             }
             else if (activeTask != null)
             {
-                AddLabel(row.transform, $"{slotId}: building {activeTask.ModuleId} ({activeTask.Progress:0}%) [{activeTask.Status}]", 12f, 6f, 460f, 28f);
+                string moduleName = DisplayName.Prettify(activeTask.ModuleId);
+                AddLabel(row.transform, $"{slotName}: building {moduleName} ({activeTask.Progress:0}%) [{activeTask.Status}]", 12f, 6f, 460f, 28f);
                 if (activeTask.Status == TaskStatus.Running)
                     AddButton(row.transform, "Pause", () => { _processor.Submit(new PauseTaskCommand(_ctx.World.Player.ActorId, activeTask.TaskId)); Rebuild(); }, 480f, 4f);
                 else
@@ -148,7 +152,7 @@ namespace LastHope.UI.Shelter
             }
             else
             {
-                AddLabel(row.transform, $"{slotId}:", 12f, 6f, 100f, 28f);
+                AddLabel(row.transform, $"{slotName}:", 12f, 6f, 100f, 28f);
                 float x = 110f;
                 if (BuildRules.TryFindZoneForSlot(_ctx.Definitions.ShelterZones, slotId, out var zone))
                 {
@@ -156,7 +160,8 @@ namespace LastHope.UI.Shelter
                     {
                         if (!module.AllowedZoneIds.Contains(zone.Id)) continue;
                         string moduleId = module.Id;
-                        AddButton(row.transform, $"Build {moduleId} ({FormatMaterials(module.Materials)})", () =>
+                        string moduleName = DisplayName.Prettify(moduleId);
+                        AddButton(row.transform, $"Build {moduleName} ({FormatMaterials(module.Materials)})", () =>
                         {
                             var result = _processor.Submit(new StartBuildCommand(_ctx.World.Player.ActorId, slotId, moduleId));
                             if (!result.Success) Debug.Log($"[Build] Start '{moduleId}' at '{slotId}' failed: {result.Code}");
@@ -176,7 +181,7 @@ namespace LastHope.UI.Shelter
             foreach (var kvp in materials)
             {
                 if (sb.Length > 0) sb.Append(", ");
-                sb.Append(kvp.Value).Append('x').Append(kvp.Key);
+                sb.Append(kvp.Value).Append('x').Append(DisplayName.PrettifyWithoutPrefix(kvp.Key, "item_"));
             }
             return sb.ToString();
         }

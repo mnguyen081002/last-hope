@@ -1,3 +1,4 @@
+using LastHope.Core.Text;
 using UnityEngine;
 
 namespace LastHope.Presentation.World
@@ -12,6 +13,6 @@ namespace LastHope.Presentation.World
 
         public void SetCoreId(string id) => coreId = id;
 
-        private void Awake() => WorldLabel.Create(transform, WorldLabel.Prettify(coreId));
+        private void Awake() => WorldLabel.Create(transform, DisplayName.Prettify(coreId));
     }
 }

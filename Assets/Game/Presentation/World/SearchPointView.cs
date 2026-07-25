@@ -1,4 +1,5 @@
 using LastHope.Core.Commands;
+using LastHope.Core.Text;
 using LastHope.Presentation.Interaction;
 using UnityEngine;
 
@@ -13,11 +14,7 @@ namespace LastHope.Presentation.World
 
         public string PromptText => "Search";
 
-        private void Awake()
-        {
-            string displayId = searchPointId.StartsWith("searchpoint_") ? searchPointId.Substring("searchpoint_".Length) : searchPointId;
-            WorldLabel.Create(transform, $"Search\n{WorldLabel.Prettify(displayId)}");
-        }
+        private void Awake() => WorldLabel.Create(transform, $"Search\n{DisplayName.PrettifyWithoutPrefix(searchPointId, "searchpoint_")}");
 
         public bool CanInteract(GameContext ctx) => true;
 
