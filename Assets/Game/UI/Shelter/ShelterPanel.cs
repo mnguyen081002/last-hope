@@ -63,6 +63,7 @@ namespace LastHope.UI.Shelter
                 _ctx.Events.Subscribe<ExclusivePanelOpened>(OnExclusivePanelOpened);
                 _ctx.Events.Subscribe<PowerStateChanged>(_ => { if (_visible) Rebuild(); });
                 _ctx.Events.Subscribe<WaterStocksChanged>(_ => { if (_visible) Rebuild(); });
+                _ctx.Events.Subscribe<ShelterWaterChanged>(_ => { if (_visible) Rebuild(); });
                 _ctx.Events.Subscribe<TaskStateChanged>(_ => { if (_visible) Rebuild(); });
             }
         }
@@ -125,7 +126,7 @@ namespace LastHope.UI.Shelter
         private GameObject SummaryRow(ShelterState shelter, int index)
         {
             var row = NewRow(index);
-            AddLabel(row.transform, $"Battery {shelter.Power.BatteryCharge:0}/{_ctx.Definitions.Balance.Power.BatteryMaxCharge:0}   Clean Water {shelter.WaterStocks.Clean:0}   Untreated {shelter.WaterStocks.Untreated:0}", 12f, 6f, 900f, 28f);
+            AddLabel(row.transform, $"Battery {shelter.Power.BatteryCharge:0}/{_ctx.Definitions.Balance.Power.BatteryMaxCharge:0}   Clean Water {shelter.WaterStocks.Clean:0}   Untreated {shelter.WaterStocks.Untreated:0}   Flood {shelter.WaterIntrusion.Level} ({shelter.WaterIntrusion.Units:0}/100)", 12f, 6f, 900f, 28f);
             return row;
         }
 
