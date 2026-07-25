@@ -39,6 +39,8 @@ namespace LastHope.EditorTools
         private const string TestSystemsScenePath = ScenesFolder + "/90_TestSystems.unity";
         private const string MainShelterScenePath = ScenesFolder + "/Shelters/20_MainShelter.unity";
         private const string ConvenienceStoreScenePath = ScenesFolder + "/Locations/41_Location_ConvenienceStore.unity";
+        private const string UtilityGarageScenePath = ScenesFolder + "/Locations/42_Location_UtilityGarage.unity";
+        private const string SchoolScenePath = ScenesFolder + "/Locations/43_Location_School.unity";
         private const string InputActionsPath = "Assets/Input/GameControls.inputactions";
 
         [MenuItem("Last Hope/Build Sprint 1 Scenes")]
@@ -55,6 +57,8 @@ namespace LastHope.EditorTools
             BuildGamePersistentScene(inputActions);
             BuildMainShelterScene();
             BuildConvenienceStoreScene();
+            BuildUtilityGarageScene();
+            BuildSchoolScene();
             BuildBootScene();
 
             EditorBuildSettings.scenes = new[]
@@ -64,6 +68,8 @@ namespace LastHope.EditorTools
                 new EditorBuildSettingsScene(TestSystemsScenePath, true),
                 new EditorBuildSettingsScene(MainShelterScenePath, true),
                 new EditorBuildSettingsScene(ConvenienceStoreScenePath, true),
+                new EditorBuildSettingsScene(UtilityGarageScenePath, true),
+                new EditorBuildSettingsScene(SchoolScenePath, true),
             };
 
             AssetDatabase.SaveAssets();
@@ -469,6 +475,68 @@ namespace LastHope.EditorTools
             CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
 
             EditorSceneManager.SaveScene(scene, ConvenienceStoreScenePath);
+        }
+
+        private static void BuildUtilityGarageScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "Ground";
+            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+
+            var lightGo = new GameObject("Directional Light");
+            var light = lightGo.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.2f;
+            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            CreateSearchPoint("searchpoint_garage_workbench", new Vector3(-3f, 0.5f, 2f));
+            CreateSearchPoint("searchpoint_garage_shelf", new Vector3(3f, 0.5f, 2f));
+
+            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            travelPoint.name = "TravelPoint_Shelter";
+            travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
+            travelPoint.AddComponent<TravelPointView>();
+
+            var spawn = new GameObject("PlayerSpawnPoint");
+            spawn.transform.position = new Vector3(0f, 0.1f, -5f);
+            spawn.AddComponent<PlayerSpawnPoint>();
+
+            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
+
+            EditorSceneManager.SaveScene(scene, UtilityGarageScenePath);
+        }
+
+        private static void BuildSchoolScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "Ground";
+            ground.transform.localScale = new Vector3(1.5f, 1f, 1.5f);
+
+            var lightGo = new GameObject("Directional Light");
+            var light = lightGo.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.2f;
+            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            CreateSearchPoint("searchpoint_school_nurse", new Vector3(-3f, 0.5f, 2f));
+            CreateSearchPoint("searchpoint_school_classroom", new Vector3(3f, 0.5f, 2f));
+
+            var travelPoint = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            travelPoint.name = "TravelPoint_Shelter";
+            travelPoint.transform.position = new Vector3(0f, 0.5f, -6f);
+            travelPoint.AddComponent<TravelPointView>();
+
+            var spawn = new GameObject("PlayerSpawnPoint");
+            spawn.transform.position = new Vector3(0f, 0.1f, -5f);
+            spawn.AddComponent<PlayerSpawnPoint>();
+
+            CreateBoundaryWalls(-7.5f, 7.5f, -7.5f, 7.5f); // matches the Ground plane's (1.5,1,1.5) scale
+
+            EditorSceneManager.SaveScene(scene, SchoolScenePath);
         }
 
         private static void CreateSearchPoint(string id, Vector3 position)

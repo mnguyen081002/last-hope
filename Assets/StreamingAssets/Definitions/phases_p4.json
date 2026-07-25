@@ -1,0 +1,82 @@
+[
+  {
+    "id": "phase_p4_normal",
+    "start_minute": 0,
+    "flood_band_min": 0,
+    "flood_band_max": 0,
+    "current_band_min": 0,
+    "current_band_max": 0,
+    "black_water": false,
+    "rain_intensity": 0
+  },
+  {
+    "id": "phase_p4_warning",
+    "start_minute": 120,
+    "flood_band_min": 0,
+    "flood_band_max": 0,
+    "current_band_min": 0,
+    "current_band_max": 0,
+    "black_water": false,
+    "rain_intensity": 0
+  },
+  {
+    "id": "phase_p4_first_rain",
+    "start_minute": 300,
+    "flood_band_min": 0,
+    "flood_band_max": 1,
+    "current_band_min": 0,
+    "current_band_max": 1,
+    "black_water": false,
+    "rain_intensity": 1
+  },
+  {
+    "id": "phase_p4_black_rain",
+    "start_minute": 480,
+    "flood_band_min": 1,
+    "flood_band_max": 2,
+    "current_band_min": 1,
+    "current_band_max": 2,
+    "black_water": true,
+    "rain_intensity": 2
+  },
+  {
+    "id": "phase_p4_escalation",
+    "start_minute": 640,
+    "flood_band_min": 2,
+    "flood_band_max": 3,
+    "current_band_min": 2,
+    "current_band_max": 3,
+    "black_water": true,
+    "rain_intensity": 3
+  },
+  {
+    "id": "phase_p4_peak",
+    "start_minute": 760,
+    "flood_band_min": 3,
+    "flood_band_max": 4,
+    "current_band_min": 3,
+    "current_band_max": 4,
+    "black_water": true,
+    "rain_intensity": 4
+  },
+  {
+    "id": "phase_p4_aftermath",
+    "start_minute": 880,
+    "flood_band_min": 2,
+    "flood_band_max": 3,
+    "current_band_min": 1,
+    "current_band_max": 2,
+    "black_water": false,
+    "rain_intensity": 0
+  },
+  {
+    "id": "phase_p4_end",
+    "start_minute": 960,
+    "flood_band_min": 1,
+    "flood_band_max": 2,
+    "current_band_min": 0,
+    "current_band_max": 1,
+    "black_water": false,
+    "rain_intensity": 0
+  }
+]

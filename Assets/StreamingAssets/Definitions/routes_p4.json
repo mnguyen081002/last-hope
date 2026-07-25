@@ -1,0 +1,14 @@
+[
+  {
+    "id": "route_shelter_garage",
+    "from_location_id": "location_shelter",
+    "to_location_id": "location_garage",
+    "travel_minutes": 35
+  },
+  {
+    "id": "route_shelter_school",
+    "from_location_id": "location_shelter",
+    "to_location_id": "location_school",
+    "travel_minutes": 30
+  }
+]

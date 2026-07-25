@@ -68,6 +68,12 @@ namespace LastHope.Core.Commands
                 case "turn_away":
                     ctx.World.PersistentFlags["minh_relative_abandoned"] = true;
                     break;
+                case "rescue":
+                    ctx.World.PersistentFlags["school_survivor_rescued"] = true;
+                    break;
+                case "leave":
+                    ctx.World.PersistentFlags["school_survivor_abandoned"] = true;
+                    break;
                 case "ack":
                     // Acknowledgement only — the consequence already happened via the flags set
                     // above (or via ExpirationPersistentFlags for the "didn't act" branch).

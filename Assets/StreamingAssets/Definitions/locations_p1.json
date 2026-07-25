@@ -2,7 +2,7 @@
   {
     "id": "location_shelter",
     "search_point_ids": [],
-    "connected_route_ids": ["route_shelter_store"],
+    "connected_route_ids": ["route_shelter_store", "route_shelter_garage", "route_shelter_school"],
     "scene_name": "20_MainShelter",
     "is_shelter": true
   },

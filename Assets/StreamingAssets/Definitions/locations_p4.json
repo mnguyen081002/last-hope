@@ -1,0 +1,15 @@
+[
+  {
+    "id": "location_garage",
+    "search_point_ids": ["searchpoint_garage_workbench", "searchpoint_garage_shelf"],
+    "connected_route_ids": ["route_shelter_garage"],
+    "scene_name": "42_Location_UtilityGarage"
+  },
+  {
+    "id": "location_school",
+    "search_point_ids": ["searchpoint_school_nurse", "searchpoint_school_classroom"],
+    "connected_route_ids": ["route_shelter_school"],
+    "scene_name": "43_Location_School",
+    "is_shelter": true
+  }
+]

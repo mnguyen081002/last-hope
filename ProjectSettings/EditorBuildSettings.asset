@@ -20,4 +20,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Locations/41_Location_ConvenienceStore.unity
     guid: bf091e5202e3f3b44a12ee0767749b15
+  - enabled: 1
+    path: Assets/Scenes/Locations/42_Location_UtilityGarage.unity
+    guid: 7c8d350ab72c3804faf889ee87000c19
+  - enabled: 1
+    path: Assets/Scenes/Locations/43_Location_School.unity
+    guid: 63df2101c82328a4eaa0192c2bec1c73
   m_configObjects: {}

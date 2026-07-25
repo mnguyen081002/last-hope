@@ -1,0 +1,43 @@
+[
+  {
+    "id": "event_storm_warning",
+    "event_type": "world",
+    "priority": "Major",
+    "scope": "world",
+    "trigger_phase_id": "phase_p4_warning",
+    "available_responses": ["ack"],
+    "tags": ["storm_warning"]
+  },
+  {
+    "id": "event_black_rain_transition",
+    "event_type": "world",
+    "priority": "Critical",
+    "scope": "world",
+    "trigger_phase_id": "phase_p4_black_rain",
+    "available_responses": ["ack"],
+    "tags": ["black_rain_transition"]
+  },
+  {
+    "id": "event_school_rescue",
+    "event_type": "npc",
+    "priority": "Major",
+    "scope": "world",
+    "trigger_phase_id": "phase_p4_escalation",
+    "requires_discovery": true,
+    "discovery_location_id": "location_school",
+    "soft_deadline_minutes": 60,
+    "hard_deadline_minutes": 120,
+    "available_responses": ["rescue", "leave"],
+    "expiration_persistent_flags": ["school_survivor_lost"],
+    "tags": ["school_rescue"]
+  },
+  {
+    "id": "event_grid_failure",
+    "event_type": "shelter",
+    "priority": "Critical",
+    "scope": "shelter",
+    "trigger_phase_id": "phase_p4_escalation",
+    "available_responses": ["ack"],
+    "tags": ["grid_failure"]
+  }
+]

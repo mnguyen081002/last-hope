@@ -77,6 +77,12 @@ namespace LastHope.Systems.Events
                 shelter.EventFlags.Add(ShelterEventFlags.DrainBackflowActive);
             else if (def.Tags.Contains("pump_jam"))
                 shelter.EventFlags.Add(ShelterEventFlags.PumpJammed);
+            else if (def.Tags.Contains("grid_failure"))
+                // S17: PowerSystem already reads PersistentFlags["grid_down"] (S12) — setting it
+                // here is the entire mechanical effect, same trigger-time-tag pattern as
+                // drain_backflow/pump_jam above, just on WorldState.PersistentFlags instead of
+                // ShelterState.EventFlags.
+                _ctx.World.PersistentFlags["grid_down"] = true;
             // "storage_flood_risk" has no trigger-time state effect — it's a warning the player
             // resolves before the risk becomes real.
 
