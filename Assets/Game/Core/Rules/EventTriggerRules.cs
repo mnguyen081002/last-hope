@@ -39,5 +39,15 @@ namespace LastHope.Core.Rules
 
             return true;
         }
+
+        /// <summary>Sleep-wake by event priority (event-system-design.md §14, S14): Critical
+        /// always wakes the sleeper; Major wakes only when sleeping at the affected shelter;
+        /// Standard and below sleep through.</summary>
+        public static bool ShouldWakeSleeper(string priority, bool atShelter)
+        {
+            if (priority == "Critical") return true;
+            if (priority == "Major") return atShelter;
+            return false;
+        }
     }
 }

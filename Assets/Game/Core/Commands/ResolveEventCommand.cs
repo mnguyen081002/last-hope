@@ -26,7 +26,11 @@ namespace LastHope.Core.Commands
         public CommandResult Validate(GameContext ctx)
         {
             var instance = ctx.World.ActiveEvents.Find(e => e.EventInstanceId == TargetId);
-            if (instance == null || instance.State != EventLifecycleState.Active)
+            if (instance == null)
+                return CommandResult.Fail(CommandErrorCode.EventNotActive);
+            if (instance.State == EventLifecycleState.Undiscovered)
+                return CommandResult.Fail(CommandErrorCode.EventNotDiscovered);
+            if (instance.State != EventLifecycleState.Active)
                 return CommandResult.Fail(CommandErrorCode.EventNotActive);
 
             if (!ctx.Definitions.TryGetEvent(instance.EventId, out var def) || !def.AvailableResponses.Contains(_responseId))

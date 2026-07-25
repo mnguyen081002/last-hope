@@ -191,7 +191,9 @@ namespace LastHope.DebugTools.Panel
             }
             foreach (var activeEvent in _ctx.World.ActiveEvents)
             {
-                if (activeEvent.State != EventLifecycleState.Active) continue;
+                // Debug tool shows Undiscovered too (player UI hides them) — resolve buttons on an
+                // Undiscovered instance fail with EventNotDiscovered, which is itself useful to see.
+                if (activeEvent.State != EventLifecycleState.Active && activeEvent.State != EventLifecycleState.Undiscovered) continue;
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{activeEvent.EventId} [{activeEvent.State}]", GUILayout.Width(220));
                 if (_ctx.Definitions.TryGetEvent(activeEvent.EventId, out var def))
@@ -358,6 +360,7 @@ namespace LastHope.DebugTools.Panel
                 State = EventLifecycleState.Active,
                 TriggeredAtMinute = _ctx.World.WorldTimeMinutes,
                 DeadlineMinute = def.HardDeadlineMinutes > 0 ? _ctx.World.WorldTimeMinutes + def.HardDeadlineMinutes : (long?)null,
+                SoftDeadlineMinute = def.SoftDeadlineMinutes > 0 ? _ctx.World.WorldTimeMinutes + def.SoftDeadlineMinutes : (long?)null,
             };
             _ctx.World.ActiveEvents.Add(instance);
 

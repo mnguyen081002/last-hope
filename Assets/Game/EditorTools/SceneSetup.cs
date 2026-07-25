@@ -8,6 +8,7 @@ using LastHope.DebugTools.Overlay;
 using LastHope.DebugTools.Panel;
 using LastHope.Systems.Boot;
 using LastHope.UI.Container;
+using LastHope.UI.Events;
 using LastHope.UI.Hud;
 using LastHope.UI.Inventory;
 using LastHope.UI.Map;
@@ -254,6 +255,26 @@ namespace LastHope.EditorTools
             shelterRect.offsetMax = Vector2.zero;
             shelterGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
             shelterGo.AddComponent<ShelterPanel>().SetInputActions(inputActions);
+
+            var eventsGo = new GameObject("EventPanel", typeof(RectTransform));
+            eventsGo.transform.SetParent(canvasGo.transform, false);
+            var eventsRect = eventsGo.GetComponent<RectTransform>();
+            eventsRect.anchorMin = new Vector2(0.15f, 0.15f);
+            eventsRect.anchorMax = new Vector2(0.85f, 0.85f);
+            eventsRect.offsetMin = Vector2.zero;
+            eventsRect.offsetMax = Vector2.zero;
+            eventsGo.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
+            eventsGo.AddComponent<EventPanel>().SetInputActions(inputActions);
+
+            var toastGo = new GameObject("EventToast", typeof(RectTransform));
+            toastGo.transform.SetParent(canvasGo.transform, false);
+            var toastRect = toastGo.GetComponent<RectTransform>();
+            toastRect.anchorMin = new Vector2(0.5f, 1f);
+            toastRect.anchorMax = new Vector2(0.5f, 1f);
+            toastRect.pivot = new Vector2(0.5f, 1f);
+            toastRect.sizeDelta = new Vector2(600f, 44f);
+            toastRect.anchoredPosition = new Vector2(0f, -56f);
+            toastGo.AddComponent<EventToast>();
         }
 
         private static void BuildMainShelterScene()

@@ -35,6 +35,7 @@ namespace LastHope.Core.Commands
         UnsafeToSleep,
         EventNotActive,
         ResponseUnavailable,
+        EventNotDiscovered,
     }
 
     public readonly struct CommandResult

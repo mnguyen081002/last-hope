@@ -11,7 +11,7 @@ namespace LastHope.UI.Hud
     public sealed class ControlsLegend : MonoBehaviour
     {
         private const string LegendText =
-            "WASD di chuyển   E tương tác   I/Tab túi đồ   M bản đồ   B xây dựng   N shelter   Esc đóng   F1 debug   F2 debug panel";
+            "WASD di chuyển   E tương tác   I/Tab túi đồ   M bản đồ   B xây dựng   N shelter   V sự kiện   Esc đóng   F1 debug   F2 debug panel";
 
         private void Awake()
         {

@@ -33,9 +33,28 @@ namespace LastHope.Data.Definitions
         /// other condition already holds; 0 = no chance gate (trigger as soon as conditions hold).</summary>
         public int TriggerChancePercentPerLongTick { get; set; }
 
-        /// <summary>Offset in minutes from trigger time; 0 = none. Stored but not enforced until S14.</summary>
+        /// <summary>Offset in minutes from the moment the instance becomes Active (trigger, or
+        /// discovery for RequiresDiscovery events); 0 = none. Soft publishes
+        /// EventDeadlineApproaching once; hard expires the event (S14).</summary>
         public int SoftDeadlineMinutes { get; set; }
         public int HardDeadlineMinutes { get; set; }
+
+        /// <summary>When true the instance starts Undiscovered (S14): invisible to player UI and
+        /// unresolvable until discovered. Discovery source today is being at a shelter
+        /// (shelter-scope events); radio/NPC sources arrive with S15 Intel. Deadlines arm at
+        /// discovery, not trigger.</summary>
+        public bool RequiresDiscovery { get; set; }
+
+        /// <summary>Event Chain (S14): this event id is force-triggered (bypassing its trigger
+        /// conditions) when the current event is Resolved or Expired; null/empty = no chain.</summary>
+        public string NextEventId { get; set; }
+
+        /// <summary>Persistent Consequence on expiration (S14): flag names added to
+        /// ShelterState.EventFlags / set true in WorldState.PersistentFlags when the hard deadline
+        /// passes unresolved. Any entry makes the instance end as PersistentConsequence instead of
+        /// Expired.</summary>
+        public List<string> ExpirationShelterFlags { get; set; } = new List<string>();
+        public List<string> ExpirationPersistentFlags { get; set; } = new List<string>();
 
         public List<string> AvailableResponses { get; set; } = new List<string>();
 

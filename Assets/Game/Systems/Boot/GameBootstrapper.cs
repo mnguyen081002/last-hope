@@ -68,9 +68,13 @@ namespace LastHope.Systems.Boot
             var disasterPhaseSystem = new DisasterPhaseSystem(ctx);
             var conditionSystem = new ConditionSystem(ctx);
             var hazardSystem = new HazardSystem(ctx);
-            var waterIntrusionSystem = new WaterIntrusionSystem(ctx);
+            // Construction order = long-tick subscriber order: tasks complete builds, power
+            // allocates to the new modules, THEN water intrusion reads pump Active state — all
+            // within the same tick. (P3 review 2026-07-25: WaterIntrusionSystem used to subscribe
+            // first, so a freshly powered pump only took effect one long-tick late.)
             var taskSystem = new TaskSystem(ctx);
             var powerSystem = new PowerSystem(ctx);
+            var waterIntrusionSystem = new WaterIntrusionSystem(ctx);
             var waterSystem = new WaterSystem(ctx);
             var eventSystem = new EventSystem(ctx);
 

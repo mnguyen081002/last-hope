@@ -265,6 +265,30 @@ namespace LastHope.Core.Events
         public EventTriggered(string eventInstanceId, string eventId) { EventInstanceId = eventInstanceId; EventId = eventId; }
     }
 
+    /// <summary>Published once per instance the long-tick its soft deadline passes (S14) — the
+    /// "act soon" warning. Carries the hard deadline so UI can show the real countdown.</summary>
+    public readonly struct EventDeadlineApproaching : IGameEvent
+    {
+        public readonly string EventInstanceId;
+        public readonly string EventId;
+        public readonly long HardDeadlineMinute;
+        public EventDeadlineApproaching(string eventInstanceId, string eventId, long hardDeadlineMinute)
+        {
+            EventInstanceId = eventInstanceId;
+            EventId = eventId;
+            HardDeadlineMinute = hardDeadlineMinute;
+        }
+    }
+
+    /// <summary>Published when an Active event passes its hard deadline unresolved (S14). The
+    /// instance ends as Expired, or PersistentConsequence when expiration flags were applied.</summary>
+    public readonly struct EventExpired : IGameEvent
+    {
+        public readonly string EventInstanceId;
+        public readonly string EventId;
+        public EventExpired(string eventInstanceId, string eventId) { EventInstanceId = eventInstanceId; EventId = eventId; }
+    }
+
     /// <summary>Published by ResolveEventCommand (S13) when a player response resolves an Active event.</summary>
     public readonly struct EventResolved : IGameEvent
     {

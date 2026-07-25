@@ -59,6 +59,7 @@ namespace LastHope.Data
             Validate(items, locations, routes, searchPoints, result.Errors);
             ValidateDisasterPhases(disasterPhases, result.Errors);
             ValidateModules(modules, items, shelterZones, result.Errors);
+            ValidateEvents(events, result.Errors);
 
             result.Registry = new DefinitionRegistry(definitionVersion, balance, items, locations, routes, searchPoints, disasterPhases, shelterZones, modules, events);
             result.Success = result.Errors.Count == 0;
@@ -205,6 +206,16 @@ namespace LastHope.Data
                 foreach (string zoneId in module.AllowedZoneIds)
                     if (!shelterZones.ContainsKey(zoneId))
                         errors.Add($"Module '{module.Id}' references missing shelter zone '{zoneId}'.");
+            }
+        }
+
+        /// <summary>Event chains (S14): next_event_id must reference an existing event.</summary>
+        private static void ValidateEvents(Dictionary<string, EventDefinition> events, List<string> errors)
+        {
+            foreach (var evt in events.Values)
+            {
+                if (!string.IsNullOrEmpty(evt.NextEventId) && !events.ContainsKey(evt.NextEventId))
+                    errors.Add($"Event '{evt.Id}' references missing next_event_id '{evt.NextEventId}'.");
             }
         }
 

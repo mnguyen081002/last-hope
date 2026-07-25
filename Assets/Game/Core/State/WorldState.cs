@@ -124,8 +124,10 @@ namespace LastHope.Core.State
 
     public sealed class NpcState { public string Id { get; set; } public string StatusName { get; set; } = "Unknown"; }
 
-    /// <summary>Full 8-state lifecycle from event-system-design.md §5, declared for S14+ — S13
-    /// only ever produces Active (trigger skips Undiscovered/Discovered gating) and Resolved.</summary>
+    /// <summary>Full 8-state lifecycle from event-system-design.md §5. S14 walks
+    /// Undiscovered→Active (discovery), Active→Resolved (ResolveEventCommand), Active→Expired/
+    /// PersistentConsequence (hard deadline). Dormant/Triggered/Discovered remain transient
+    /// concepts that never persist as an instance state.</summary>
     public enum EventLifecycleState { Dormant, Triggered, Undiscovered, Discovered, Active, Resolved, Expired, PersistentConsequence }
 
     /// <summary>Replaces the S2-era Id/StatusName stub (S13).</summary>
@@ -136,9 +138,18 @@ namespace LastHope.Core.State
         public EventLifecycleState State { get; set; }
         public long TriggeredAtMinute { get; set; }
 
-        /// <summary>Hard deadline in world minutes; null if the definition has none. Stored but not
-        /// auto-enforced (no expire-on-deadline) until S14.</summary>
+        /// <summary>Hard deadline in world minutes; null if the definition has none. Armed when
+        /// the instance becomes Active (at trigger, or at discovery for RequiresDiscovery events);
+        /// enforced by EventSystem every long-tick (S14).</summary>
         public long? DeadlineMinute { get; set; }
+
+        /// <summary>Soft "act soon" deadline in world minutes (S14); null if none. Same arming
+        /// rule as DeadlineMinute.</summary>
+        public long? SoftDeadlineMinute { get; set; }
+
+        /// <summary>True once EventDeadlineApproaching has been published for this instance —
+        /// serialized so save/load can't re-announce the same soft deadline.</summary>
+        public bool SoftDeadlineNotified { get; set; }
 
         public string ChosenResponse { get; set; }
     }

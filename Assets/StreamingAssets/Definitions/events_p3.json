@@ -27,6 +27,7 @@
     "scope": "shelter",
     "trigger_requires_pump_module": true,
     "trigger_chance_percent_per_long_tick": 1,
+    "soft_deadline_minutes": 30,
     "hard_deadline_minutes": 60,
     "available_responses": ["clear_pump"],
     "tags": ["pump_jam"]

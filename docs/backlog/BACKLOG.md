@@ -131,9 +131,21 @@ Verify: 221/221 test vẫn pass (không có test tự động cho vùng Presenta
 
 **User báo bug: không thấy thanh nước trong Shelter Panel/Debug Panel giảm khi Pump có điện, đã sửa:** hoá ra `ShelterPanel` (N) chưa từng hiển thị `WaterIntrusion` (mực nước lụt) — dòng tổng quan chỉ có Battery/Clean Water/Untreated, nên user không thể thấy Pump có hiệu lực hay không dù cơ chế `WaterIntrusionRules.ComputeDelta` trừ `pumpOutput` đã đúng và có test (`ComputeDelta_ActivePump_SubtractsPumpOutput`). `DebugPanel` (F2) vẫn luôn có dòng `Water {Level} ({Units}/100)` đọc trực tiếp state mỗi frame. Đã thêm `Flood {Level} ({Units}/100)` vào dòng tổng quan của `ShelterPanel` và subscribe thêm `ShelterWaterChanged` để panel rebuild khi mực nước đổi.
 
-**Còn thiếu để Gate P3 pass đầy đủ (cần user xác nhận bằng tay):** playtest 6h chuẩn bị + 6h Peak thật — hiểu vì sao nước vào (Rain phase + Drain Backflow event), Power Allocation phải chọn ưu tiên khi thiếu điện, Ground Floor mất (Critical flood) vẫn chơi tiếp được, không đứng chờ task (Passive task tự chạy), Pump Jam event xử lý được qua BuildPanel/DebugPanel. AI headless không tự xác nhận được cảm giác chơi hay UI có thực sự bấm được (B/N/F2 Events section), chỉ xác nhận cơ chế đúng qua test.
+**Gate P3: PASS đầy đủ (user xác nhận bằng tay 2026-07-25).** Playtest thật xác nhận shelter loop chơi được; các bug UI phát hiện trong quá trình playtest (camera/zoom/thanh chỉ số/label/tên entity/thanh nước ShelterPanel) đã sửa hết như ghi chú phía trên.
 
-Milestone tiếp theo: **P4 — Vertical Slice (S14–S18 → Gate GO/NO-GO)**, plan chi tiết đã có ở `docs/plans/2026-07-24-p3-p4-completion-plan.md`.
+**Review code P3 trước khi vào P4 (2026-07-25):** kiến trúc pure-rules/Systems/Commands nhất quán, save additive, không thấy bug logic mới. 1 điểm đã sửa: thứ tự khởi tạo system trong `GameBootstrapper` (WaterIntrusion trước Power) làm pump mới cấp điện chỉ có hiệu lực từ long-tick SAU — đảo lại Task → Power → WaterIntrusion để hiệu lực ngay trong tick. Ghi nhận không sửa: `ResolveEventCommand`/`RestAtShelterCommand` FastForward trong Execute là pattern có chủ đích; EventSystem đốt 1 lượt RNG stream "events" mỗi long-tick cho event có chance-gate kể cả khi điều kiện khác chưa thoả (deterministic, không phải bug).
+
+Milestone tiếp theo: **P4 — Vertical Slice (S14–S18 → Gate GO/NO-GO)**, plan chi tiết đã có ở `docs/plans/2026-07-24-p3-p4-completion-plan.md`. Bắt đầu S14 2026-07-25.
+
+## P4 — Vertical Slice (S14–S18 → Gate GO/NO-GO)
+
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| S14 | Event Framework hoàn chỉnh + Event UI | Verify | Plan riêng `docs/plans/2026-07-25-s14-event-framework.md`. `EventDefinition` +`RequiresDiscovery`/`NextEventId`/`ExpirationShelterFlags`/`ExpirationPersistentFlags`; `ActiveEventState` +`SoftDeadlineMinute`/`SoftDeadlineNotified`; `EventSystem` lifecycle đầy đủ (Undiscovered→discovery tại shelter với deadline arm từ discovery, soft deadline → `EventDeadlineApproaching` 1 lần, hard deadline → Expire + Persistent Consequence flags + chain `NextEventId`; chain cả khi Resolve qua subscribe `EventResolved`; deadline check mỗi LongTick thay vì RegisterThreshold — save-safe, xem plan); sleep-wake theo Priority (`ShouldWakeSleeper`: Critical luôn/Major tại shelter/Standard không — tính cả event Undiscovered); `ResolveEventCommand` chặn Undiscovered (`EventNotDiscovered`); UI mới `EventPanel` (phím V, resolve trong game thật) + `EventToast` (banner top-center); pump_jam +soft_deadline 30'. SaveVersion→9, manifest→0.10.0. Test: **236/236 EditMode pass** (15 mới: EventLifecycleTests); scene regenerate sạch; build Windows Succeeded 0 lỗi 1 warning; headless smoke 15s: boot → spawn player không exception. **Chưa xác nhận bằng mắt** (phím V, toast, wake-khi-ngủ) — cần user test tay |
+| S15 | Intel + World Map Intel + NPC nền | Backlog | Plan riêng `docs/plans/2026-07-25-s15-intel-npc-foundation.md` |
+| S16 | Nguyễn Minh đầy đủ + NPC pressure | Backlog | (BL-P4 mô tả trong `docs/mvp-product-backlog.md` mục 8) |
+| S17 | Slice content: 4 phase + 3 location + route + 6 event | Backlog | |
+| S18 | Outcome + Causal Report + Save full + Art tối thiểu | Backlog | Gate GO/NO-GO là quyết định của user sau external playtest |
 
 ### Bug phát hiện qua playtest thật (2026-07-24, sau S9) — đã sửa
 

@@ -45,10 +45,11 @@ namespace LastHope.Core.Commands
         {
             ctx.Events.Publish(new SleepStarted());
 
+            long sleepStart = ctx.World.WorldTimeMinutes;
             bool interrupted = false;
             int elapsed = ctx.Clock.FastForward(Minutes, _ =>
             {
-                if (!IsShelterUnsafe(ctx)) return false;
+                if (!IsShelterUnsafe(ctx) && !HasWakeEvent(ctx, sleepStart)) return false;
                 interrupted = true;
                 return true;
             });
@@ -62,6 +63,23 @@ namespace LastHope.Core.Commands
             string shelterId = ctx.Definitions.Balance.NewGame.MainShelterId;
             return ctx.World.ShelterStates.TryGetValue(shelterId, out var shelter)
                 && shelter.WaterIntrusion.Level >= WaterIntrusionLevel.Deep;
+        }
+
+        /// <summary>S14 wake condition (event-system-design.md §14): an unresolved event that
+        /// triggered after sleep began, whose priority wakes a sleeper. Sleeping is always at a
+        /// shelter (validated above), so atShelter is true here. Undiscovered events count —
+        /// being woken by the noise is the fiction; the shelter-side discovery check makes them
+        /// visible on the next long-tick anyway.</summary>
+        private static bool HasWakeEvent(GameContext ctx, long sleepStartMinute)
+        {
+            foreach (var evt in ctx.World.ActiveEvents)
+            {
+                if (evt.TriggeredAtMinute <= sleepStartMinute) continue;
+                if (evt.State != EventLifecycleState.Active && evt.State != EventLifecycleState.Undiscovered) continue;
+                if (!ctx.Definitions.TryGetEvent(evt.EventId, out var def)) continue;
+                if (EventTriggerRules.ShouldWakeSleeper(def.Priority, atShelter: true)) return true;
+            }
+            return false;
         }
     }
 }
