@@ -46,3 +46,5 @@ Cuối plan / implementation, phải xác định người dùng cần test gì 
 Trả lời bằng tiếng việt
 
 Tự xác định khi nào cần commit và tự thực hiện commit.
+
+Khi thiết kế placement hãy đọc: isometric-game-placement-rules.md

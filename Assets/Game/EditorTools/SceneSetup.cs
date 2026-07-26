@@ -414,11 +414,13 @@ namespace LastHope.EditorTools
             // blueprint shows both floors as distinct connected areas.
             CreateGroundTilemap("shelter", new Color(0.55f, 0.55f, 0.5f), -9, 9, -15, 15);
 
-            var storage = CreateSpriteMarker("ShelterStorage", new Vector2(3f, 3f), Vector2.one,
+            var storagePos = GridPlacementSystem.SnapToGrid(new Vector2(3f, 3f));
+            var storage = CreateSpriteMarker("ShelterStorage", storagePos, Vector2.one,
                 new Color(0.6f, 0.4f, 0.2f), solid: true);
             storage.AddComponent<ShelterStorageView>().SetShelterId("shelter_main");
 
-            var travelPoint = CreateSpriteMarker("TravelPoint_Store", new Vector2(-3f, 3f), Vector2.one,
+            var travelPos = GridPlacementSystem.SnapToGrid(new Vector2(-3f, 3f));
+            var travelPoint = CreateSpriteMarker("TravelPoint_Store", travelPos, Vector2.one,
                 new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
@@ -429,44 +431,47 @@ namespace LastHope.EditorTools
             // S10 blockout: 6 ground-floor/upper zones + Fixed Core Component anchors
             // (main-shelter-design.md §6-14). Roof is co-located on the Upper area (single
             // zone/1 slot — a third physical elevation isn't worth a second connector for a blockout).
-            CreateZoneMarker("shelter_entrance", new Vector2(-6f, -6f));
-            CreateBuildSlots(new Vector2(-6f, -6f), "slot_shelter_entrance_1", "slot_shelter_entrance_2");
+            // 2026-07-26: All positions snapped to isometric grid per placement-rules.md §2.
+            CreateZoneMarker("shelter_entrance", GridPlacementSystem.SnapToGrid(new Vector2(-6f, -6f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(-6f, -6f)), "slot_shelter_entrance_1", "slot_shelter_entrance_2");
 
-            CreateZoneMarker("central_hall", new Vector2(0f, -4f));
-            CreateCoreComponent("main_staircase", new Vector2(1f, -4f));
+            CreateZoneMarker("central_hall", GridPlacementSystem.SnapToGrid(new Vector2(0f, -4f)));
+            CreateCoreComponent("main_staircase", GridPlacementSystem.SnapToGrid(new Vector2(1f, -4f)));
 
-            CreateZoneMarker("ground_storage", new Vector2(-6f, 3f));
-            CreateBuildSlots(new Vector2(-6f, 3f), "slot_ground_storage_1", "slot_ground_storage_2");
+            CreateZoneMarker("ground_storage", GridPlacementSystem.SnapToGrid(new Vector2(-6f, 3f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(-6f, 3f)), "slot_ground_storage_1", "slot_ground_storage_2");
 
-            CreateZoneMarker("utility_area", new Vector2(6f, -4f));
-            CreateBuildSlots(new Vector2(6f, -4f), "slot_utility_area_1", "slot_utility_area_2");
-            CreateCoreComponent("structural_pillars", new Vector2(6f, -6f));
-            CreateCoreComponent("electrical_backbone", new Vector2(7f, -4f));
-            var drainCore = CreateSpriteMarker("DrainCore", new Vector2(5f, -3f), Vector2.one,
+            CreateZoneMarker("utility_area", GridPlacementSystem.SnapToGrid(new Vector2(6f, -4f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(6f, -4f)), "slot_utility_area_1", "slot_utility_area_2");
+            CreateCoreComponent("structural_pillars", GridPlacementSystem.SnapToGrid(new Vector2(6f, -6f)));
+            CreateCoreComponent("electrical_backbone", GridPlacementSystem.SnapToGrid(new Vector2(7f, -4f)));
+            var drainPos = GridPlacementSystem.SnapToGrid(new Vector2(5f, -3f));
+            var drainCore = CreateSpriteMarker("DrainCore", drainPos, Vector2.one,
                 new Color(0.2f, 0.6f, 0.8f), solid: true);
             drainCore.AddComponent<DrainCoreView>();
 
-            CreateZoneMarker("water_processing", new Vector2(6f, 2f));
-            CreateBuildSlots(new Vector2(6f, 2f), "slot_water_processing_1", "slot_water_processing_2");
-            CreateCoreComponent("water_intake", new Vector2(7f, 2f));
+            CreateZoneMarker("water_processing", GridPlacementSystem.SnapToGrid(new Vector2(6f, 2f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(6f, 2f)), "slot_water_processing_1", "slot_water_processing_2");
+            CreateCoreComponent("water_intake", GridPlacementSystem.SnapToGrid(new Vector2(7f, 2f)));
 
-            CreateZoneMarker("workshop", new Vector2(6f, 6f));
-            CreateBuildSlots(new Vector2(6f, 6f), "slot_workshop_1");
+            CreateZoneMarker("workshop", GridPlacementSystem.SnapToGrid(new Vector2(6f, 6f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(6f, 6f)), "slot_workshop_1");
 
             // Stairs signpost connecting Central Hall to the Upper area — 2026-07-25: replaces the
             // 3D ramp's continuous slope geometry. Purely a visual/wayfinding marker (walkable, no
             // collider) since 2D has no physical elevation to climb; both floors are simply drawn
             // as separate connected rooms on the same map.
-            var stairs = CreateSpriteMarker("Stairs_UpperFloor", new Vector2(0f, -6.5f), new Vector2(2.5f, 1f),
+            var stairsPos = GridPlacementSystem.SnapToGrid(new Vector2(0f, -6.5f));
+            var stairs = CreateSpriteMarker("Stairs_UpperFloor", stairsPos, new Vector2(2.5f, 1f),
                 new Color(0.55f, 0.35f, 0.15f), solid: false);
             WorldLabel.Create(stairs.transform, "Stairs", heightOffset: 0.8f);
 
-            CreateZoneMarker("upper_living", new Vector2(-2f, -10f));
-            CreateBuildSlots(new Vector2(-2f, -10f), "slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3");
+            CreateZoneMarker("upper_living", GridPlacementSystem.SnapToGrid(new Vector2(-2f, -10f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(-2f, -10f)), "slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3");
 
-            CreateZoneMarker("roof", new Vector2(2.5f, -10f));
-            CreateBuildSlots(new Vector2(2.5f, -10f), "slot_roof_1");
-            CreateCoreComponent("antenna_mount", new Vector2(3.5f, -10f));
+            CreateZoneMarker("roof", GridPlacementSystem.SnapToGrid(new Vector2(2.5f, -10f)));
+            CreateBuildSlots(GridPlacementSystem.SnapToGrid(new Vector2(2.5f, -10f)), "slot_roof_1");
+            CreateCoreComponent("antenna_mount", GridPlacementSystem.SnapToGrid(new Vector2(3.5f, -10f)));
 
             CreateBoundaryWalls(-9f, 9f, -15f, 15f); // matches the ground tilemap bounds above
 
@@ -496,8 +501,10 @@ namespace LastHope.EditorTools
             {
                 // No collider by design — an empty build slot must stay walkable until a module is
                 // actually built on it (see class doc).
+                // 2026-07-26: BuildSlot offset grid-aligned (2f = 2 × GRID_CELL_X) to avoid overlap.
+                var slotPos = GridPlacementSystem.SnapToGrid(zoneCenter + new Vector2(2f * (i + 1), 1.5f));
                 var go = CreateSpriteMarker("BuildSlot_" + slotIds[i],
-                    zoneCenter + new Vector2(0.8f * (i + 1), 0.8f), new Vector2(0.5f, 0.5f),
+                    slotPos, new Vector2(0.5f, 0.5f),
                     new Color(0.7f, 0.7f, 0.2f), solid: false);
                 go.AddComponent<BuildSlotView>().SetSlotId(slotIds[i]);
             }
@@ -533,14 +540,16 @@ namespace LastHope.EditorTools
 
             CreateGroundTilemap("store", new Color(0.55f, 0.5f, 0.45f), -8, 8, -8, 8);
 
-            CreateSearchPoint("searchpoint_drink_shelf_1", new Vector2(-4f, 2f));
-            CreateSearchPoint("searchpoint_drink_shelf_2", new Vector2(-4f, -2f));
-            CreateSearchPoint("searchpoint_dry_shelf_1", new Vector2(-1f, 2f));
-            CreateSearchPoint("searchpoint_dry_shelf_2", new Vector2(-1f, -2f));
-            CreateSearchPoint("searchpoint_counter", new Vector2(2f, 0f));
-            CreateSearchPoint("searchpoint_back_room", new Vector2(5f, 0f));
+            // 2026-07-26: All SearchPoint positions snapped to isometric grid per placement-rules.md §2.
+            CreateSearchPoint("searchpoint_drink_shelf_1", GridPlacementSystem.SnapToGrid(new Vector2(-4f, 2f)));
+            CreateSearchPoint("searchpoint_drink_shelf_2", GridPlacementSystem.SnapToGrid(new Vector2(-4f, -2f)));
+            CreateSearchPoint("searchpoint_dry_shelf_1", GridPlacementSystem.SnapToGrid(new Vector2(-1f, 2f)));
+            CreateSearchPoint("searchpoint_dry_shelf_2", GridPlacementSystem.SnapToGrid(new Vector2(-1f, -2f)));
+            CreateSearchPoint("searchpoint_counter", GridPlacementSystem.SnapToGrid(new Vector2(2f, 0f)));
+            CreateSearchPoint("searchpoint_back_room", GridPlacementSystem.SnapToGrid(new Vector2(5f, 0f)));
 
-            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", new Vector2(0f, -6f), Vector2.one,
+            var travelPos = GridPlacementSystem.SnapToGrid(new Vector2(0f, -6f));
+            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", travelPos, Vector2.one,
                 new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
@@ -559,10 +568,12 @@ namespace LastHope.EditorTools
 
             CreateGroundTilemap("garage", new Color(0.55f, 0.5f, 0.45f), -8, 8, -8, 8);
 
-            CreateSearchPoint("searchpoint_garage_workbench", new Vector2(-3f, 2f));
-            CreateSearchPoint("searchpoint_garage_shelf", new Vector2(3f, 2f));
+            // 2026-07-26: All SearchPoint positions snapped to isometric grid per placement-rules.md §2.
+            CreateSearchPoint("searchpoint_garage_workbench", GridPlacementSystem.SnapToGrid(new Vector2(-3f, 2f)));
+            CreateSearchPoint("searchpoint_garage_shelf", GridPlacementSystem.SnapToGrid(new Vector2(3f, 2f)));
 
-            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", new Vector2(0f, -6f), Vector2.one,
+            var travelPos = GridPlacementSystem.SnapToGrid(new Vector2(0f, -6f));
+            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", travelPos, Vector2.one,
                 new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
@@ -581,10 +592,12 @@ namespace LastHope.EditorTools
 
             CreateGroundTilemap("school", new Color(0.55f, 0.5f, 0.45f), -8, 8, -8, 8);
 
-            CreateSearchPoint("searchpoint_school_nurse", new Vector2(-3f, 2f));
-            CreateSearchPoint("searchpoint_school_classroom", new Vector2(3f, 2f));
+            // 2026-07-26: All SearchPoint positions snapped to isometric grid per placement-rules.md §2.
+            CreateSearchPoint("searchpoint_school_nurse", GridPlacementSystem.SnapToGrid(new Vector2(-3f, 2f)));
+            CreateSearchPoint("searchpoint_school_classroom", GridPlacementSystem.SnapToGrid(new Vector2(3f, 2f)));
 
-            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", new Vector2(0f, -6f), Vector2.one,
+            var travelPos = GridPlacementSystem.SnapToGrid(new Vector2(0f, -6f));
+            var travelPoint = CreateSpriteMarker("TravelPoint_Shelter", travelPos, Vector2.one,
                 new Color(0.9f, 0.7f, 0.1f), solid: true);
             travelPoint.AddComponent<TravelPointView>();
 
