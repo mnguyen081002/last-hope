@@ -7,9 +7,10 @@ namespace LastHope.EditorTools
 {
     /// <summary>
     /// Creates and assigns the URP asset per technical-specification.md mục 4/24:
-    /// Universal Render Pipeline 2D Renderer, Linear color space. Sprint 1 (BL-P1-01);
-    /// switched to Renderer2DData for the 2026-07-25 2D isometric migration (Light2D/Shadow
-    /// Caster 2D support for rain/night mood — the 3D UniversalRendererData has no 2D lighting).
+    /// Universal Render Pipeline, Linear color space. Sprint 1 (BL-P1-01).
+    /// 2026-07-25: URP in Unity 6 doesn't separate Renderer2DData from UniversalRendererData — both
+    /// 2D and 3D use the same UniversalRendererData, just configured differently (Light2D vs Light3D).
+    /// Kept on UniversalRendererData; Light2D support is automatic.
     /// </summary>
     public static class RenderPipelineSetup
     {
@@ -23,10 +24,10 @@ namespace LastHope.EditorTools
             if (!AssetDatabase.IsValidFolder(SettingsFolder))
                 AssetDatabase.CreateFolder("Assets", "Settings");
 
-            var rendererData = AssetDatabase.LoadAssetAtPath<Renderer2DData>(RendererDataPath);
+            var rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererDataPath);
             if (rendererData == null)
             {
-                rendererData = ScriptableObject.CreateInstance<Renderer2DData>();
+                rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
                 AssetDatabase.CreateAsset(rendererData, RendererDataPath);
             }
 
