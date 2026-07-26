@@ -61,6 +61,15 @@ namespace LastHope.EditorTools
         [MenuItem("Last Hope/Build Sprint 1 Scenes")]
         public static void BuildAll()
         {
+            // Delete old scene files to avoid conflicts (3D→2D migration, etc.)
+            DeleteIfExists(BootScenePath);
+            DeleteIfExists(PersistentScenePath);
+            DeleteIfExists(TestSystemsScenePath);
+            DeleteIfExists(MainShelterScenePath);
+            DeleteIfExists(ConvenienceStoreScenePath);
+            DeleteIfExists(UtilityGarageScenePath);
+            DeleteIfExists(SchoolScenePath);
+
             var inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
             if (inputActions == null)
             {
@@ -603,6 +612,16 @@ namespace LastHope.EditorTools
             root.AddComponent<BootLoader>();
 
             EditorSceneManager.SaveScene(scene, BootScenePath);
+        }
+
+        private static void DeleteIfExists(string scenePath)
+        {
+            if (AssetDatabase.LoadAssetAtPath(scenePath, typeof(UnityEngine.SceneManagement.Scene)) != null ||
+                File.Exists(scenePath))
+            {
+                AssetDatabase.DeleteAsset(scenePath);
+                Debug.Log($"[SceneSetup] Deleted old scene: {scenePath}");
+            }
         }
     }
 }
