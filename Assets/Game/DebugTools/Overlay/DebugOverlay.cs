@@ -36,7 +36,7 @@ namespace LastHope.DebugTools.Overlay
 
             float fps = 1f / Mathf.Max(_smoothedDeltaTime, 0.0001f);
             string posText = trackedTarget != null
-                ? $"Pos: {trackedTarget.position:F1}"
+                ? $"Pos: ({trackedTarget.position.x:F1}, {trackedTarget.position.y:F1})"
                 : "Pos: n/a";
 
             string text = $"Last Hope — Debug Overlay (F1)\nFPS: {fps:F0}\n{posText}\nBuild: {Application.version}";

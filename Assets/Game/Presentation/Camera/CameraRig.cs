@@ -4,10 +4,10 @@ using UnityEngine.InputSystem;
 namespace LastHope.Presentation.CameraRig
 {
     /// <summary>
-    /// Fixed 2D isometric orthographic camera (2026-07-25 migration from 3D): no rotation — the
-    /// camera looks straight down -Z, the isometric look comes entirely from the sprite art and
-    /// from CustomAxis transparency sorting, not from a tilted camera. Follows target in X/Y,
-    /// zoom clamped via orthographicSize.
+    /// Fixed 2D isometric orthographic camera: no rotation — the camera looks straight down
+    /// -Z, the isometric look comes entirely from the sprite art and from CustomAxis
+    /// transparency sorting, not from a tilted camera. Follows target in X/Y, zoom clamped
+    /// via orthographicSize.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class CameraRig : MonoBehaviour

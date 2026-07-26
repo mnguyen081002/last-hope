@@ -4,11 +4,10 @@ using UnityEngine.InputSystem;
 namespace LastHope.Presentation.Player
 {
     /// <summary>
-    /// Top-down 2D movement (2026-07-25 migration from 3D CharacterController): Rigidbody2D
-    /// kinematic, moved in FixedUpdate via MovePosition. No gravity, no slope/step, no
-    /// fall-recovery — those were 3D-only concepts (a top-down 2D plane has no vertical drop to
-    /// fall off). Input maps straight to world X/Y: the camera never rotates, so "screen-relative"
-    /// and "world-relative" are always the same direction, unlike the old camera-forward projection.
+    /// Top-down 2D movement: Rigidbody2D kinematic, moved in FixedUpdate via MovePosition. No
+    /// gravity, no slope/step, no fall-recovery — those were 3D-only concepts (a top-down 2D
+    /// plane has no vertical drop to fall off). Input maps straight to world X/Y: the camera
+    /// never rotates, so "screen-relative" and "world-relative" are always the same direction.
     /// SpeedModifier is set by PlayerAvatarSync from Flood/Carry Load/Condition.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]

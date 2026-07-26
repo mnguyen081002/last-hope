@@ -149,6 +149,12 @@ Milestone tiếp theo: **P4 — Vertical Slice (S14–S18 → Gate GO/NO-GO)**, 
 
 **Gate P4: điều kiện kỹ thuật PASS (2026-07-25).** SliceRoundtripTests xanh, AI xác nhận 3 outcome khác nhau đạt được từ 3 chiến lược khác nhau không softlock. **GO/NO-GO là quyết định của user, không phải AI/test** — cần: tự chơi/dùng Debug Panel dẫn tới cả 3 outcome ít nhất 1 lần ngoài đời thật (không chỉ qua test), xác nhận `OutcomeReportPanel` đọc được/không lỗi layout, external playtest + tỷ lệ replay-intent (BL-P4-16, ngoài phạm vi AI). |
 
+## S1-S4 — Foundation redo sau S19 (2026-07-26)
+
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| S1-S4-redo | Xóa và viết lại CameraRig/PlayerController/PlayerAvatarSync/DebugOverlay | Verify | Plan `docs/plans/2026-07-26-s1-s4-2d-foundation-redo.md`. Sau S19, nhiều vòng vá liên tiếp (camera lệch tâm, zoom, label mirror, rơi khỏi map, "Redesign Placement System" chưa xác nhận bằng mắt) khiến user quyết định xóa-viết-lại 4 hạng mục foundation gốc (S1 Project setup, S2 Camera, S3 Input+movement, S4 Logging+debug overlay) thay vì tiếp tục vá. **Trước khi xóa đã đọc lại code cũ và không thấy bug logic rõ ràng trong 6 file Presentation/DebugTools** (đã nói rõ với user — user vẫn chọn xóa viết lại theo đúng quyết định ban đầu). Kết quả: `CameraRig.cs`/`PlayerController.cs`/`PlayerAvatarSync.cs`/`DebugOverlay.cs` xóa hẳn (kèm .meta, đổi GUID) rồi viết lại giữ nguyên public API để `SceneSetup.cs` không cần sửa wiring; nội dung logic tương đương bản cũ (đã đúng 2D từ S19) + 1 sửa nhỏ thật sự: `DebugOverlay` hiện Pos dạng `(X, Y)` tường minh thay vì `Vector3.ToString("F1")` (trước in cả Z=0 gây hiểu lầm 2D vẫn còn trục Z). S1 (project setup: package/asmdef/URP asset) audit không xóa — đã đúng cấu hình 2D từ S19, xóa viết lại không có gì khác biệt. Core/Data/Systems/UI/DebugTools-Panel/World-views/Interaction/Boot **không đụng** (không phụ thuộc 2D/3D, không phải S1-S4). **Chưa verify**: Unity Editor đang mở sẵn bởi user lúc AI làm việc nên không chạy được batchmode compile/test song song — cần user tự để Editor recompile, chạy `Last Hope/Build Sprint 1 Scenes` (regenerate scene dùng class mới, tránh missing-script do đổi GUID), chạy lại EditMode suite, rồi Play test theo checklist trong plan. |
+
 ## S19 — Chuyển 3D isometric sang 2D isometric (kiểu Project Zomboid)
 
 | ID | Hạng mục | Trạng thái | Ghi chú |

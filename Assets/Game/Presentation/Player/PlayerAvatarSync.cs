@@ -10,8 +10,7 @@ namespace LastHope.Presentation.Player
     /// Binds simulation state to the player's Transform. This is the presentation-write
     /// exemption: continuous position data is not a gameplay rule, so it bypasses the Command
     /// Layer by design — unlike discrete mutations, which always still go through commands.
-    /// 2026-07-25: Rigidbody2D replaces CharacterController (3D->2D migration); PositionZ
-    /// dropped from PlayerState — 2D world position is X/Y only.
+    /// 2D world position is X/Y only.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class PlayerAvatarSync : MonoBehaviour
@@ -51,8 +50,8 @@ namespace LastHope.Presentation.Player
             // here — it must only change when something has actually confirmed the position is
             // valid for CurrentLocationId (SceneFlowController's spawn placement, or a loaded
             // save whose location already matches). Stamping it unconditionally every frame
-            // raced SceneFlowController's placement check and left new-game players stranded at
-            // their pre-scene-load coordinates with no floor under them (BL-P1-19 bug fix).
+            // races SceneFlowController's placement check and leaves new-game players stranded
+            // at their pre-scene-load coordinates (BL-P1-19 bug — do not reintroduce).
             var player = _ctx.World.Player;
             Vector2 pos = transform.position;
             player.PositionX = pos.x;
@@ -65,7 +64,7 @@ namespace LastHope.Presentation.Player
         {
             var player = _ctx.World.Player;
 
-            // No matching saved position for the scene we're in — S6's SceneFlowController /
+            // No matching saved position for the scene we're in — SceneFlowController /
             // PlayerSpawnPoint handles cross-scene placement; nothing to do here yet.
             if (player.PositionLocationId != player.CurrentLocationId) return;
 
