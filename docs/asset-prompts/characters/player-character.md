@@ -2,32 +2,35 @@
 
 - **Asset ID(s):** `character_player`
 - **Category:** character
-- **Milestone:** P1 (placeholder capsule dùng trước; asset này thay thế khi qua cleanup)
-- **Ưu tiên:** trung bình (không chặn gameplay — capsule đủ cho Gate P1)
+- **Milestone:** P1 (sprite placeholder dùng trước; asset này thay thế khi qua cleanup)
+- **Ưu tiên:** trung bình (không chặn gameplay — placeholder đủ cho Gate P1)
+
+> **Đã có sẵn:** `Assets/Art/Production/Character8Direction/Frames/` — walk 8 hướng × 4 frame.
+> Kiểm tra bộ này trước khi generate mới; prompt dưới đây dùng để bổ sung state còn thiếu.
 
 ## Generation Prompt (English)
 
-> Full-body 3D character of a European urban survivor in their early 30s, gender-neutral silhouette, wearing a worn dark-olive rain jacket with hood down, rolled-up work pants, rubber boots, and a compact backpack. Lean build, practical posture. Stylized low-poly game character, clean topology for rigging, T-pose, muted desaturated color palette (dark olive, wet asphalt grey, faded navy), slightly weathered clothing with damp stains. No weapons. Designed to read clearly from a fixed isometric orthographic camera at 35 degrees pitch — strong silhouette, distinct head/torso/leg separation, no fine surface details. Neutral facial features, low-poly hair. Single character, no background, no props in hands.
+> 2D game sprite of a European urban survivor in their early 30s, gender-neutral silhouette, wearing a worn dark-olive rain jacket with hood down, rolled-up work pants, rubber boots, and a compact backpack. Lean build, practical posture. Drawn in isometric projection as seen from a fixed orthographic 2D camera, three-quarter top-down view. Flat stylized shading, crisp readable silhouette, muted desaturated palette (dark olive, wet asphalt grey, faded navy), slightly weathered clothing with damp stains. No weapons. Strong head/torso/leg separation, minimal fine detail so it reads at small on-screen size. Single character centered, fully transparent background, no ground shadow baked in, no border or outline halo.
 
 ### Variant prompts
 
+- **8 hướng:** same character rendered in 8 isometric facing directions (N, NE, E, SE, S, SW, W, NW), consistent proportions and palette across all directions, each on transparent background.
 - **Wet variant** (P2): same character, jacket glistening wet, hood up, darker saturation.
-- **Overloaded pose reference** (concept only): same character hunched forward carrying a large water container with both hands.
+- **Overloaded pose** (P2): same character hunched forward carrying a large water container with both hands.
 
 ## Ràng buộc kỹ thuật
 
-- Chiều cao: **1.7 m** (pivot giữa hai chân, đứng trên y=0).
-- Poly budget: 8k–15k tris (character duy nhất luôn trên màn hình — được phép cao nhất project).
-- Texture: 2048, một material chính.
-- Rig: humanoid Unity, không cần finger bones.
-- Animation baseline cần có (có thể generate/mua riêng, retarget): idle, walk, run, carry-walk (2 tay phía trước), interact-crouch, search-loop (lục lọi), incapacitated.
-- Movement KHÔNG dùng root motion (tech spec mục 6) — animation in-place.
+- Chiều cao nhân vật trong sprite tương ứng **1.7 m** thực tế — quy ra pixel theo PPU chung của project, giữ nhất quán với tile sàn.
+- Frame size: 256 px, nền trong suốt, nhân vật căn giữa theo trục ngang.
+- Pivot: **giữa hai chân** (điểm chạm sàn) — quyết định Y-sort so với prop.
+- Animation baseline: idle, walk, carry-walk (2 tay phía trước), interact, search-loop, incapacitated. Mỗi state × 8 hướng, 4 frame/hướng cho walk.
+- Sprite sheet cắt đều theo grid cố định, đặt tên `<state>-<direction>-<frame>.png` (khớp convention `Character8Direction/Frames/`).
 
-## Checklist cleanup (Blender)
+## Checklist cleanup (sprite)
 
-- [ ] Cao đúng 1.7 m, apply transform
-- [ ] Pivot giữa hai chân tại y=0
-- [ ] Topology sạch quanh khớp vai/hông cho rig
-- [ ] UV không chồng, 1 material
-- [ ] Silhouette đọc rõ ở camera orthographic 35.264°/45° với zoom gameplay
-- [ ] Capsule collider tham chiếu: radius 0.3 m, height 1.7 m
+- [ ] Nền trong suốt sạch, không viền halo/matte trắng
+- [ ] Chiều cao pixel khớp PPU và tỉ lệ tile sàn
+- [ ] Pivot giữa hai chân, nhất quán mọi frame (nhân vật không "nhảy" khi đổi frame)
+- [ ] 8 hướng cùng tỉ lệ, cùng palette, không lệch sáng tối giữa các hướng
+- [ ] Silhouette đọc rõ ở zoom gameplay thực tế trong scene
+- [ ] Collider2D tham chiếu: capsule/box khớp footprint chân, không bao cả sprite

@@ -15,8 +15,8 @@ Baseline kế hoạch:
 Team Size: 1 developer
 Platform: PC
 Mode: Single-player
-Visual: Isometric 3D
-Camera: Orthographic, fixed angle
+Visual: Isometric 2D (sprite trên lưới iso, kiểu Project Zomboid)
+Camera: Orthographic, không xoay
 Asset Pipeline: AI generation + manual cleanup
 World Structure: Location và Shelter tách thành scene
 Development Style: Data-driven
@@ -104,13 +104,13 @@ Không chờ tới cuối mới làm Debug Tool.
 
 Trong P1–P4 sử dụng:
 
-Primitive mesh.
-Material đơn sắc.
+Sprite placeholder (ô màu phẳng đúng footprint).
+Palette đơn sắc.
 Animation tối thiểu.
 Icon tạm.
 UI debug.
 
-AI asset chỉ bắt đầu tích hợp có hệ thống sau khi Camera, Scale và Modular Grid được khóa.
+AI asset chỉ bắt đầu tích hợp có hệ thống sau khi Camera, PPU/Scale và lưới iso được khóa.
 
 5. Dependency Graph
    Project Foundation
@@ -149,7 +149,7 @@ Save System phải được tích hợp sớm, không để tới cuối.
    Thiết lập coding convention.
    Thiết lập folder structure.
    Thiết lập input cơ bản.
-   Tạo camera isometric orthographic.
+   Tạo camera orthographic 2D không xoay (Y-sort CustomAxis).
    Tạo test scene.
    Thiết lập logging.
    Thiết lập automated test foundation.
@@ -826,19 +826,19 @@ Pipeline tối thiểu:
 
 AI Concept
 ↓
-AI 3D Generation hoặc manual blockout
+AI 2D Generation hoặc manual blockout
 ↓
-Blender Cleanup
+Tách nền / cleanup sprite
 ↓
-Scale và Pivot
+Chuẩn hóa kích thước pixel và pivot
 ↓
-Topology và UV check
+Cắt sprite sheet / frame animation
 ↓
-Material normalization
+Palette normalization
 ↓
-Collider
+Collider2D
 ↓
-Engine Import
+Engine Import (PPU, pivot, sorting)
 ↓
 Isometric Camera Review
 ↓
@@ -846,13 +846,13 @@ Performance Review
 
 Asset gameplay-critical phải ưu tiên:
 
-Scale chính xác.
-Collider chính xác.
+Kích thước pixel đúng tỉ lệ ô tile.
+Collider2D chính xác theo footprint.
 Silhouette rõ.
-Pivot đúng.
-Material nhất quán.
+Pivot đúng (đáy giữa footprint).
+Palette nhất quán.
 
-Không ưu tiên chi tiết bề mặt nhỏ không nhìn thấy từ camera.
+Không ưu tiên chi tiết nhỏ không đọc được ở zoom gameplay.
 
 22. Scope Cut Order
 

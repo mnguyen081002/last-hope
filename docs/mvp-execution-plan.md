@@ -6,30 +6,25 @@ Tài liệu này là kế hoạch thực thi trực tiếp của `docs/mvp-produ
 
 ---
 
-## 1. Trạng thái xuất phát (Fresh Start)
+## 1. Trạng thái xuất phát
 
-Toàn bộ code của prototype Day One cũ đã được xóa để làm lại từ đầu.
+Chưa có code gameplay: `Assets/Game/`, `Assets/Tests/`, `Assets/Scenes/` trống.
 
-### Đã xóa
+### Đã có sẵn, không dựng lại
 
-- `Assets/Editor/` — FreshProjectBootstrap và Editor asmdef cũ.
-- `Assets/Scenes/DayOne.unity` — scene prototype cũ.
-- `Assets/Tests/` — DayOneRunTests và Test asmdef cũ.
-
-(Khôi phục được từ git history nếu cần tham khảo.)
-
-### Giữ lại
-
-- `Packages/` + `Library/` — toàn bộ package đã cài, không cài lại.
-- `ProjectSettings/` — Unity 6000.5.4f1, đã cấu hình sẵn.
-- `Assets/Art/` — art asset đã generate (character animation, environment props).
-- `Assets/Audio/` — placeholder.
+- `Packages/` + `Library/` — toàn bộ package đã cài (URP 2D Renderer, Input System, Tilemap, Physics2D, 2D Sprite, Newtonsoft, Test Framework).
+- `ProjectSettings/` — Unity 6000.5.4f1, đã cấu hình 2D.
+- `Assets/Art/` — 743 PNG sprite (nhân vật 8 hướng, terrain, world prop, loot).
+- `Assets/StreamingAssets/Definitions/` — 18 file JSON content + balance, `definition_version 0.14.0`.
+- `Assets/Audio/` — placeholder. `Assets/Input/GameControls.inputactions`.
 - `scripts/*.py` — tool xử lý art pipeline (phục vụ BL-X-07), không phải gameplay code.
 - `docs/` — toàn bộ thiết kế.
 
 ### Kết luận
 
-Code gameplay bắt đầu từ **con số không**, nhưng project setup (engine, package, art nguồn) đã có sẵn — vì vậy Milestone M0 trong backlog rút gọn đáng kể (bỏ qua tạo project, cài package).
+Code gameplay bắt đầu từ **con số không**, nhưng project setup (engine, package, art, content data) đã có sẵn — Milestone M0 rút gọn đáng kể (bỏ qua tạo project, cài package), và không phải viết lại Definition JSON.
+
+**Ràng buộc render:** game là **2D isometric** (Tilemap Isometric, `SpriteRenderer` + `Collider2D`, `Rigidbody2D` kinematic, camera orthographic không xoay + Y-sort `CustomAxis`). Xem `docs/00-project-overview/isometric-game-placement-rules.md` trước khi thiết kế placement.
 
 ---
 
@@ -167,8 +162,8 @@ Lịch chi tiết giai đoạn E sẽ được lập lại **sau Gate P4**, dự
 
 ## 5. Việc bắt đầu ngay (Sprint 1)
 
-1. Chạy P0 Paper Simulation trên spreadsheet (BL-P0-01…03) — không cần engine, làm xen kẽ.
+1. Chạy P0 Paper Simulation trên spreadsheet (BL-P0-01…03) — tùy chọn, chỉ để kiểm chứng lại số trong `Assets/StreamingAssets/Definitions/balance.json`.
 2. Dựng folder + asmdef theo mục 2.
-3. Boot scene + camera isometric orthographic + movement placeholder, xác nhận Scale với art trong `Assets/Art/Generated`.
+3. Boot scene + camera orthographic 2D (Y-sort CustomAxis) + movement placeholder, xác nhận PPU/Scale với sprite trong `Assets/Art/Production`.
 4. Logging + debug overlay + build PC đầu tiên.
 5. Chốt và ghi ADR: định dạng Definition Data (đề xuất JSON), cách chia Scene, cách serialize Save.

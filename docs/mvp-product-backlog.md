@@ -437,7 +437,7 @@ Các item này sống qua nhiều Milestone, được kiểm tra lại tại m�
 | BL-X-04 | Test Pyramid        | Unit (Clock, Resource, Inventory, Power, Event condition, Outcome, Save) + Integration (Sleep+Event, Travel+Closure, Search+Save, Pump+Power Loss, NPC+Consumption, Storage+Contamination) |
 | BL-X-05 | Data-driven guard   | Không hard-code Item/Location/Event/NPC/Phase/Module trong gameplay logic          |
 | BL-X-06 | Multiplayer-ready data | World Clock/State/Shelter/Event State chung; Inventory/Condition/Exposure riêng — nhưng KHÔNG code networking trong MVP |
-| BL-X-07 | Asset pipeline      | AI Concept → Blender Cleanup → Scale/Pivot → Collider → Engine → Isometric Review; chỉ chạy hàng loạt sau P4 |
+| BL-X-07 | Asset pipeline      | AI Concept → AI 2D Generation → tách nền/cleanup sprite → pixel size + pivot → sprite sheet → Collider2D → Engine Import (PPU/sorting) → Isometric Review; chỉ chạy hàng loạt sau P4 |
 
 ---
 

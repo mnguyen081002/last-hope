@@ -1,8 +1,16 @@
-# Kế hoạch code hoàn thiện MVP Black Rain (từ sau Sprint 1)
+# Kế hoạch code MVP Black Rain — thiết kế class-level M1/M2
+
+> **Đây là tài liệu thiết kế, không phải trạng thái tiến độ.** Trạng thái thật luôn nằm ở
+> `docs/backlog/BACKLOG.md` + `CODEMAP.md`. Mọi câu "đã xong" trong file này đọc là "phạm vi
+> cần đạt", không phải "đã có trong repo".
 
 ## Context
 
-Sprint 1 (M0 skeleton) đã xong: URP 17.5.0 + Input System 1.20.0 + Newtonsoft, 8 asmdef, 3 scene, CameraRig/PlayerController/GameLog/DebugOverlay/BootLoader, build Windows chạy sạch (headless smoke test pass). Kế hoạch này: (1) chốt cơ chế track tiến độ rẻ token cho AI, (2) sườn tới hoàn thành P7, (3) chi tiết class-level cho M1 (S2–S4) + M2 (S5–S6) đến Gate P1, kèm bộ số liệu baseline phải tự chốt vì design doc không spec.
+Kế hoạch này chứa: (1) cơ chế track tiến độ rẻ token cho AI, (2) sườn tới hoàn thành P7, (3) chi tiết class-level cho M1 (S2–S4) + M2 (S5–S6) đến Gate P1, kèm bộ số liệu baseline phải tự chốt vì design doc không spec.
+
+Phạm vi M0 skeleton (S1) làm nền: URP 2D Renderer + Input System + Newtonsoft, 8 asmdef, 3 scene, CameraRig/PlayerController/GameLog/DebugOverlay/BootLoader, build Windows chạy sạch (headless smoke test pass).
+
+**Bảng baseline ở cuối file đã được hiện thực hóa thành `Assets/StreamingAssets/Definitions/balance.json` + `items_p1.json`** — dùng file JSON làm nguồn số liệu chính, bảng trong doc chỉ để giải thích ý đồ.
 
 **Khác biệt doc vs giả định cũ (đã reconcile, áp dụng trong plan này):**
 - Thời gian canonical là **`world_time_minutes` (long)** — không phải seconds. Clock giữ accumulator giây game nội bộ, chỉ bank ra phút nguyên. Anchor: Day 0 17:00 = phút 0.
@@ -30,7 +38,7 @@ Cơ chế 3 file (mục tiêu: session AI mới nắm toàn bộ hiện trạng 
 
 | Giai đoạn | Sprint | Nội dung | Gate chặn |
 | --- | --- | --- | --- |
-| ✅ S1 | M0 | Skeleton, camera, movement, build | M0: build chạy ✅ (chờ user xác nhận hình ảnh) |
+| S1 | M0 | Skeleton, camera 2D, movement, build | M0: build chạy |
 | **S2** | M1 | Definition Registry + WorldState + RNG + Serializer | — |
 | **S3** | M1 | Clock + Tick + EventBus + Command Layer | — |
 | **S4** | M1 | Save + Debug Panel v1 + full test suite | **Gate M1**: sim 24h, save/load roundtrip, tick chính xác |

@@ -8,26 +8,38 @@ Trạng thái theo đúng quy ước `docs/mvp-product-backlog.md` mục 2.4:
 Backlog → Ready → In Progress → Verify → Done
 ```
 
-Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú Jira key cũ (`KAN-xx`) chỉ để tham chiếu lịch sử — không còn thao tác trên Jira nữa.
+Cập nhật file này mỗi khi bắt đầu/hoàn thành một item. Ghi chú Jira key cũ (`KAN-xx`) chỉ để tham chiếu, không còn thao tác trên Jira.
 
 ---
 
-## Reset toàn bộ (2026-07-27)
+## Ràng buộc khóa cứng — đọc trước khi implement bất cứ gì
 
-Toàn bộ code game (`Assets/Game/**`, `Assets/Tests/**`, `Assets/Scenes/**` — 19 sprint, 287
-EditMode test, Gate P4 từng PASS về mặt kỹ thuật) đã bị xóa theo yêu cầu của user, sau nhiều
-vòng vá lỗi không dứt điểm ở S19 (chuyển 3D→2D). Lý do và phạm vi đầy đủ:
-`docs/plans/2026-07-27-full-reset.md`.
+**Game là 2D isometric, kiểu Project Zomboid.** Mọi sprint Presentation/EditorTools dựng 2D:
+Tilemap Isometric, `SpriteRenderer` + `Collider2D`, `Rigidbody2D` kinematic, camera
+orthographic không xoay + `transparencySortMode = CustomAxis`. Không dùng `Rigidbody`,
+`CharacterController`, mesh, raycast occlusion.
 
-Toàn bộ trạng thái bên dưới reset về **Backlog**. Mô tả chi tiết từng item vẫn đúng trong
-`docs/mvp-product-backlog.md` (mô tả CÁI CẦN XÂY, không đổi). Implementation note cũ (file
-nào, class nào, test nào) đã gỡ vì không còn đúng với code thực tế — muốn tra lại thiết kế
-cũ đã làm thế nào, xem git history tại commit `128679e4fd1ffad051c43649a22967afc112ea8a`
-(commit cuối trước khi xóa).
+Trước khi thiết kế placement: đọc `docs/00-project-overview/isometric-game-placement-rules.md`.
+Chi tiết kỹ thuật: `docs/00-project-overview/technical-specification.md`.
+
+## Hiện trạng
+
+Chưa có code gameplay nào (`Assets/Game/**`, `Assets/Tests/**`, `Assets/Scenes/**` trống) —
+mọi item dưới đây ở trạng thái `Backlog`. Mô tả chi tiết từng item: `docs/mvp-product-backlog.md`.
+
+Sẵn có, dùng lại trực tiếp:
+
+- `Assets/StreamingAssets/Definitions/` — 18 file JSON content + balance, `definition_version 0.14.0`.
+- `Assets/Art/` — 743 PNG sprite (nhân vật 8 hướng, terrain, prop, loot).
+
+Chi tiết: bảng trong `CODEMAP.md`.
 
 ---
 
 ## P0 — Paper Simulation
+
+Bộ số baseline hiện hành nằm trong `Assets/StreamingAssets/Definitions/balance.json`. Chỉ
+chạy P0 khi muốn kiểm chứng lại các số đó, không phải điều kiện tiên quyết để bắt đầu P1-A.
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
@@ -35,7 +47,7 @@ cũ đã làm thế nào, xem git history tại commit `128679e4fd1ffad051c43649
 | BL-P0-02 | Kịch bản chuẩn | Backlog | (KAN-11) |
 | BL-P0-03 | Chạy mô phỏng đa chiến lược | Backlog | (KAN-12) |
 | BL-P0-04 | Phân tích dominant strategy | Backlog | (KAN-13) |
-| BL-P0-05 | Chốt baseline số liệu | Backlog | (KAN-14) |
+| BL-P0-05 | Chốt baseline số liệu | Backlog | (KAN-14) — số hiện hành trong `balance.json` |
 
 **Gate P0:** chưa chạy.
 
@@ -123,14 +135,5 @@ cũ đã làm thế nào, xem git history tại commit `128679e4fd1ffad051c43649
 
 ---
 
-## S19 — 2D isometric (kiểu Project Zomboid)
-
-| ID | Hạng mục | Trạng thái | Ghi chú |
-| --- | --- | --- | --- |
-| S19 | 2D isometric migration | Backlog | Quyết định vẫn giữ: art 2D (không có pipeline dựng asset 3D). Lần làm lại cần dựng Presentation/EditorTools đúng 2D ngay từ đầu (Tilemap Isometric, CustomAxis sort, Rigidbody2D) thay vì migrate từ 3D như lần trước — xem `docs/00-project-overview/isometric-game-placement-rules.md` trước khi thiết kế placement. |
-
----
-
-Milestone tiếp theo: bắt đầu lại từ **P0** (nếu muốn chốt lại baseline số liệu trước khi
-code) hoặc thẳng **P1-A** (nếu baseline P0 coi như vẫn hợp lệ từ lần làm trước) — cần user
-quyết định trước khi bắt đầu.
+Milestone tiếp theo: **P1-A** (BL-P1-01..05), dựng 2D isometric ngay từ sprint đầu theo mục
+"Ràng buộc khóa cứng".

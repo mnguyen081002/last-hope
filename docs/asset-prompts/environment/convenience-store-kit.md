@@ -11,21 +11,23 @@ Cửa hàng tiện lợi góc phố kiểu châu Âu (corner shop / mini-market)
 
 ## Generation Prompt (English)
 
-> Modular corner-shop interior kit, small European urban mini-market after days of storm blackout, stylized low-poly game environment. Pieces: double-sided metal gondola shelving unit partially stocked with scattered packaged goods, wall shelf unit, dead glass-door beverage fridge with dark interior, checkout counter with small shelf and non-working register, back-room steel storage rack with cardboard boxes, hanging shop sign panels. Slightly disordered look: fallen boxes, empty shelf gaps, a thin wet sheen on the lower 20cm. Muted palette with a few faded brand-color accents (no real brands, generic European packaging shapes). Each piece separate mesh, snap-friendly proportions on a 0.5 meter grid, silhouette readable from fixed isometric orthographic camera at 35 degrees pitch.
+> Modular corner-shop interior kit for a 2D isometric game, small European urban mini-market after days of storm blackout, drawn in isometric projection for a fixed orthographic 2D camera, flat stylized shading. Pieces: double-sided metal gondola shelving unit partially stocked with scattered packaged goods, wall shelf unit, dead glass-door beverage fridge with dark interior, checkout counter with small shelf and non-working register, back-room steel storage rack with cardboard boxes, hanging shop sign panels. Slightly disordered look: fallen boxes, empty shelf gaps, a thin wet sheen along the floor line. Muted palette with a few faded brand-color accents (no real brands, generic European packaging shapes). Each piece as a separate sprite on a fully transparent background, consistent lighting direction, proportions snapping to a 2:1 isometric diamond tile grid, silhouette readable at gameplay zoom, no baked shadow, no outline halo.
 
 ## Ràng buộc kỹ thuật
 
-- Kệ gondola: **1×0.5×1.5 m** mỗi module, ghép được thành dãy. Pivot đáy giữa.
-- Tủ lạnh: 1×0.7×2 m. Quầy: 1.5×0.6×1 m. Rack kho: 1×0.5×2 m.
-- Poly: 300–1.2k tris/mảnh. Texture: atlas 1024–2048 chung kit.
-- Hàng trên kệ là phần của mesh kệ (không phải item nhặt được — loot spawn từ Search Point logic, không phải từ mesh).
+- Footprint theo ô tile: kệ gondola **2×1 ô** mỗi module, ghép được thành dãy. Tủ lạnh 2×1 ô. Quầy 3×1 ô. Rack kho 2×1 ô.
+- Chiều cao vẽ trong sprite: kệ ~1.5 m, tủ lạnh ~2 m, quầy ~1 m, rack ~2 m (quy ra pixel theo PPU chung).
+- Sprite size: 256–512 px cạnh dài mỗi mảnh; atlas chung cho cả kit.
+- Pivot: đáy giữa footprint — quyết định Y-sort với player.
+- Hàng trên kệ là phần của sprite kệ (không phải item nhặt được — loot spawn từ Search Point logic).
 - Variant mỗi kệ: đầy / vơi / rỗng — thể hiện **progressive depletion** trực quan sau khi search.
 
-## Checklist cleanup (Blender)
+## Checklist cleanup (sprite)
 
-- [ ] Kích thước đúng mét, apply transform
-- [ ] Pivot đáy giữa
-- [ ] 3 variant depletion mỗi loại kệ (đầy/vơi/rỗng) cùng pivot — swap mesh không lệch
-- [ ] Atlas UV chung
-- [ ] Box collider bao ngoài từng mảnh
-- [ ] Review dãy kệ tạo lối đi rõ ràng dưới camera iso (không che khuất player)
+- [ ] Footprint khớp đúng số ô tile, cạnh dưới trùng đường diamond của lưới
+- [ ] Nền trong suốt sạch, không viền halo
+- [ ] Pivot đáy giữa footprint
+- [ ] 3 variant depletion mỗi loại kệ (đầy/vơi/rỗng) cùng pivot, cùng kích thước — swap sprite không lệch
+- [ ] Hướng ánh sáng thống nhất toàn kit
+- [ ] Collider2D khớp footprint từng mảnh
+- [ ] Review dãy kệ tạo lối đi rõ ràng, sort order đúng khi player đi trước/sau kệ

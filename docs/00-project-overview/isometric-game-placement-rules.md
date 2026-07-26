@@ -39,7 +39,7 @@ Socket : vật trên bàn, kệ, tường hoặc máy móc — offset cố đị
 Mỗi object **MUST** khai báo:
 
 ```text
-footprint (số ô tile chiếm, không phải kích thước world 3D)
+footprint (số ô tile chiếm, không phải kích thước world tuyệt đối)
 allowed rotations (thường chỉ 0°/90°/180°/270° trên lưới iso)
 placement type
 clearance (số ô trống xung quanh)
@@ -119,7 +119,7 @@ Cầu thang chỉ hợp lệ khi:
 
 ---
 
-## 6. Visibility và tầng (thay occlusion 3D)
+## 6. Visibility và tầng
 
 Critical object gồm:
 
@@ -138,7 +138,7 @@ Critical object **MUST** sort đúng lớp và không bị object cùng ô che k
 Floor visibility toggle: chỉ tầng hiện tại của player active/hiện, tầng khác ẩn hoặc mờ
 ```
 
-**KHÔNG** dùng raycast 3D occlusion, wall fade hay roof hide — camera 2D không có khái niệm "vật cản giữa camera và object", chỉ có sort order và floor toggle.
+**KHÔNG** dùng raycast occlusion, wall fade hay roof hide — camera 2D không có khái niệm "vật cản giữa camera và object", chỉ có sort order và floor toggle.
 
 AI **MUST NOT** để 2 tầng cùng hiện đầy đủ cùng lúc gây rối mắt (trừ khi chủ đích thiết kế "nhìn xuyên tầng" — phải khai báo rõ).
 
@@ -177,7 +177,7 @@ Approach point hợp lệ
 Khoảng an toàn quanh mép map
 ```
 
-Level bounds bao bọc bằng `TilemapCollider2D`/`CompositeCollider2D` (hoặc `EdgeCollider2D`/`BoxCollider2D` không renderer cho tường biên) — không có khái niệm "rơi khỏi map" như 3D (không có trục Y vật lý), nhưng vẫn phải chặn player đi ra ngoài footprint thiết kế.
+Level bounds bao bọc bằng `TilemapCollider2D`/`CompositeCollider2D` (hoặc `EdgeCollider2D`/`BoxCollider2D` không renderer cho tường biên). Không có trục trọng lực nên không có khái niệm "rơi khỏi map", nhưng vẫn phải chặn player đi ra ngoài footprint thiết kế.
 
 Ground phải bao phủ:
 
@@ -250,7 +250,7 @@ AI **MUST NOT** spawn critical object nếu không có candidate hợp lệ.
 5. Sort order tính động theo vị trí Y cho object di chuyển được — không hard-code.
 6. Cửa, cầu thang và lối vào phải dễ nhận biết qua sorting/silhouette, không phụ thuộc góc camera.
 7. Kiểm tra cả hai phía cửa và cả hai đầu cầu thang/điểm chuyển tầng.
-8. Đa tầng dùng floor visibility toggle, không dùng occlusion 3D.
+8. Đa tầng dùng floor visibility toggle, không dùng occlusion.
 9. Kiểm tra lại sort order sau khi đặt nội thất và decoration.
 10. Reject object không có path, sort sai lớp hoặc không tương tác được.
 11. Không báo hoàn thành trước khi các kiểm tra bắt buộc pass.

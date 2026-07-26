@@ -11,7 +11,7 @@ Project Type: 2D
 Game Mode: Single-player
 ```
 
-> **ADR 2026-07-25:** Đổi từ 3D sang 2D isometric (kiểu Project Zomboid — sprite phẳng trên lưới iso). Lý do: không có khả năng dựng/render asset 3D (không có Blender/3D pipeline khả dụng cho 1 dev); art 2D dễ tạo hơn nhiều. `LastHope.Core`/`Data`/`Systems` không đổi (C# thuần, không phụ thuộc UnityEngine 3D API) — chỉ `LastHope.Presentation`/`EditorTools` đổi.
+> **Quyết định khóa:** 2D isometric kiểu Project Zomboid — sprite phẳng trên lưới iso. Lý do: art 2D khả thi với 1 dev, không cần pipeline dựng/render asset phức tạp. `LastHope.Core`/`Data`/`Systems` là C# thuần, không phụ thuộc API render nào; ràng buộc 2D chỉ áp lên `LastHope.Presentation`/`EditorTools`.
 
 Linux và macOS không thuộc phạm vi build đầu tiên, nhưng không được sử dụng API chỉ hoạt động trên Windows nếu không cần thiết.
 
@@ -29,8 +29,8 @@ Quy tắc:
 
 - Camera không xoay, không nghiêng — góc "isometric" nằm ở cách vẽ sprite/tile, không phải góc camera.
 - Có thể zoom trong một khoảng giới hạn (qua `orthographicSize`).
-- Điều khiển di chuyển ánh xạ thẳng theo trục world X/Y — không còn khái niệm "theo hướng màn hình" vì camera không xoay nên world và màn hình luôn cùng hướng.
-- Vật thể che nhân vật xử lý bằng **Y-sort** (`Camera.transparencySortMode = CustomAxis`), không phải ẩn/làm mờ theo raycast 3D.
+- Điều khiển di chuyển ánh xạ thẳng theo trục world X/Y — camera không xoay nên world và màn hình luôn cùng hướng.
+- Vật thể che nhân vật xử lý bằng **Y-sort** (`Camera.transparencySortMode = CustomAxis`), không ẩn/làm mờ theo raycast.
 - Camera không trực tiếp chứa gameplay state.
 
 Prototype sử dụng Camera Rig tự triển khai, chưa cần Cinemachine.
@@ -67,7 +67,7 @@ Sử dụng **Universal Render Pipeline — 2D Renderer** (`Renderer2DData`).
 Thiết lập:
 
 - Linear Color Space.
-- Light2D (Global/Point/Freeform) là nguồn sáng chính — thay Baked Lighting 3D, dùng cho hiệu ứng mưa/đêm/Black Rain.
+- Light2D (Global/Point/Freeform) là nguồn sáng chính, dùng cho hiệu ứng mưa/đêm/Black Rain.
 - Shadow Caster 2D giới hạn, chỉ dùng khi cần tín hiệu gameplay rõ (không phải thẩm mỹ).
 - Sprite pixel-art hoặc flat-shaded, vẽ theo góc chiếu isometric (footprint diamond).
 - Không dùng HDRP.
@@ -750,7 +750,7 @@ Unity Test Framework
 Newtonsoft JSON (com.unity.nuget.newtonsoft-json)
 ```
 
-> Ghi chú hiện trạng 2026-07-25: đổi sang 2D isometric — bỏ `Physics module 3D` (`com.unity.modules.physics`, dùng cho `CharacterController`, không còn dùng) và `AI Navigation` (chưa từng được implement, không có NPC visual nào tồn tại) khỏi baseline. `physics2d` từ giờ dùng thật (trước chỉ khai báo sẵn, chưa dùng).
+> Không dùng: `com.unity.modules.physics` (Physics 3D / `CharacterController`) và `AI Navigation` — không nằm trong baseline 2D.
 
 Chưa thêm:
 
@@ -814,7 +814,7 @@ Source Control:
 Git + Git LFS
 
 Asset Tool:
-Blender + AI generation
+AI image generation + image editor (sprite cleanup)
 
 Networking:
 Không triển khai trong MVP
