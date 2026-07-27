@@ -1,5 +1,6 @@
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
+using LastHope.Systems.Hazard;
 using LastHope.Systems.Travel;
 
 namespace LastHope.Systems.Commands
@@ -26,6 +27,11 @@ namespace LastHope.Systems.Commands
             if (!route.Connects(context.World.Player.CurrentLocationId))
                 return CommandResult.Fail(CommandErrorCode.WrongLocation,
                     $"Route '{RouteId}' không nối location hiện tại.");
+
+            var flood = context.World.GetOrCreateRoute(RouteId).Flood;
+            if (!HazardSystem.IsPassable(flood))
+                return CommandResult.Fail(CommandErrorCode.NotAllowedNow,
+                    $"Route '{RouteId}' đang Impassable — không đi qua được.");
 
             return CommandResult.Ok();
         }

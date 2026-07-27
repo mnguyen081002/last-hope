@@ -6,6 +6,7 @@ using LastHope.Core.Time;
 using LastHope.Systems.Boot;
 using LastHope.Systems.Condition;
 using LastHope.Systems.Registry;
+using LastHope.Systems.Hazard;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -38,7 +39,7 @@ namespace LastHope.DebugTools.Panel
             var services = GameBootstrapper.Services;
             var world = services.World;
 
-            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 620f),
+            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 700f),
                 GUI.skin.box);
             scroll = GUILayout.BeginScrollView(scroll);
 
@@ -49,6 +50,7 @@ namespace LastHope.DebugTools.Panel
 
             DrawTimeControls(services);
             DrawConditionControls(services);
+            DrawHazardControls(services);
             DrawInventoryControls(services);
             DrawSaveControls(services);
 
@@ -118,6 +120,28 @@ namespace LastHope.DebugTools.Panel
             player.BlackWaterExposure = 0f;
             player.IsCold = false;
             player.IsSick = false;
+        }
+
+        const string TestRouteId = "route_shelter_store";
+
+        void DrawHazardControls(GameServices services)
+        {
+            GUILayout.Space(8f);
+            GUILayout.Label("— Hazard —");
+
+            var routeState = services.World.GetOrCreateRoute(TestRouteId);
+            GUILayout.Label($"{TestRouteId}: {routeState.Flood}" +
+                            (HazardSystem.IsPassable(routeState.Flood) ? "" : " (chặn)"));
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Dry")) routeState.Flood = FloodState.Dry;
+            if (GUILayout.Button("Shallow")) routeState.Flood = FloodState.Shallow;
+            if (GUILayout.Button("Medium")) routeState.Flood = FloodState.Medium;
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Deep")) routeState.Flood = FloodState.Deep;
+            if (GUILayout.Button("Impassable")) routeState.Flood = FloodState.Impassable;
+            GUILayout.EndHorizontal();
         }
 
         void DrawInventoryControls(GameServices services)

@@ -8,9 +8,9 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 
 ## Hiện trạng
 
-**Gate P1 PASS** (P1-A/B/C xong, user đã playtest). **P2-A Player Condition Core xong**
-(107 EditMode test, user đã verify). Còn P2-B (Hazard/Flood/Route) và P2-C (Equipment/
-Content/Scenario). Chưa có: P3/P4.
+**Gate P1 PASS**. **P2-A Player Condition Core xong** (user đã verify). **P2-B phần Flood
+State xong** (124 EditMode test) — Current Strength/Electrified Water/Route Closure/
+Disaster Phase **chưa làm** (balance.json không có số). P2-C chưa bắt đầu. Chưa có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -69,7 +69,8 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | --- | --- | --- | --- | --- |
 | Logging | `Core/Diagnostics/GameLog.cs` | `Info/Warn/Error(LogCategory, msg)`, `Enabled` | ✅ | Error luôn ghi, không tắt được |
 | RNG | `Core/Random/RngStream.cs`, `RngService.cs` | `Stream(name)`, `FlushState()`, `NextInt/NextChance` | ✅ | xorshift64*, stream đặt tên độc lập; **phải `FlushState()` trước khi save** |
-| World State | `Core/State/WorldState.cs` | `WorldTimeMinutes`, `RngStreams`, `Player`, `Locations`, `GetOrCreateLocation` | ✅ | Thứ duy nhất được serialize |
+| World State | `Core/State/WorldState.cs` | `WorldTimeMinutes`, `RngStreams`, `Player`, `Locations`, `Routes`, `GetOrCreateLocation/Route` | ✅ | Thứ duy nhất được serialize |
+| Route state | `Core/State/RouteState.cs` | `FloodState` enum (Dry/Shallow/Medium/Deep/Impassable) | ✅ | Route chưa từng đổi = mặc định Dry (không có entry) |
 | Inventory state | `Core/State/InventoryState.cs`, `ItemInstanceState.cs`, `InventoryOps.cs` | `AddItem/RemoveItem/CountOf/TotalWeightKg/Move` | ✅ | Nhận `List<ItemInstanceState>` (dùng chung player/storage/searchpoint) + overload giữ API `InventoryState` cũ |
 | Time | `Core/Time/SimulationClock.cs`, `TickScheduler.cs`, `GameTimeUtil.cs` | `AccumulateRealSeconds`, `Advance/FastForward`, `ShortTick/LongTick` | ✅ | `AdvanceOneMinute` là **nơi duy nhất** tăng `WorldTimeMinutes`; long tick mỗi 10 phút; anchor Day 0 17:00 |
 | Events | `Core/Events/EventBus.cs`, `GameEvents.cs` | `Subscribe/Unsubscribe/Publish<T>` | 🟡 | struct event, handler copy-on-write. Có: `WorldTimeChanged`, `InventoryChanged`, `LocationChanged`, `SearchPointOpened`, `StorageOpened`, `TravelStarted`, `WorldStateReloaded` |
@@ -98,10 +99,11 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Inventory rules | `Systems/Inventory/InventorySystem.cs` | `ComputeLoadTier`, `SpeedModifierFor`, `CanAdd/Add` | ✅ | `LoadTier` Normal/Light/Heavy/Blocked theo `balance.json`; vật hai tay (`TwoHandCarry`) route riêng khỏi `Slots` |
 | Owner scheme | `Systems/Inventory/InventoryOwner.cs` | `InventoryOwner{Player,ShelterStorage,SearchPoint,DroppedItems}`, `InventoryOwnerOps` | ✅ | Struct tham số lệnh (không nằm trong save) quy đổi ra `List<ItemInstanceState>` thật |
 | Search | `Systems/Search/SearchSystem.cs` | `Open`, `TakeAll` | ✅ | Roll 1 lần qua stream `"loot"`; `TakeAll` binary-search phần lớn nhất còn nhặt được, trả `false` nếu sót (triage) |
-| Travel | `Systems/Travel/TravelSystem.cs` | `ComputeTravelMinutes`, `Travel` | ✅ | loadFactor theo `LoadTier`; `FastForward` từng phút qua `TickScheduler` |
+| Travel | `Systems/Travel/TravelSystem.cs` | `ComputeTravelMinutes`, `Travel` | ✅ | loadFactor × floodTimeFactor (nhân dồn, cố ý); `FastForward` từng phút qua `TickScheduler`; áp crossing cost một lần mỗi chuyến |
 | Commands | `Systems/Commands/{TransferItemCommand,OpenSearchPointCommand,TakeAllFromSearchPointCommand,BeginTravelCommand}.cs` | implement `IGameCommand` | ✅ | `TransferItemCommand` dùng chung cho Take/Store/Withdraw/Drop/PickUp qua `InventoryOwner` |
 | Telemetry | `Systems/Telemetry/TelemetryLogger.cs` | `LogSearchClosed`, `LogInventoryOpenDuration` (+ tự subscribe Travel/Location/Search event) | ⬜ | JSONL `persistentDataPath/Telemetry/session_*.jsonl`. Sự kiện có EventBus sẵn thì tự nghe; sự kiện chỉ UI biết (đóng panel, thời gian mở) UI gọi thẳng |
-| Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa + Black Water Exposure gain **chưa nối nguồn** (chờ P2-B Hazard) |
+| Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa ambient **chưa nối nguồn** (chờ Disaster Phase); Black Water Exposure gain **đã nối** qua Hazard crossing |
+| Hazard | `Systems/Hazard/HazardSystem.cs` | `IsPassable`, `FloodIndex`, `TimeFactor`, `ApplyCrossingCost` | ✅ | Chỉ Flood State (`balance.json.hazard.crossing_*`, mảng 4 phần tử = Dry/Shallow/Medium/Deep). Current Strength/Electrified Water/Structural Collapse **chưa làm** — không có số |
 
 ## LastHope.Presentation
 

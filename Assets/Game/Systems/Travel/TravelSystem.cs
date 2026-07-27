@@ -1,13 +1,14 @@
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Hazard;
 using LastHope.Systems.Inventory;
 
 namespace LastHope.Systems.Travel
 {
     public static class TravelSystem
     {
-        /// <summary>Số phút thực tế sẽ tốn nếu đi route này ngay bây giờ (đã nhân loadFactor).</summary>
+        /// <summary>Số phút thực tế sẽ tốn nếu đi route này ngay bây giờ (đã nhân loadFactor × floodTimeFactor).</summary>
         public static int ComputeTravelMinutes(WorldState world, DefinitionRegistry definitions, string routeId)
         {
             var route = definitions.GetRoute(routeId);
@@ -21,7 +22,12 @@ namespace LastHope.Systems.Travel
                 _ => balance.Travel.LoadFactorNormal,
             };
 
-            return UnityEngine.Mathf.RoundToInt(route.TravelMinutes * loadFactor);
+            var flood = world.GetOrCreateRoute(routeId).Flood;
+            float floodTimeFactor = HazardSystem.IsPassable(flood)
+                ? HazardSystem.TimeFactor(flood, balance.Hazard)
+                : 1f; // Impassable chặn ở Command.Validate, không tới đây — giá trị này không dùng thực tế.
+
+            return UnityEngine.Mathf.RoundToInt(route.TravelMinutes * loadFactor * floodTimeFactor);
         }
 
         /// <summary>
@@ -38,10 +44,14 @@ namespace LastHope.Systems.Travel
             int minutes = ComputeTravelMinutes(world, definitions, routeId);
             ticks.FastForward(minutes);
 
-            // Cộng một lần ngoài tick thường — chi phí thể lực của MỘT chuyến đi, không phải mỗi phút.
             var player = world.Player;
+
+            // Cộng một lần ngoài tick thường — chi phí của MỘT chuyến đi, không phải mỗi phút.
             player.Fatigue = UnityEngine.Mathf.Clamp(
                 player.Fatigue + definitions.Balance.Condition.FatiguePerTravel, 0f, 100f);
+
+            var flood = world.GetOrCreateRoute(routeId).Flood;
+            HazardSystem.ApplyCrossingCost(player, flood, definitions.Balance.Hazard);
 
             player.CurrentLocationId = toLocationId;
         }

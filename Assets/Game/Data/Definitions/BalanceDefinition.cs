@@ -11,6 +11,7 @@ namespace LastHope.Data.Definitions
         public TravelBalance Travel = new();
         public NewGameBalance NewGame = new();
         public ConditionBalance Condition = new();
+        public HazardBalance Hazard = new();
     }
 
     public class InventoryBalance
@@ -76,5 +77,19 @@ namespace LastHope.Data.Definitions
         public float ShelterRestMinutes = 60f;
         public float ShelterTreatExposureMinutes = 60f;
         public float ShelterTreatExposureDecayPerLongTick = 5f;
+    }
+
+    /// <summary>
+    /// Khớp 1:1 `balance.json.hazard`. Mảng 4 phần tử = index theo <c>FloodState</c>
+    /// Dry(0)/Shallow(1)/Medium(2)/Deep(3) — chốt với user 2026-07-27. Impassable không có
+    /// index (route bị chặn hoàn toàn, không tính crossing cost).
+    /// </summary>
+    public class HazardBalance
+    {
+        public float[] CrossingStaminaCost = { 0f, 5f, 15f, 30f };
+        public float[] CrossingExposureGain = { 0f, 5f, 15f, 30f };
+        public float[] CrossingWetGain = { 10f, 30f, 60f, 90f };
+        public float[] CrossingTimeFactor = { 1.0f, 1.2f, 1.5f, 2.0f };
+        public float ContaminatedHandlingExposureGain = 10f;
     }
 }

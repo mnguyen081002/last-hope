@@ -23,12 +23,25 @@ namespace LastHope.Core.State
 
         public Dictionary<string, LocationState> Locations = new();
 
+        /// <summary>Route chưa từng đổi flood state thì không có entry (mặc định Dry).</summary>
+        public Dictionary<string, RouteState> Routes = new();
+
         public LocationState GetOrCreateLocation(string locationId)
         {
             if (!Locations.TryGetValue(locationId, out var state))
             {
                 state = new LocationState();
                 Locations[locationId] = state;
+            }
+            return state;
+        }
+
+        public RouteState GetOrCreateRoute(string routeId)
+        {
+            if (!Routes.TryGetValue(routeId, out var state))
+            {
+                state = new RouteState();
+                Routes[routeId] = state;
             }
             return state;
         }

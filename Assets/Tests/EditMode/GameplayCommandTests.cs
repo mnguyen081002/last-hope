@@ -225,5 +225,30 @@ namespace LastHope.Tests.EditMode
             Assert.AreEqual("location_shelter", received.Value.FromLocationId);
             Assert.AreEqual("location_convenience_store", received.Value.ToLocationId);
         }
+
+        [Test]
+        public void BeginTravel_ImpassableRoute_IsRejected_DoesNotMutate()
+        {
+            world.GetOrCreateRoute(RouteShelterStore).Flood = LastHope.Core.State.FloodState.Impassable;
+            long timeBefore = world.WorldTimeMinutes;
+
+            var result = processor.Submit(new BeginTravelCommand(RouteShelterStore));
+
+            Assert.AreEqual(CommandErrorCode.NotAllowedNow, result.Error);
+            Assert.AreEqual(timeBefore, world.WorldTimeMinutes);
+            Assert.AreEqual("location_shelter", world.Player.CurrentLocationId);
+        }
+
+        [Test]
+        public void BeginTravel_DeepFlood_StillPassable_AppliesCrossingCost()
+        {
+            world.GetOrCreateRoute(RouteShelterStore).Flood = LastHope.Core.State.FloodState.Deep;
+
+            var result = processor.Submit(new BeginTravelCommand(RouteShelterStore));
+
+            Assert.IsTrue(result.Success);
+            Assert.Less(world.Player.Stamina, 100f);
+            Assert.Greater(world.Player.BlackWaterExposure, 0f);
+        }
     }
 }

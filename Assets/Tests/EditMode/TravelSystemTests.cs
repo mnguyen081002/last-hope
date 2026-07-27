@@ -3,6 +3,7 @@ using LastHope.Core.Events;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Hazard;
 using LastHope.Systems.Travel;
 using NUnit.Framework;
 using UnityEngine;
@@ -102,6 +103,34 @@ namespace LastHope.Tests.EditMode
             TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
 
             Assert.AreEqual(25, shortTickCount, "FastForward phải chạy từng phút, không nhảy cộc.");
+        }
+
+        [Test]
+        public void ComputeTravelMinutes_FloodTimeFactor_StacksWithLoadFactor()
+        {
+            // Overload heavy (x1.5) + flood Deep (x2.0) phải nhân dồn, không phải chọn cái lớn hơn.
+            world.Player.Inventory.Slots.Add(new ItemInstanceState { ItemId = "item_toolbox", Quantity = 2 });
+            world.Player.Inventory.Slots.Add(new ItemInstanceState { ItemId = "item_water_bottle", Quantity = 5 });
+            world.GetOrCreateRoute(RouteShelterStore).Flood = FloodState.Deep;
+
+            int minutes = TravelSystem.ComputeTravelMinutes(world, definitions, RouteShelterStore);
+
+            int expected = Mathf.RoundToInt(
+                25 * definitions.Balance.Travel.LoadFactorHeavy * definitions.Balance.Hazard.CrossingTimeFactor[3]);
+            Assert.AreEqual(expected, minutes);
+        }
+
+        [Test]
+        public void Travel_AppliesFloodCrossingCost()
+        {
+            world.GetOrCreateRoute(RouteShelterStore).Flood = FloodState.Medium;
+
+            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+
+            var balance = definitions.Balance.Hazard;
+            Assert.AreEqual(100f - balance.CrossingStaminaCost[2], world.Player.Stamina, 0.0001f);
+            Assert.AreEqual(balance.CrossingExposureGain[2], world.Player.BlackWaterExposure, 0.0001f);
+            Assert.AreEqual(balance.CrossingWetGain[2], world.Player.Wet, 0.0001f);
         }
     }
 }

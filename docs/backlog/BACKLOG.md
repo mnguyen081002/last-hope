@@ -119,9 +119,9 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P2-04 | Flood State | Backlog | Dry/Shallow/Medium/Deep/Impassable trên Route+Zone |
+| BL-P2-04 | Flood State | Verify | Dry/Shallow/Medium/Deep/Impassable trên **Route** (chưa làm Zone trong Location — không có nội dung nào cần) — test tự động, user cần tự xem qua Debug Panel |
 | BL-P2-05 | Current Strength | Backlog | Rủi ro vượt dòng, Rope giảm rủi ro |
-| BL-P2-06 | Black Water Exposure | Backlog | Nguồn tăng Exposure qua hazard crossing — nối vào field đã có sẵn ở P2-A |
+| BL-P2-06 | Black Water Exposure | Verify | Nguồn tăng Exposure qua hazard crossing xong (nối vào field trống từ P2-A); `contaminated_handling_exposure_gain` — chưa có action "xử lý đồ nhiễm bẩn" để dùng tới |
 | BL-P2-07 | Electrified Water cục bộ | Backlog | Hazard Volume cục bộ, cảnh báo trước |
 | BL-P2-08 | Route Closure | Backlog | Route đổi theo Phase/Clock, không softlock |
 | BL-P2-09 | Disaster Phase rút gọn | Backlog | Dry → First Rain → Black Rain → Route Closure — cần trước khi nối `wet_gain_per_minute_in_rain` (đã giữ sẵn field ở P2-A) |
@@ -134,11 +134,25 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk |
 | BL-P2-12 | Content P2 | Backlog | Route + Location thứ hai (cao/thấp cho Flood chọn) |
 | BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 |
-| BL-P2-14 | Save Hazard State | Backlog | Hazard/Route/Condition State sống qua save/load — Condition state (P2-A) đã tự động qua vì nằm trong `PlayerState`/`WorldStateSerializer` sẵn có |
+| BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
 
-**Gate P2:** chưa chạy — mới xong P2-A (Condition Core), còn P2-B/P2-C.
+**Gate P2:** chưa chạy — xong P2-A (Condition Core) + phần Flood State của P2-B. Còn lại:
+Current Strength (BL-P2-05), Electrified Water (BL-P2-07), Route Closure (BL-P2-08),
+Disaster Phase (BL-P2-09) — **không có số trong `balance.json`**, chờ quyết định user (tự
+đề xuất số hay để lại). P2-C (Equipment/Return Window/Content/Scenario) chưa bắt đầu.
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
 không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
+
+## Cần user verify Flood State (BL-P2-04/06, không chặn tiếp tục code)
+
+F2 Debug Panel có mục Hazard mới — đổi flood state của `route_shelter_store` (route duy
+nhất hiện có) rồi thử Travel:
+
+1. Đặt Shallow/Medium/Deep — Stamina/Wet/Exposure có đổi ngay sau khi tới nơi không, thời
+   gian di chuyển có tăng theo tier không (Deep phải lâu gấp đôi Dry).
+2. Mang nặng (Overload Heavy) + đặt Deep cùng lúc — thời gian phải nhân dồn cả hai (loadFactor
+   × floodTimeFactor), không phải chỉ tính cái lớn hơn.
+3. Đặt Impassable rồi thử tương tác Travel Point — phải bị từ chối hoàn toàn, không đi được.
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút
