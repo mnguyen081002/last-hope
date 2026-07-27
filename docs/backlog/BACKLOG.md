@@ -57,26 +57,28 @@ chạy P0 khi muốn kiểm chứng lại các số đó, không phải điều 
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-01 | Project setup | Backlog | (KAN-15) |
-| BL-P1-02 | Camera isometric | Backlog | (KAN-16) |
-| BL-P1-03 | Input + movement | Backlog | (KAN-17) |
-| BL-P1-04 | Logging + debug overlay | Backlog | (KAN-18) |
-| BL-P1-05 | Build PC đầu tiên | Backlog | (KAN-19) |
+| BL-P1-01 | Project setup | Done | 9 asmdef, cây folder, scene sinh bằng `SceneSetup` |
+| BL-P1-02 | Camera isometric | Verify | `CameraRig` xong — cần user nhìn: căn giữa, zoom có hợp lý không |
+| BL-P1-03 | Input + movement | Verify | `PlayerController` xong — cần user nhìn: WASD đúng hướng world |
+| BL-P1-04 | Logging + debug overlay | Verify | `GameLog` Done; `DebugOverlay` F1 cần user nhìn |
+| BL-P1-05 | Build PC đầu tiên | Done | Build Windows + smoke test headless pass (boot → persistent → test room) |
 
 ## P1-B — Technical Foundation (M1)
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-06 | Definition Registry | Backlog | (KAN-20) |
-| BL-P1-07 | Runtime World State | Backlog | (KAN-21) |
-| BL-P1-08 | World Clock | Backlog | (KAN-22) |
-| BL-P1-09 | Simulation Tick | Backlog | (KAN-23) |
-| BL-P1-10 | Command Layer | Backlog | (KAN-24) |
-| BL-P1-11 | Save Foundation | Backlog | (KAN-25) |
-| BL-P1-12 | Debug Panel v1 | Backlog | (KAN-26) |
-| BL-P1-13 | Test Foundation | Backlog | (KAN-27) |
+| BL-P1-06 | Definition Registry | Done | Đọc 18 file JSON thật, gom toàn bộ lỗi thay vì fail-first |
+| BL-P1-07 | Runtime World State | Done | `WorldState` + Player/Location/SearchPoint/Inventory state |
+| BL-P1-08 | World Clock | Done | `SimulationClock` bank phút nguyên, 24h không drift |
+| BL-P1-09 | Simulation Tick | Done | `TickScheduler` — nơi duy nhất tăng `WorldTimeMinutes` |
+| BL-P1-10 | Command Layer | Done | Pipeline + `UseItemCommand`. Command gameplay khác thêm ở S5-S6 |
+| BL-P1-11 | Save Foundation | Done | Checksum SHA256, atomic write, .bak, autosave rotation 3 slot |
+| BL-P1-12 | Debug Panel v1 | Verify | `DebugPanel` F2 xong — cần user tự bấm thử |
+| BL-P1-13 | Test Foundation | Done | 51 EditMode test xanh |
 
-**Gate M1:** chưa chạy.
+**Gate M1:** phần tự động **PASS** (51/51 test: clock 24h không drift, tick chính xác,
+save/load roundtrip canonical JSON bằng nhau, RNG chạy tiếp đúng sau load, validate fail
+không mutate state). Phần thủ công **chờ user** — xem mục "Cần user verify" cuối file.
 
 ## P1-C — Exploration Gameplay (M2)
 
@@ -135,5 +137,23 @@ chạy P0 khi muốn kiểm chứng lại các số đó, không phải điều 
 
 ---
 
-Milestone tiếp theo: **P1-A** (BL-P1-01..05), dựng 2D isometric ngay từ sprint đầu theo mục
-"Ràng buộc khóa cứng".
+## Cần user verify (chặn Gate M1 chuyển sang Done)
+
+Chạy `Builds/Windows/LastHope.exe` hoặc mở scene `00_Boot` trong Editor rồi Play:
+
+1. Nhân vật hiện ra, camera căn giữa nhân vật (không lệch tâm).
+2. WASD di chuyển đúng hướng world — W lên, S xuống, không đảo/xiên.
+3. Cuộn chuột zoom: nấc rõ ràng, không quá nhanh/chậm; giới hạn 3–12 hợp lý.
+4. Đi tới rìa map: bị tường biên chặn, không lọt ra ngoài.
+5. Đi trước/sau 4 prop trong test room: sprite sort đúng (đứng dưới thì che, đứng trên thì bị che).
+6. **F1** — overlay hiện FPS + toạ độ X/Y, số liệu cập nhật khi di chuyển.
+7. **F2** — Debug Panel: bấm `+1h` thấy đồng hồ nhảy; `Thêm` item vào túi thấy kg/L tăng;
+   `Dùng` item_water_bottle thấy số lượng giảm; `Save manual` rồi `Load manual` không lỗi.
+
+Kích thước nhân vật hiện dùng sprite 256px ở PPU 100 (= 2.56 unit) — **nhiều khả năng
+quá to** so với 1.7 m thiết kế. Nếu nhìn thấy sai tỉ lệ, báo tôi để chỉnh PPU/scale.
+
+---
+
+Milestone tiếp theo: **P1-C** (BL-P1-14..22) — Interaction, Item, Inventory, Search, Storage,
+Travel, Location blockout, Telemetry → Gate P1.

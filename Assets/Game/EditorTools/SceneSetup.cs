@@ -1,8 +1,10 @@
 using System.IO;
 using LastHope.DebugTools.Overlay;
+using LastHope.DebugTools.Panel;
 using LastHope.Presentation.Boot;
 using LastHope.Presentation.CameraControl;
 using LastHope.Presentation.Player;
+using LastHope.Systems.Boot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -66,6 +68,12 @@ namespace LastHope.EditorTools
 
             var controls = AssetDatabase.LoadAssetAtPath<InputActionAsset>(ControlsPath);
             if (controls == null) Debug.LogWarning($"[SceneSetup] Không thấy {ControlsPath}");
+
+            // Composition root phải Awake trước mọi view đọc GameBootstrapper.Services.
+            var servicesGo = new GameObject("GameServices");
+            servicesGo.AddComponent<GameBootstrapper>();
+            servicesGo.AddComponent<SimulationDriver>();
+            servicesGo.AddComponent<DebugPanel>();
 
             var player = BuildPlayer(controls);
 
