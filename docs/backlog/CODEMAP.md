@@ -8,8 +8,9 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 
 ## Hiện trạng
 
-Xong **P1-A** + **P1-B** (Gate M1 PASS) + phần hệ thống/scene của **P1-C** (84 EditMode
-test). Còn thiếu: Telemetry (BL-P1-21), playtest user (BL-P1-22) → Gate P1. Chưa có: P2/P3/P4.
+Xong **P1-A** + **P1-B** (Gate M1 PASS) + toàn bộ hệ thống **P1-C** (84 EditMode test,
+Telemetry event-driven). Còn thiếu duy nhất: **user tự playtest** (BL-P1-22, checklist ở
+cuối `BACKLOG.md`) → chuyển Gate P1 Pass. Chưa có: P2/P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -99,6 +100,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Search | `Systems/Search/SearchSystem.cs` | `Open`, `TakeAll` | ✅ | Roll 1 lần qua stream `"loot"`; `TakeAll` binary-search phần lớn nhất còn nhặt được, trả `false` nếu sót (triage) |
 | Travel | `Systems/Travel/TravelSystem.cs` | `ComputeTravelMinutes`, `Travel` | ✅ | loadFactor theo `LoadTier`; `FastForward` từng phút qua `TickScheduler` |
 | Commands | `Systems/Commands/{TransferItemCommand,OpenSearchPointCommand,TakeAllFromSearchPointCommand,BeginTravelCommand}.cs` | implement `IGameCommand` | ✅ | `TransferItemCommand` dùng chung cho Take/Store/Withdraw/Drop/PickUp qua `InventoryOwner` |
+| Telemetry | `Systems/Telemetry/TelemetryLogger.cs` | `LogSearchClosed`, `LogInventoryOpenDuration` (+ tự subscribe Travel/Location/Search event) | ⬜ | JSONL `persistentDataPath/Telemetry/session_*.jsonl`. Sự kiện có EventBus sẵn thì tự nghe; sự kiện chỉ UI biết (đóng panel, thời gian mở) UI gọi thẳng |
 
 ## LastHope.Presentation
 

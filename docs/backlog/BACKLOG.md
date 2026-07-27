@@ -90,12 +90,38 @@ movement, tường biên, Y-sort, F1, F2).
 | BL-P1-18 | Shelter Storage | Verify | `StorageView`/`StoragePanel` — cần user tự chuyển đồ 2 chiều |
 | BL-P1-19 | Route và Travel | Verify | `TravelSystem`/`TravelPointView` có test tự động; đổi scene cần user xem |
 | BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Verify | 6 search point đã dựng qua `SceneSetup`, khớp `searchpoints_p1.json` |
-| BL-P1-21 | Telemetry P1 | Backlog | Chưa làm — khối tiếp theo |
-| BL-P1-22 | Playtest vòng P1 | Backlog | Chờ user chạy playtest thật sau khi Telemetry xong |
+| BL-P1-21 | Telemetry P1 | Done | `TelemetryLogger` — JSONL `persistentDataPath/Telemetry`, event-driven qua EventBus |
+| BL-P1-22 | Playtest vòng P1 | Ready | Toàn bộ hệ thống sẵn sàng — chờ user tự chạy build, checklist ở cuối file |
 
-**Gate P1:** chưa chạy — chờ Telemetry (BL-P1-21) + playtest user (BL-P1-22). Phần hệ
-thống/test tự động đã xanh (84 EditMode test), pipeline boot → load location → interact
-chạy sạch qua smoke test headless.
+**Gate P1:** phần hệ thống/test tự động đã xong — 84 EditMode test xanh, pipeline
+boot → load location → interact → travel → search → storage chạy sạch qua smoke test
+headless (0 exception, 0 warning). **Chờ user playtest thật** (BL-P1-22) để chuyển Pass.
+
+## Cần user playtest (chặn Gate P1)
+
+Chạy `Builds/Windows/LastHope.exe`. Bắt đầu tại Main Shelter (`location_shelter`):
+
+1. Camera căn giữa player, WASD di chuyển, tường biên chặn đúng (đã xác nhận ở Gate M1).
+2. Đi tới prop xanh lá (Travel Point) gần góc dưới phải, nhấn E — có tốn thời gian game
+   không (F1 xem đồng hồ hoặc F2 debug panel), có đổi sang scene Convenience Store không.
+3. Ở Convenience Store: 6 prop nâu là 6 search point. Nhấn E ở 5 cái đầu — panel mở **ngay**,
+   thấy toàn bộ item, không progress bar. Ở prop cuối (`searchpoint_back_room`, góc dưới
+   phải) — **giữ** E khoảng 2 giây, có thanh tiến trình hiện dưới màn hình; thả sớm phải hủy
+   (không roll loot, thử lại từ đầu được).
+4. Trong panel search: bấm "Take All" ở `searchpoint_back_room` (nội dung nặng — toolbox,
+   water container 20L...) — vì tổng khối lượng > carry cap, phải báo **"còn sót lại đồ"**
+   (triage). Đóng panel, mở lại — phần chưa lấy còn nguyên, không roll lại.
+5. Nhặt được `item_water_container_20l` (nếu roll ra) — kiểm tra nó **không nằm trong danh
+   sách túi thường** mà hiện riêng dạng "[ôm]" trong Inventory Panel.
+6. Bấm phím ToggleInventory — thấy túi đồ, kg/L, tier tải (Normal/Light/Heavy). Mang nặng
+   thử xem tốc độ đi có chậm lại không (Overload).
+7. Quay lại Shelter qua Travel Point, nhấn E ở prop xanh dương (Storage) — panel kho mở,
+   chuyển đồ 2 chiều bằng nút `>>`/`<<`.
+8. F2 → Save manual → Load manual — search point đã mở vẫn giữ đúng phần còn lại (không
+   re-roll). Đây là exit criteria chính của Gate P1.
+9. Kiểm tra `%userprofile%\AppData\LocalLow\Last Hope Project\Last Hope MVP\Telemetry\` có
+   file `session_*.jsonl` mới ghi các dòng `travel_started`, `location_changed`,
+   `search_opened`, `search_closed`, `inventory_open_time`.
 
 ---
 

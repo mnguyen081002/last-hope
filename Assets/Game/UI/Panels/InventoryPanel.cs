@@ -21,6 +21,7 @@ namespace LastHope.UI.Panels
         InputAction toggleAction;
         bool visible;
         Vector2 scroll;
+        float openedAtRealTime;
 
         void Awake()
         {
@@ -36,7 +37,18 @@ namespace LastHope.UI.Panels
 
         void Update()
         {
-            if (toggleAction != null && toggleAction.WasPressedThisFrame()) visible = !visible;
+            if (toggleAction == null || !toggleAction.WasPressedThisFrame()) return;
+
+            visible = !visible;
+            if (visible)
+            {
+                openedAtRealTime = Time.realtimeSinceStartup;
+            }
+            else if (GameBootstrapper.IsReady)
+            {
+                GameBootstrapper.Services.Telemetry.LogInventoryOpenDuration(
+                    Time.realtimeSinceStartup - openedAtRealTime);
+            }
         }
 
         void OnGUI()

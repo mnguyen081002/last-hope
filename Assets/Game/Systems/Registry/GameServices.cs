@@ -5,6 +5,7 @@ using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Telemetry;
 
 namespace LastHope.Systems.Registry
 {
@@ -23,8 +24,10 @@ namespace LastHope.Systems.Registry
         public CommandProcessor Commands { get; private set; }
         public SaveService Saves { get; }
         public GameContext Context { get; private set; }
+        public TelemetryLogger Telemetry { get; }
 
-        public GameServices(DefinitionRegistry definitions, WorldState world, string saveDirectory)
+        public GameServices(
+            DefinitionRegistry definitions, WorldState world, string saveDirectory, string telemetryDirectory)
         {
             Definitions = definitions;
             Events = new EventBus();
@@ -32,6 +35,8 @@ namespace LastHope.Systems.Registry
             Saves = new SaveService(saveDirectory, definitions.DefinitionVersion);
 
             BindWorld(world);
+
+            Telemetry = new TelemetryLogger(this, telemetryDirectory);
         }
 
         /// <summary>

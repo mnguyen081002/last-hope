@@ -17,6 +17,7 @@ namespace LastHope.UI.Panels
     {
         bool visible;
         string openSearchPointId;
+        int quantityAtOpen;
         Vector2 scroll;
         string statusMessage = "";
 
@@ -44,14 +45,35 @@ namespace LastHope.UI.Panels
         public void Open(string searchPointId)
         {
             openSearchPointId = searchPointId;
+            quantityAtOpen = TotalRemainingQuantity(searchPointId);
             statusMessage = "";
             visible = true;
         }
 
         void Close()
         {
+            if (openSearchPointId != null)
+            {
+                int remaining = TotalRemainingQuantity(openSearchPointId);
+                int taken = Mathf.Max(0, quantityAtOpen - remaining);
+                GameBootstrapper.Services?.Telemetry.LogSearchClosed(openSearchPointId, taken, remaining);
+            }
+
             visible = false;
             openSearchPointId = null;
+        }
+
+        static int TotalRemainingQuantity(string searchPointId)
+        {
+            var services = GameBootstrapper.Services;
+            if (!services.Definitions.TryGetSearchPoint(searchPointId, out var definition)) return 0;
+
+            var location = services.World.GetOrCreateLocation(definition.LocationId);
+            if (!location.SearchPoints.TryGetValue(searchPointId, out var state)) return 0;
+
+            int total = 0;
+            foreach (var slot in state.RemainingItems) total += slot.Quantity;
+            return total;
         }
 
         void OnGUI()

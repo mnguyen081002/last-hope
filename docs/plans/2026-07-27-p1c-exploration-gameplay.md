@@ -97,14 +97,7 @@ Mỗi khối (Core/Systems trước, Presentation sau) đều: batchmode compile
 hình, không đánh giá được "cảm giác loot decision". Checklist đưa cho user ở cuối plan khi
 Presentation xong.
 
-## User cần tự test bằng mắt (sau khi Presentation xong)
+## User cần tự test bằng mắt
 
-- Từ Main Shelter, đi tới Convenience Store qua Travel Point — có tốn thời gian game không
-  (xem đồng hồ nhảy), scene có đổi đúng không.
-- Tương tác 6 search point: E → thấy list ngay (không progress bar), Take All có khi nào báo
-  đầy/thất bại không (kệ kho ~20kg/35L > carry cap 15kg/25L phải buộc triage).
-- Đóng game, mở lại (hoặc F2 Save/Load): search point đã mở giữ nguyên phần chưa lấy.
-- Mang `item_water_container_20l` (Carried Object) — có chiếm ô riêng, không lẫn vào backpack.
-- Về lại Shelter, chuyển đồ vào Storage — Storage không giới hạn sức chứa.
-- Mở Inventory Panel (phím ToggleInventory) — số kg/L đúng, Overload có giảm tốc độ đi
-  không khi vượt ngưỡng.
+Checklist đầy đủ (9 bước) nằm trong `docs/backlog/BACKLOG.md` mục "Cần user playtest" —
+giữ một bản duy nhất ở đó để cập nhật, tránh hai checklist trôi lệch nhau.

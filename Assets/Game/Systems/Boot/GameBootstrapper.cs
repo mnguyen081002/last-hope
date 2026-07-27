@@ -37,6 +37,7 @@ namespace LastHope.Systems.Boot
 
             string definitionsPath = Path.Combine(Application.streamingAssetsPath, "Definitions");
             string savePath = Path.Combine(Application.persistentDataPath, "Saves");
+            string telemetryPath = Path.Combine(Application.persistentDataPath, "Telemetry");
 
             DefinitionRegistry definitions;
             try
@@ -51,7 +52,7 @@ namespace LastHope.Systems.Boot
             }
 
             var world = NewGameFactory.Create(definitions, masterSeed);
-            Services = new GameServices(definitions, world, savePath);
+            Services = new GameServices(definitions, world, savePath, telemetryPath);
 
             GameLog.Info(LogCategory.Boot,
                 $"Definitions v{definitions.DefinitionVersion} — {definitions.Items.Count} item, " +
