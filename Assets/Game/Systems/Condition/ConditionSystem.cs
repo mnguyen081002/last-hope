@@ -20,6 +20,16 @@ namespace LastHope.Systems.Condition
             UpdateBodyTemperature(player, balance, isAtShelter);
             UpdateColdFlag(player, balance);
             UpdateStamina(player, balance);
+
+            UpdateSickFlag(player, balance);
+            if (player.IsSick)
+            {
+                // Cả 3 cùng xấu đi mỗi phút: Thirst/Hunger tăng thêm, Health giảm — không
+                // floor (khác starvation), Sick nặng có thể dẫn tới tử vong (Health = 0).
+                player.Thirst = Clamp100(player.Thirst + balance.SickDecayPerMinute);
+                player.Hunger = Clamp100(player.Hunger + balance.SickDecayPerMinute);
+                player.Health = Mathf.Max(0f, player.Health - balance.SickDecayPerMinute);
+            }
         }
 
         public static void ApplyLongTick(PlayerState player, ConditionBalance balance)
@@ -30,13 +40,6 @@ namespace LastHope.Systems.Condition
             {
                 player.Health = Mathf.Max(balance.StarvationHealthFloor,
                     player.Health - balance.StarvationHealthDecayPerLongTick);
-            }
-
-            UpdateSickFlag(player, balance);
-            if (player.IsSick)
-            {
-                // Không có floor — khác starvation, Sick nặng có thể dẫn tới tử vong (Health = 0).
-                player.Health = Mathf.Max(0f, player.Health - balance.SickHealthDecayPerLongTick);
             }
         }
 

@@ -111,9 +111,9 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P2-01 | Player Condition Core | Verify | Health/Stamina/Fatigue/Hunger/Thirst/BodyTemp — test tự động; `Injury` **chưa làm** (balance.json không có số) |
-| BL-P2-02 | Status Effect | Verify | Wet/Cold/BlackWaterExposure→Sick xong; `Bleeding`/`Disoriented` **chưa làm** (không có số trong balance.json) |
-| BL-P2-03 | Condition UI debug | Verify | Thêm mục Condition vào F2 Debug Panel — user tự xem |
+| BL-P2-01 | Player Condition Core | Done | Health/Stamina/Fatigue/Hunger/Thirst/BodyTemp — user đã verify; `Injury` **chưa làm** (balance.json không có số) |
+| BL-P2-02 | Status Effect | Done | Wet/Cold/BlackWaterExposure→Sick — user đã verify + chỉnh tốc độ Sick; `Bleeding`/`Disoriented` **chưa làm** (không có số trong balance.json) |
+| BL-P2-03 | Condition UI debug | Done | Mục Condition trong F2 Debug Panel — user đã xem |
 
 ### P2-B — Hazard và Route State (M3)
 
@@ -140,18 +140,10 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
 không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
 
-## Cần user verify P2-A (không chặn tiếp tục code, chỉ để xác nhận số liệu hợp lý)
-
-Chạy build, F2 mở Debug Panel, xem mục Condition mới:
-
-1. Nút `+50 Wet` rồi chờ (hoặc fast-forward) — BodyTemperature tụt dần, Cold bật lên sau
-   vài phút khi xuống ≤35°C.
-2. Đi vào shelter (`location_shelter`) — Wet tự giảm, BodyTemperature hồi về 37°C.
-3. Nút `-20 HP` vài lần cho Health ≤5 — nhân vật đứng im, không đi được (Collapsed).
-4. `+50 Exposure` hai lần (đạt 100 ≥ ngưỡng 70) — `Sick` bật lên, Health bắt đầu giảm dần
-   mỗi 10 phút game (long tick), không có floor (khác starvation).
-5. Số hiển thị (Thirst/Hunger tăng dần theo phút) có tốc độ hợp lý theo cảm giác chơi không
-   — đây là baseline tự suy ra từ `balance.json`, có thể cần tune sau playtest thật.
+**P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
+(`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút
+game sang 0.4/phút game (quy đổi từ "mỗi 30 giây thực" ở timescale mặc định ×5), và mở rộng
+áp dụng cho cả Thirst/Hunger tăng theo, không chỉ Health giảm — theo yêu cầu user.
 
 ---
 

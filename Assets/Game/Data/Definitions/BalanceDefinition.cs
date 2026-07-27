@@ -64,7 +64,14 @@ namespace LastHope.Data.Definitions
         public float SickExposureThreshold = 70f;
         public float StarvationHealthDecayPerLongTick = 0.5f;
         public float StarvationHealthFloor = 1f;
-        public float SickHealthDecayPerLongTick = 0.5f;
+
+        /// <summary>
+        /// Tốc độ Thirst/Hunger/Health cùng xấu đi mỗi phút game khi Sick. Quy đổi từ "mỗi
+        /// 30 giây thực" theo DefaultTimeScale ×5: 30s thực × 5 = 150s game = 2.5 phút
+        /// game → 1/2.5 = 0.4/phút.
+        /// </summary>
+        public float SickDecayPerMinute = 0.4f;
+
         public float CollapsedHealthThreshold = 5f;
         public float ShelterRestMinutes = 60f;
         public float ShelterTreatExposureMinutes = 60f;

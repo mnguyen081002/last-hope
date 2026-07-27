@@ -184,12 +184,39 @@ namespace LastHope.Tests.EditMode
         public void Sick_TriggersAtExposureThreshold_AndDecaysHealthWithNoFloor()
         {
             player.BlackWaterExposure = balance.SickExposureThreshold;
-            player.Health = balance.SickHealthDecayPerLongTick * 0.5f;
+            player.Health = balance.SickDecayPerMinute * 0.5f;
+            player.Wet = 0f; // tránh body temp drift làm Cold bật, không liên quan test này
 
-            ConditionSystem.ApplyLongTick(player, balance);
+            ConditionSystem.ApplyShortTick(player, balance, isAtShelter: false);
 
             Assert.IsTrue(player.IsSick);
             Assert.AreEqual(0f, player.Health, "Sick không có floor — có thể xuống 0.");
+        }
+
+        [Test]
+        public void Sick_AlsoAcceleratesThirstAndHunger_SameRateAsHealthDecay()
+        {
+            player.BlackWaterExposure = balance.SickExposureThreshold;
+            player.Thirst = 0f;
+            player.Hunger = 0f;
+
+            ConditionSystem.ApplyShortTick(player, balance, isAtShelter: false);
+
+            float expectedThirst = balance.ThirstPerHour / 60f + balance.SickDecayPerMinute;
+            float expectedHunger = balance.HungerPerHour / 60f + balance.SickDecayPerMinute;
+            Assert.AreEqual(expectedThirst, player.Thirst, 0.0001f);
+            Assert.AreEqual(expectedHunger, player.Hunger, 0.0001f);
+        }
+
+        [Test]
+        public void Sick_HealthDecay_AppliesEveryMinute_NotJustLongTick()
+        {
+            player.BlackWaterExposure = balance.SickExposureThreshold;
+            player.Health = 100f;
+
+            ConditionSystem.ApplyShortTick(player, balance, isAtShelter: false);
+
+            Assert.AreEqual(100f - balance.SickDecayPerMinute, player.Health, 0.0001f);
         }
 
         [Test]

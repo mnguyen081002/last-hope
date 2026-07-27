@@ -35,7 +35,7 @@
     "sick_exposure_threshold": 70,
     "starvation_health_decay_per_long_tick": 0.5,
     "starvation_health_floor": 1,
-    "sick_health_decay_per_long_tick": 0.5,
+    "sick_decay_per_minute": 0.4,
     "collapsed_health_threshold": 5,
     "shelter_rest_minutes": 60,
     "shelter_treat_exposure_minutes": 60,

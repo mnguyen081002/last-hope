@@ -8,9 +8,9 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 
 ## Hiện trạng
 
-**Gate P1 PASS** (P1-A/B/C xong, user đã playtest). Đang làm **P2-A Player Condition Core**
-(105 EditMode test) — còn P2-B (Hazard/Flood/Route) và P2-C (Equipment/Content/Scenario).
-Chưa có: P3/P4.
+**Gate P1 PASS** (P1-A/B/C xong, user đã playtest). **P2-A Player Condition Core xong**
+(107 EditMode test, user đã verify). Còn P2-B (Hazard/Flood/Route) và P2-C (Equipment/
+Content/Scenario). Chưa có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController

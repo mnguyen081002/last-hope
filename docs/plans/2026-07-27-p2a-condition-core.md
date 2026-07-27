@@ -27,7 +27,7 @@ liệu + ngữ nghĩa chính xác do tôi suy ra và ghi rõ ở đây vì doc k
 | `black_water_exposure_threshold` | **Chưa dùng** — chỉ có nguồn tăng Exposure qua Hazard crossing (P2-B chưa làm). Field giữ sẵn |
 | `sick_exposure_threshold` | `Exposure ≥ 70` → `IsSick = true` (không tự tắt trong slice này — cần Shelter treat, để P3 Sleep) |
 | `starvation_health_decay_per_long_tick` / `_floor` | `Hunger≥100 OR Thirst≥100` → Health giảm mỗi long tick, dừng ở floor (không tự chết vì đói) |
-| `sick_health_decay_per_long_tick` | `IsSick` → Health giảm mỗi long tick (**không có floor** — Sick nặng có thể chết, khác starvation) |
+| `sick_decay_per_minute` | `IsSick` → Thirst/Hunger/Health **cùng xấu đi mỗi phút** (Thirst/Hunger tăng, Health giảm, không floor — Sick nặng có thể chết, khác starvation). Đổi tên từ `sick_health_decay_per_long_tick` (2026-07-27, theo yêu cầu user): quy đổi "mỗi 30 giây thực" × DefaultTimeScale ×5 = 150s game = 2.5 phút game → 0.4/phút; mở rộng áp dụng sang cả Thirst/Hunger, không chỉ Health |
 | `collapsed_health_threshold` | `Health ≤ 5` → Collapsed, chặn hoàn toàn di chuyển (nhị phân, không phải modifier — balance.json không cho số modifier tăng dần nên không bịa) |
 | `shelter_rest_minutes`, `shelter_treat_exposure_*` | **Chưa dùng** — thuộc Sleep/Rest command, để P3 |
 
