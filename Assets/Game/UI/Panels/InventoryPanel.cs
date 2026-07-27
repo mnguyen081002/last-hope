@@ -12,13 +12,14 @@ namespace LastHope.UI.Panels
     /// <summary>
     /// Panel túi đồ người chơi tự bấm mở (khác <see cref="DebugTools.Panel.DebugPanel"/> —
     /// panel đó là cheat tool cho dev, panel này là gameplay thật). Toggle qua action
-    /// <c>ToggleInventory</c>.
+    /// <c>ToggleInventory</c> (nhấn lại = đóng) hoặc ESC (action <c>Close</c>).
     /// </summary>
     public class InventoryPanel : MonoBehaviour
     {
         [SerializeField] InputActionAsset controls;
 
         InputAction toggleAction;
+        InputAction closeAction;
         bool visible;
         Vector2 scroll;
         float openedAtRealTime;
@@ -27,19 +28,39 @@ namespace LastHope.UI.Panels
         {
             if (controls != null)
             {
-                toggleAction = controls.FindActionMap("Gameplay", true).FindAction("ToggleInventory", true);
+                var map = controls.FindActionMap("Gameplay", true);
+                toggleAction = map.FindAction("ToggleInventory", true);
+                closeAction = map.FindAction("Close", true);
             }
         }
 
-        void OnEnable() => toggleAction?.Enable();
+        void OnEnable()
+        {
+            toggleAction?.Enable();
+            closeAction?.Enable();
+        }
 
-        void OnDisable() => toggleAction?.Disable();
+        void OnDisable()
+        {
+            toggleAction?.Disable();
+            closeAction?.Disable();
+        }
 
         void Update()
         {
-            if (toggleAction == null || !toggleAction.WasPressedThisFrame()) return;
+            if (toggleAction != null && toggleAction.WasPressedThisFrame())
+            {
+                SetVisible(!visible);
+            }
+            else if (visible && closeAction != null && closeAction.WasPressedThisFrame())
+            {
+                SetVisible(false);
+            }
+        }
 
-            visible = !visible;
+        void SetVisible(bool value)
+        {
+            visible = value;
             if (visible)
             {
                 openedAtRealTime = Time.realtimeSinceStartup;

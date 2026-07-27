@@ -112,7 +112,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Overload sync | `Presentation/Player/PlayerOverloadSync.cs` | — | ⬜ | Đẩy `LoadTier` → `PlayerController.SpeedModifier` mỗi frame |
 | Boot | `Presentation/Boot/BootLoader.cs` | — | ⬜ | `00_Boot` → additive persistent (không hard-code scene gameplay) |
 | Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint` |
-| Interaction | `Presentation/Interaction/{IInteractable,InteractionDetector,InteractionPromptOverlay}.cs` | `CurrentTarget`, `HoldProgress01` | ⬜ | Nhấn tức thì (`HoldDurationSeconds` ≤0) hoặc giữ phím thật (progress bar, thả sớm = hủy) |
+| Interaction | `Presentation/Interaction/{IInteractable,InteractionDetector,InteractionPromptOverlay}.cs` | `CurrentTarget`, `HoldProgress01` | ⬜ | Nhấn tức thì (`HoldDurationSeconds` ≤0) hoặc giữ phím thật (progress bar, thả sớm = hủy). `SearchPointView` chỉ đòi hold ở lần mở **đầu tiên** — đã `Rolled` thì mở lại tức thì |
 | World views | `Presentation/World/{SearchPointView,StorageView,TravelPointView,PlayerSpawnPoint}.cs` | implement `IInteractable` | ⬜ | Chỉ submit Command/publish event, không biết UI nào phản hồi (tránh phụ thuộc `UI`) |
 
 Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi P1-C, xem plan doc.
@@ -121,9 +121,9 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
-| Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location |
-| Search | `UI/Panels/SearchPanel.cs` | `Open(searchPointId)` | ⬜ | Tự mở khi nghe `SearchPointOpened`. Take lẻ / Take All, báo triage nếu còn sót |
-| Storage | `UI/Panels/StoragePanel.cs` | — | ⬜ | Tự mở khi nghe `StorageOpened`. Chuyển 2 chiều player ↔ kho |
+| Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location. Đóng: nhấn lại `ToggleInventory` hoặc ESC (`Close`) |
+| Search | `UI/Panels/SearchPanel.cs` | `Open(searchPointId)` | ⬜ | Tự mở khi nghe `SearchPointOpened`. Take lẻ / Take All, báo triage nếu còn sót. Đóng: tương tác lại đúng search point (toggle) hoặc ESC |
+| Storage | `UI/Panels/StoragePanel.cs` | — | ⬜ | Tự mở khi nghe `StorageOpened`. Chuyển 2 chiều player ↔ kho. Đóng: tương tác lại đúng kho (toggle) hoặc ESC |
 
 ## LastHope.DebugTools
 

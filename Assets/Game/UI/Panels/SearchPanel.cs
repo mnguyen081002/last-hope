@@ -5,33 +5,53 @@ using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
 using LastHope.Systems.Inventory;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace LastHope.UI.Panels
 {
     /// <summary>
     /// Hiện toàn bộ nội dung search point đã mở — không progress bar, không reveal dần
     /// (thiết kế khóa). Tự mở khi nghe <see cref="SearchPointOpened"/>, không cần
-    /// Presentation biết tới panel này (tránh Presentation phụ thuộc UI).
+    /// Presentation biết tới panel này (tránh Presentation phụ thuộc UI). Tương tác lại
+    /// đúng search point đang mở, hoặc nhấn ESC (action <c>Close</c>), đều đóng panel.
     /// </summary>
     public class SearchPanel : MonoBehaviour
     {
+        [SerializeField] InputActionAsset controls;
+
+        InputAction closeAction;
         bool visible;
         string openSearchPointId;
         int quantityAtOpen;
         Vector2 scroll;
         string statusMessage = "";
 
+        void Awake()
+        {
+            if (controls != null)
+            {
+                closeAction = controls.FindActionMap("Gameplay", true).FindAction("Close", true);
+            }
+        }
+
         void OnEnable()
         {
+            closeAction?.Enable();
             if (GameBootstrapper.IsReady) Subscribe();
             else GameBootstrapper.Ready += Subscribe;
         }
 
         void OnDisable()
         {
+            closeAction?.Disable();
             GameBootstrapper.Ready -= Subscribe;
             if (GameBootstrapper.IsReady)
                 GameBootstrapper.Services.Events.Unsubscribe<SearchPointOpened>(OnSearchPointOpened);
+        }
+
+        void Update()
+        {
+            if (visible && closeAction != null && closeAction.WasPressedThisFrame()) Close();
         }
 
         void Subscribe()
@@ -42,8 +62,15 @@ namespace LastHope.UI.Panels
 
         void OnSearchPointOpened(SearchPointOpened e) => Open(e.SearchPointId);
 
+        /// <summary>Tương tác lại đúng search point đang mở = đóng (toggle), không mở lại.</summary>
         public void Open(string searchPointId)
         {
+            if (visible && openSearchPointId == searchPointId)
+            {
+                Close();
+                return;
+            }
+
             openSearchPointId = searchPointId;
             quantityAtOpen = TotalRemainingQuantity(searchPointId);
             statusMessage = "";

@@ -114,8 +114,11 @@ namespace LastHope.EditorTools
             var inventoryPanel = inventoryPanelGo.AddComponent<InventoryPanel>();
             SetSerialized(inventoryPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
 
-            new GameObject("SearchPanel").AddComponent<SearchPanel>();
-            new GameObject("StoragePanel").AddComponent<StoragePanel>();
+            var searchPanel = new GameObject("SearchPanel").AddComponent<SearchPanel>();
+            SetSerialized(searchPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
+
+            var storagePanel = new GameObject("StoragePanel").AddComponent<StoragePanel>();
+            SetSerialized(storagePanel, so => so.FindProperty("controls").objectReferenceValue = controls);
 
             SaveScene(scene, $"{ScenesRoot}/10_GamePersistent.unity");
         }

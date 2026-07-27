@@ -83,45 +83,25 @@ movement, tường biên, Y-sort, F1, F2).
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-14 | Interaction System | Verify | Hold+cancel qua `InteractionDetector` — cần user tự bấm giữ E ở `searchpoint_back_room` (2s) |
+| BL-P1-14 | Interaction System | Done | Hold+cancel qua `InteractionDetector`; user xác nhận |
 | BL-P1-15 | Item System | Done | `ItemDefinition`/`ItemInstanceState` từ S2, dùng xuyên P1-C |
-| BL-P1-16 | Inventory | Verify | Overload/Carried Object có test tự động; UI (`InventoryPanel`) cần user xem |
-| BL-P1-17 | Search System | Verify | `SearchSystem`/`SearchPanel` có test tự động; hold-to-open + panel cần user xem |
-| BL-P1-18 | Shelter Storage | Verify | `StorageView`/`StoragePanel` — cần user tự chuyển đồ 2 chiều |
-| BL-P1-19 | Route và Travel | Verify | `TravelSystem`/`TravelPointView` có test tự động; đổi scene cần user xem |
-| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Verify | 6 search point đã dựng qua `SceneSetup`, khớp `searchpoints_p1.json` |
+| BL-P1-16 | Inventory | Done | Overload/Carried Object — test tự động + user xác nhận |
+| BL-P1-17 | Search System | Done | `SearchSystem`/`SearchPanel` — test tự động + user xác nhận |
+| BL-P1-18 | Shelter Storage | Done | `StorageView`/`StoragePanel` — user xác nhận |
+| BL-P1-19 | Route và Travel | Done | `TravelSystem`/`TravelPointView` — test tự động + user xác nhận |
+| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Done | 6 search point khớp `searchpoints_p1.json` |
 | BL-P1-21 | Telemetry P1 | Done | `TelemetryLogger` — JSONL `persistentDataPath/Telemetry`, event-driven qua EventBus |
-| BL-P1-22 | Playtest vòng P1 | Ready | Toàn bộ hệ thống sẵn sàng — chờ user tự chạy build, checklist ở cuối file |
+| BL-P1-22 | Playtest vòng P1 | Done | User xác nhận 2026-07-27 |
 
-**Gate P1:** phần hệ thống/test tự động đã xong — 84 EditMode test xanh, pipeline
-boot → load location → interact → travel → search → storage chạy sạch qua smoke test
-headless (0 exception, 0 warning). **Chờ user playtest thật** (BL-P1-22) để chuyển Pass.
+**Gate P1: PASS** (2026-07-27) — 84 EditMode test + playtest thật của user.
 
-## Cần user playtest (chặn Gate P1)
-
-Chạy `Builds/Windows/LastHope.exe`. Bắt đầu tại Main Shelter (`location_shelter`):
-
-1. Camera căn giữa player, WASD di chuyển, tường biên chặn đúng (đã xác nhận ở Gate M1).
-2. Đi tới prop xanh lá (Travel Point) gần góc dưới phải, nhấn E — có tốn thời gian game
-   không (F1 xem đồng hồ hoặc F2 debug panel), có đổi sang scene Convenience Store không.
-3. Ở Convenience Store: 6 prop nâu là 6 search point. Nhấn E ở 5 cái đầu — panel mở **ngay**,
-   thấy toàn bộ item, không progress bar. Ở prop cuối (`searchpoint_back_room`, góc dưới
-   phải) — **giữ** E khoảng 2 giây, có thanh tiến trình hiện dưới màn hình; thả sớm phải hủy
-   (không roll loot, thử lại từ đầu được).
-4. Trong panel search: bấm "Take All" ở `searchpoint_back_room` (nội dung nặng — toolbox,
-   water container 20L...) — vì tổng khối lượng > carry cap, phải báo **"còn sót lại đồ"**
-   (triage). Đóng panel, mở lại — phần chưa lấy còn nguyên, không roll lại.
-5. Nhặt được `item_water_container_20l` (nếu roll ra) — kiểm tra nó **không nằm trong danh
-   sách túi thường** mà hiện riêng dạng "[ôm]" trong Inventory Panel.
-6. Bấm phím ToggleInventory — thấy túi đồ, kg/L, tier tải (Normal/Light/Heavy). Mang nặng
-   thử xem tốc độ đi có chậm lại không (Overload).
-7. Quay lại Shelter qua Travel Point, nhấn E ở prop xanh dương (Storage) — panel kho mở,
-   chuyển đồ 2 chiều bằng nút `>>`/`<<`.
-8. F2 → Save manual → Load manual — search point đã mở vẫn giữ đúng phần còn lại (không
-   re-roll). Đây là exit criteria chính của Gate P1.
-9. Kiểm tra `%userprofile%\AppData\LocalLow\Last Hope Project\Last Hope MVP\Telemetry\` có
-   file `session_*.jsonl` mới ghi các dòng `travel_started`, `location_changed`,
-   `search_opened`, `search_closed`, `inventory_open_time`.
+Sau playtest, 2 chỉnh sửa UX theo góp ý user:
+- Mọi panel (Inventory/Search/Storage) đóng được bằng **ESC** (action `Close`, đã có sẵn
+  trong `GameControls.inputactions`, chỉ chưa dùng tới) hoặc **nhấn lại đúng phím/tương tác
+  đã mở nó** (toggle) — không chỉ có nút "Đóng" trên UI.
+- Search point **chỉ cần giữ phím "cạy" ở lần mở đầu tiên**; `SearchPointState.Rolled` đã
+  `true` thì các lần tương tác sau mở tức thì (`SearchPointView.HoldDurationSeconds` trả 0
+  nếu đã Rolled) — hợp lý vì thao tác khó chỉ xảy ra một lần, không phải mỗi lần quay lại.
 
 ---
 

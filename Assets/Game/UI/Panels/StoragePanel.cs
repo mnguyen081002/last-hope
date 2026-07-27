@@ -5,28 +5,50 @@ using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
 using LastHope.Systems.Inventory;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace LastHope.UI.Panels
 {
-    /// <summary>Kho shelter — không giới hạn sức chứa, chuyển hai chiều với túi đồ.</summary>
+    /// <summary>
+    /// Kho shelter — không giới hạn sức chứa, chuyển hai chiều với túi đồ. Tương tác lại
+    /// đúng kho đang mở, hoặc nhấn ESC (action <c>Close</c>), đều đóng panel.
+    /// </summary>
     public class StoragePanel : MonoBehaviour
     {
+        [SerializeField] InputActionAsset controls;
+
+        InputAction closeAction;
         bool visible;
         string locationId;
         Vector2 playerScroll;
         Vector2 storageScroll;
 
+        void Awake()
+        {
+            if (controls != null)
+            {
+                closeAction = controls.FindActionMap("Gameplay", true).FindAction("Close", true);
+            }
+        }
+
         void OnEnable()
         {
+            closeAction?.Enable();
             if (GameBootstrapper.IsReady) Subscribe();
             else GameBootstrapper.Ready += Subscribe;
         }
 
         void OnDisable()
         {
+            closeAction?.Disable();
             GameBootstrapper.Ready -= Subscribe;
             if (GameBootstrapper.IsReady)
                 GameBootstrapper.Services.Events.Unsubscribe<StorageOpened>(OnOpened);
+        }
+
+        void Update()
+        {
+            if (visible && closeAction != null && closeAction.WasPressedThisFrame()) Close();
         }
 
         void Subscribe()
@@ -35,8 +57,15 @@ namespace LastHope.UI.Panels
             GameBootstrapper.Services.Events.Subscribe<StorageOpened>(OnOpened);
         }
 
+        /// <summary>Tương tác lại đúng kho đang mở = đóng (toggle), không mở lại.</summary>
         void OnOpened(StorageOpened e)
         {
+            if (visible && locationId == e.LocationId)
+            {
+                Close();
+                return;
+            }
+
             locationId = e.LocationId;
             visible = true;
         }
