@@ -14,9 +14,15 @@ namespace LastHope.Presentation.Player
         [Tooltip("Tốc độ đi bộ (m/s) khi không có modifier.")]
         [SerializeField] float baseSpeed = 3.5f;
 
+        /// <summary>Khoảng đệm giữ player không dính sát vào collider sau khi chặn.</summary>
+        const float SkinWidth = 0.02f;
+
+        static readonly RaycastHit2D[] CastHitsBuffer = new RaycastHit2D[8];
+
         Rigidbody2D body;
         InputAction moveAction;
         Vector2 moveInput;
+        ContactFilter2D obstacleFilter;
 
         /// <summary>
         /// Hệ số tốc độ do gameplay áp (Overload, Flood, Condition). 1 = bình thường.
@@ -36,6 +42,12 @@ namespace LastHope.Presentation.Player
             body.gravityScale = 0f;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+            // Kinematic body không tự chặn va chạm — Unity chỉ báo sự kiện, không cản
+            // MovePosition. Phải tự cast rồi giới hạn quãng đường trước khi di chuyển.
+            obstacleFilter = new ContactFilter2D();
+            obstacleFilter.useTriggers = false;
+            obstacleFilter.useLayerMask = false;
 
             if (controls != null)
             {
@@ -60,7 +72,33 @@ namespace LastHope.Presentation.Player
         void FixedUpdate()
         {
             Vector2 delta = moveInput * (baseSpeed * SpeedModifier * Time.fixedDeltaTime);
-            body.MovePosition(body.position + delta);
+            if (delta.sqrMagnitude <= 0f) return;
+
+            // Tách trục để player đi men theo tường (trượt) thay vì dính cứng khi đâm chéo góc.
+            Vector2 position = body.position;
+            position = MoveAxis(position, new Vector2(delta.x, 0f));
+            position = MoveAxis(position, new Vector2(0f, delta.y));
+            body.MovePosition(position);
+        }
+
+        /// <summary>Cast theo hướng delta, cắt quãng đường tại vật cản gần nhất nếu có.</summary>
+        Vector2 MoveAxis(Vector2 from, Vector2 delta)
+        {
+            float distance = delta.magnitude;
+            if (distance <= 0f) return from;
+
+            Vector2 direction = delta / distance;
+            int hitCount = body.Cast(direction, obstacleFilter, CastHitsBuffer, distance);
+            if (hitCount == 0) return from + delta;
+
+            float allowed = distance;
+            for (int i = 0; i < hitCount; i++)
+            {
+                allowed = Mathf.Min(allowed, CastHitsBuffer[i].distance);
+            }
+            allowed = Mathf.Max(0f, allowed - SkinWidth);
+
+            return from + direction * allowed;
         }
     }
 }
