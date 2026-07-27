@@ -14,4 +14,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/90_TestSystems.unity
     guid: 2cd9b449b41ab614bb6b33aa2dcbb0cc
+  - enabled: 1
+    path: Assets/Scenes/Shelters/20_MainShelter.unity
+    guid: c632613872d285a4988bd4044bf50c3f
+  - enabled: 1
+    path: Assets/Scenes/Locations/41_Location_ConvenienceStore.unity
+    guid: f66448231d473574c8c3806ea871707c
   m_configObjects: {}

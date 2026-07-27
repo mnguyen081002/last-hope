@@ -83,17 +83,19 @@ movement, tường biên, Y-sort, F1, F2).
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P1-14 | Interaction System | Backlog | (KAN-28) |
-| BL-P1-15 | Item System | Backlog | (KAN-29) |
-| BL-P1-16 | Inventory | Backlog | (KAN-30) |
-| BL-P1-17 | Search System | Backlog | (KAN-31) |
-| BL-P1-18 | Shelter Storage | Backlog | (KAN-32) |
-| BL-P1-19 | Route và Travel | Backlog | (KAN-33) |
-| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Backlog | (KAN-34) |
-| BL-P1-21 | Telemetry P1 | Backlog | (KAN-35) |
-| BL-P1-22 | Playtest vòng P1 | Backlog | (KAN-36) |
+| BL-P1-14 | Interaction System | Verify | Hold+cancel qua `InteractionDetector` — cần user tự bấm giữ E ở `searchpoint_back_room` (2s) |
+| BL-P1-15 | Item System | Done | `ItemDefinition`/`ItemInstanceState` từ S2, dùng xuyên P1-C |
+| BL-P1-16 | Inventory | Verify | Overload/Carried Object có test tự động; UI (`InventoryPanel`) cần user xem |
+| BL-P1-17 | Search System | Verify | `SearchSystem`/`SearchPanel` có test tự động; hold-to-open + panel cần user xem |
+| BL-P1-18 | Shelter Storage | Verify | `StorageView`/`StoragePanel` — cần user tự chuyển đồ 2 chiều |
+| BL-P1-19 | Route và Travel | Verify | `TravelSystem`/`TravelPointView` có test tự động; đổi scene cần user xem |
+| BL-P1-20 | Location: Cửa hàng tiện lợi (blockout) | Verify | 6 search point đã dựng qua `SceneSetup`, khớp `searchpoints_p1.json` |
+| BL-P1-21 | Telemetry P1 | Backlog | Chưa làm — khối tiếp theo |
+| BL-P1-22 | Playtest vòng P1 | Backlog | Chờ user chạy playtest thật sau khi Telemetry xong |
 
-**Gate P1:** chưa chạy.
+**Gate P1:** chưa chạy — chờ Telemetry (BL-P1-21) + playtest user (BL-P1-22). Phần hệ
+thống/test tự động đã xanh (84 EditMode test), pipeline boot → load location → interact
+chạy sạch qua smoke test headless.
 
 ---
 

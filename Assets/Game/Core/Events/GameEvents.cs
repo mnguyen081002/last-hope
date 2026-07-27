@@ -40,6 +40,14 @@ namespace LastHope.Core.Events
         public SearchPointOpened(string searchPointId) => SearchPointId = searchPointId;
     }
 
+    /// <summary>Publish trực tiếp từ Presentation (StorageView) — kho không đi qua Command vì luôn mở sẵn.</summary>
+    public readonly struct StorageOpened
+    {
+        public readonly string LocationId;
+
+        public StorageOpened(string locationId) => LocationId = locationId;
+    }
+
     /// <summary>Bắn lúc bắt đầu di chuyển; <see cref="LocationChanged"/> bắn khi tới nơi.</summary>
     public readonly struct TravelStarted
     {

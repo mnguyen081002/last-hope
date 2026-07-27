@@ -6,44 +6,31 @@ namespace LastHope.Presentation.Boot
 {
     /// <summary>
     /// Nằm trong scene <c>00_Boot</c>. Load additive scene persistent rồi đặt nó làm active
-    /// scene để mọi object sinh sau thuộc về nó.
+    /// scene để mọi object sinh sau thuộc về nó. Scene gameplay đầu tiên do
+    /// <see cref="SceneFlowController"/> (trong persistent scene) load theo
+    /// <c>LocationDefinition.SceneName</c>, không hard-code ở đây.
     /// </summary>
     public class BootLoader : MonoBehaviour
     {
         public const string PersistentSceneName = "10_GamePersistent";
 
         [SerializeField] string persistentScene = PersistentSceneName;
-        [Tooltip("Scene gameplay load ngay sau persistent. S6 sẽ thay bằng SceneFlowController.")]
-        [SerializeField] string initialGameplayScene = "90_TestSystems";
 
         void Start()
         {
-            LoadAdditive(persistentScene, makeActive: true, onDone: () =>
+            if (SceneManager.GetSceneByName(persistentScene).isLoaded)
             {
-                if (!string.IsNullOrEmpty(initialGameplayScene))
-                {
-                    LoadAdditive(initialGameplayScene, makeActive: false, onDone: null);
-                }
-            });
-        }
-
-        void LoadAdditive(string sceneName, bool makeActive, System.Action onDone)
-        {
-            if (SceneManager.GetSceneByName(sceneName).isLoaded)
-            {
-                GameLog.Info(LogCategory.Boot, $"{sceneName} đã load sẵn, bỏ qua.");
-                onDone?.Invoke();
+                GameLog.Info(LogCategory.Boot, $"{persistentScene} đã load sẵn, bỏ qua.");
                 return;
             }
 
-            GameLog.Info(LogCategory.Boot, $"Load additive {sceneName}");
-            var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            GameLog.Info(LogCategory.Boot, $"Load additive {persistentScene}");
+            var op = SceneManager.LoadSceneAsync(persistentScene, LoadSceneMode.Additive);
             op.completed += _ =>
             {
-                var scene = SceneManager.GetSceneByName(sceneName);
-                if (makeActive && scene.IsValid()) SceneManager.SetActiveScene(scene);
-                GameLog.Info(LogCategory.Boot, $"{sceneName} sẵn sàng.");
-                onDone?.Invoke();
+                var scene = SceneManager.GetSceneByName(persistentScene);
+                if (scene.IsValid()) SceneManager.SetActiveScene(scene);
+                GameLog.Info(LogCategory.Boot, $"{persistentScene} sẵn sàng.");
             };
         }
     }

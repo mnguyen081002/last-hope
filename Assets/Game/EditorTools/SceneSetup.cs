@@ -3,8 +3,11 @@ using LastHope.DebugTools.Overlay;
 using LastHope.DebugTools.Panel;
 using LastHope.Presentation.Boot;
 using LastHope.Presentation.CameraControl;
+using LastHope.Presentation.Interaction;
 using LastHope.Presentation.Player;
+using LastHope.Presentation.World;
 using LastHope.Systems.Boot;
+using LastHope.UI.Panels;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -30,8 +33,8 @@ namespace LastHope.EditorTools
         // Sorting layer mặc định; sort thực tế do CustomAxis theo Y quyết định.
         const int GroundOrder = -100;
 
-        [MenuItem("Last Hope/Build Sprint 1 Scenes")]
-        public static void BuildSprint1Scenes()
+        [MenuItem("Last Hope/Build All Scenes")]
+        public static void BuildAllScenes()
         {
             Directory.CreateDirectory(ScenesRoot);
             EnsurePlaceholderSprites();
@@ -39,12 +42,14 @@ namespace LastHope.EditorTools
             BuildBootScene();
             BuildPersistentScene();
             BuildTestRoomScene();
+            BuildMainShelterScene();
+            BuildConvenienceStoreScene();
 
             RegisterScenesInBuildSettings();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[SceneSetup] Đã sinh xong 3 scene và cập nhật Build Settings.");
+            Debug.Log("[SceneSetup] Đã sinh xong 5 scene và cập nhật Build Settings.");
         }
 
         // ---------- Scene builders ----------
@@ -92,6 +97,26 @@ namespace LastHope.EditorTools
             SetSerialized(overlay, so =>
                 so.FindProperty("trackedTransform").objectReferenceValue = player.transform);
 
+            var promptGo = new GameObject("InteractionPrompt");
+            var prompt = promptGo.AddComponent<InteractionPromptOverlay>();
+            SetSerialized(prompt, so =>
+                so.FindProperty("detector").objectReferenceValue = player.GetComponent<InteractionDetector>());
+
+            var sceneFlowGo = new GameObject("SceneFlowController");
+            var sceneFlow = sceneFlowGo.AddComponent<SceneFlowController>();
+            SetSerialized(sceneFlow, so =>
+            {
+                so.FindProperty("playerAvatar").objectReferenceValue = player.GetComponent<PlayerAvatarSync>();
+                so.FindProperty("cameraRig").objectReferenceValue = rig;
+            });
+
+            var inventoryPanelGo = new GameObject("InventoryPanel");
+            var inventoryPanel = inventoryPanelGo.AddComponent<InventoryPanel>();
+            SetSerialized(inventoryPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
+
+            new GameObject("SearchPanel").AddComponent<SearchPanel>();
+            new GameObject("StoragePanel").AddComponent<StoragePanel>();
+
             SaveScene(scene, $"{ScenesRoot}/10_GamePersistent.unity");
         }
 
@@ -107,6 +132,43 @@ namespace LastHope.EditorTools
             BuildSortTestProps();
 
             SaveScene(scene, $"{ScenesRoot}/90_TestSystems.unity");
+        }
+
+        static void BuildMainShelterScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            const float halfWidth = 10f, halfHeight = 8f;
+            BuildGround(halfWidth, halfHeight);
+            BuildBoundary(halfWidth, halfHeight);
+
+            var root = new GameObject("Interactables");
+            BuildStorage(root, "location_shelter", new Vector2(-4f, 3f));
+            BuildTravelPoint(root, "route_shelter_store", "cửa hàng tiện lợi", new Vector2(4f, -3f));
+            BuildPlayerSpawnPoint(root, new Vector2(0f, 0f));
+
+            SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
+        }
+
+        static void BuildConvenienceStoreScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            const float halfWidth = 10f, halfHeight = 8f;
+            BuildGround(halfWidth, halfHeight);
+            BuildBoundary(halfWidth, halfHeight);
+
+            var root = new GameObject("Interactables");
+            BuildSearchPoint(root, "searchpoint_drink_shelf_1", new Vector2(-6f, 4f));
+            BuildSearchPoint(root, "searchpoint_drink_shelf_2", new Vector2(-3f, 4f));
+            BuildSearchPoint(root, "searchpoint_dry_shelf_1", new Vector2(0f, 4f));
+            BuildSearchPoint(root, "searchpoint_dry_shelf_2", new Vector2(3f, 4f));
+            BuildSearchPoint(root, "searchpoint_counter", new Vector2(6f, 0f));
+            BuildSearchPoint(root, "searchpoint_back_room", new Vector2(6f, -4f));
+            BuildTravelPoint(root, "route_shelter_store", "shelter", new Vector2(-6f, -5f));
+            BuildPlayerSpawnPoint(root, new Vector2(-6f, -3f));
+
+            SaveScene(scene, $"{ScenesRoot}/Locations/41_Location_ConvenienceStore.unity");
         }
 
         // ---------- Pieces ----------
@@ -130,6 +192,13 @@ namespace LastHope.EditorTools
 
             var controller = root.AddComponent<PlayerController>();
             SetSerialized(controller, so =>
+                so.FindProperty("controls").objectReferenceValue = controls);
+
+            root.AddComponent<PlayerAvatarSync>();
+            root.AddComponent<PlayerOverloadSync>();
+
+            var detector = root.AddComponent<InteractionDetector>();
+            SetSerialized(detector, so =>
                 so.FindProperty("controls").objectReferenceValue = controls);
 
             // Sprite là child, đẩy lên trên để root transform nằm ở chân → Y-sort đúng.
@@ -195,26 +264,67 @@ namespace LastHope.EditorTools
                 new Vector2(4f, -1f), new Vector2(-2f, -3.5f),
             };
 
-            var sprite = LoadPlaceholder("placeholder-prop.png");
             for (int i = 0; i < positions.Length; i++)
             {
-                var go = new GameObject($"Prop_{i}");
-                go.transform.SetParent(root.transform, false);
-                go.transform.position = positions[i];
-
-                var spriteGo = new GameObject("Sprite");
-                spriteGo.transform.SetParent(go.transform, false);
-                var renderer = spriteGo.AddComponent<SpriteRenderer>();
-                renderer.sprite = sprite;
-                if (sprite != null)
-                {
-                    spriteGo.transform.localPosition = new Vector3(0f, sprite.bounds.extents.y, 0f);
-                }
-
-                var collider = go.AddComponent<BoxCollider2D>();
-                collider.size = new Vector2(0.8f, 0.4f);
-                collider.offset = new Vector2(0f, 0.2f);
+                BuildWorldProp(root, $"Prop_{i}", positions[i], Color.white);
             }
+        }
+
+        /// <summary>Prop có sprite + collider chặn — dùng làm nền cho mọi interactable trong world.</summary>
+        static GameObject BuildWorldProp(GameObject parent, string name, Vector2 position, Color tint)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            go.transform.position = position;
+
+            var spriteGo = new GameObject("Sprite");
+            spriteGo.transform.SetParent(go.transform, false);
+            var renderer = spriteGo.AddComponent<SpriteRenderer>();
+            renderer.sprite = LoadPlaceholder("placeholder-prop.png");
+            renderer.color = tint;
+            if (renderer.sprite != null)
+            {
+                spriteGo.transform.localPosition = new Vector3(0f, renderer.sprite.bounds.extents.y, 0f);
+            }
+
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.size = new Vector2(0.8f, 0.4f);
+            collider.offset = new Vector2(0f, 0.2f);
+
+            return go;
+        }
+
+        static void BuildSearchPoint(GameObject parent, string searchPointId, Vector2 position)
+        {
+            var go = BuildWorldProp(parent, searchPointId, position, new Color(0.75f, 0.62f, 0.4f));
+            var view = go.AddComponent<SearchPointView>();
+            SetSerialized(view, so => so.FindProperty("searchPointId").stringValue = searchPointId);
+        }
+
+        static void BuildStorage(GameObject parent, string locationId, Vector2 position)
+        {
+            var go = BuildWorldProp(parent, "Storage", position, new Color(0.4f, 0.6f, 0.75f));
+            var view = go.AddComponent<StorageView>();
+            SetSerialized(view, so => so.FindProperty("locationId").stringValue = locationId);
+        }
+
+        static void BuildTravelPoint(GameObject parent, string routeId, string destinationLabel, Vector2 position)
+        {
+            var go = BuildWorldProp(parent, "TravelPoint", position, new Color(0.4f, 0.7f, 0.45f));
+            var view = go.AddComponent<TravelPointView>();
+            SetSerialized(view, so =>
+            {
+                so.FindProperty("routeId").stringValue = routeId;
+                so.FindProperty("destinationLabel").stringValue = destinationLabel;
+            });
+        }
+
+        static void BuildPlayerSpawnPoint(GameObject parent, Vector2 position)
+        {
+            var go = new GameObject("PlayerSpawnPoint");
+            go.transform.SetParent(parent.transform, false);
+            go.transform.position = position;
+            go.AddComponent<PlayerSpawnPoint>();
         }
 
         static GameObject NewCamera(string name, float orthographicSize)
@@ -310,6 +420,7 @@ namespace LastHope.EditorTools
 
         static void SaveScene(Scene scene, string path)
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, path);
             Debug.Log($"[SceneSetup] Đã ghi {path}");
@@ -322,6 +433,8 @@ namespace LastHope.EditorTools
                 new EditorBuildSettingsScene($"{ScenesRoot}/00_Boot.unity", true),
                 new EditorBuildSettingsScene($"{ScenesRoot}/10_GamePersistent.unity", true),
                 new EditorBuildSettingsScene($"{ScenesRoot}/90_TestSystems.unity", true),
+                new EditorBuildSettingsScene($"{ScenesRoot}/Shelters/20_MainShelter.unity", true),
+                new EditorBuildSettingsScene($"{ScenesRoot}/Locations/41_Location_ConvenienceStore.unity", true),
             };
         }
     }
