@@ -1,0 +1,20 @@
+{
+    "name": "LastHope.UI",
+    "rootNamespace": "LastHope.UI",
+    "references": [
+        "LastHope.Core",
+        "LastHope.Data",
+        "LastHope.Systems",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
