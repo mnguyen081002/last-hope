@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LastHope.Core.State;
+using LastHope.Core.UI;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
@@ -83,6 +84,7 @@ namespace LastHope.UI.Panels
 
             const float width = 340f, height = 460f;
             var rect = new Rect(10f, Screen.height - height - 10f, width, height);
+            PointerOverUI.MarkHover(rect.Contains(Event.current.mousePosition));
 
             GUILayout.BeginArea(rect, GUI.skin.box);
             GUILayout.Label("Túi đồ");

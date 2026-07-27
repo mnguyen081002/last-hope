@@ -3,6 +3,7 @@ using LastHope.Core.Diagnostics;
 using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
+using LastHope.Core.UI;
 using LastHope.Systems.Boot;
 using LastHope.Systems.Condition;
 using LastHope.Systems.Registry;
@@ -39,8 +40,13 @@ namespace LastHope.DebugTools.Panel
             var services = GameBootstrapper.Services;
             var world = services.World;
 
-            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 760f),
-                GUI.skin.box);
+            // Chiều cao co theo Screen.height — cửa sổ Game view nhỏ (Play trong Editor) vẫn
+            // cuộn được tới hết nội dung, không bị cắt cứng ở 760 và không kéo được xuống.
+            float height = Mathf.Min(760f, Screen.height - 20f);
+            var rect = new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, height);
+            PointerOverUI.MarkHover(rect.Contains(Event.current.mousePosition));
+
+            GUILayout.BeginArea(rect, GUI.skin.box);
             scroll = GUILayout.BeginScrollView(scroll);
 
             GUILayout.Label($"<b>Debug Panel</b> (F2)");

@@ -67,7 +67,7 @@ namespace LastHope.Presentation.Boot
 
             if (sceneName == loadedGameplayScene)
             {
-                RepositionPlayer();
+                RepositionPlayer(sceneName);
                 return;
             }
 
@@ -77,24 +77,37 @@ namespace LastHope.Presentation.Boot
             var loadOp = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             loadOp.completed += _ =>
             {
-                RepositionPlayer();
+                RepositionPlayer(sceneName);
                 if (!string.IsNullOrEmpty(previous)) SceneManager.UnloadSceneAsync(previous);
             };
         }
 
-        void RepositionPlayer()
+        // Scene cũ chưa kịp unload (bất đồng bộ) khi callback này chạy — cả 2 scene có thể
+        // cùng tồn tại PlayerSpawnPoint. Phải tìm đúng trong scene vừa load bằng tên, không
+        // dùng FindFirstObjectByType toàn cục (thứ tự không đảm bảo, hay trúng scene cũ).
+        void RepositionPlayer(string sceneName)
         {
             if (playerAvatar == null) return;
 
-            var spawn = FindFirstObjectByType<PlayerSpawnPoint>();
+            var spawn = FindSpawnPointInScene(SceneManager.GetSceneByName(sceneName));
             if (spawn == null)
             {
-                GameLog.Warn(LogCategory.Boot, $"Không thấy PlayerSpawnPoint trong '{loadedGameplayScene}'.");
+                GameLog.Warn(LogCategory.Boot, $"Không thấy PlayerSpawnPoint trong '{sceneName}'.");
                 return;
             }
 
             playerAvatar.TeleportTo(spawn.transform.position);
             if (cameraRig != null) cameraRig.SetTarget(playerAvatar.transform);
+        }
+
+        static PlayerSpawnPoint FindSpawnPointInScene(Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var spawn = root.GetComponentInChildren<PlayerSpawnPoint>(true);
+                if (spawn != null) return spawn;
+            }
+            return null;
         }
     }
 }

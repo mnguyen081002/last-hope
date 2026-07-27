@@ -1,4 +1,5 @@
 using LastHope.Core.Diagnostics;
+using LastHope.Core.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -67,7 +68,9 @@ namespace LastHope.Presentation.CameraControl
 
         void ApplyZoom()
         {
-            if (zoomAction != null)
+            // Cuộn chuột trên panel OnGUI (Debug/Inventory/Search/Storage) không được zoom
+            // camera cùng lúc — IMGUI và Input System đọc scroll độc lập nhau.
+            if (zoomAction != null && !PointerOverUI.ConsumeIsHovering())
             {
                 float scroll = zoomAction.ReadValue<float>();
                 if (!Mathf.Approximately(scroll, 0f))

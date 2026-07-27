@@ -78,6 +78,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Events | `Core/Events/EventBus.cs`, `GameEvents.cs` | `Subscribe/Unsubscribe/Publish<T>` | 🟡 | struct event, handler copy-on-write. Có: `WorldTimeChanged`, `InventoryChanged`, `LocationChanged`, `SearchPointOpened`, `StorageOpened`, `TravelStarted`, `WorldStateReloaded` |
 | Commands | `Core/Commands/IGameCommand.cs`, `CommandProcessor.cs`, `UseItemCommand.cs` | `Submit(command)` → `CommandResult`, `GameContext{World,Definitions,Events,Rng,Ticks}` | ✅ | Validate fail = không mutate. Command gameplay khác (Transfer/Search/Travel) ở `Systems/Commands` |
 | Save | `Core/Save/WorldStateSerializer.cs`, `SaveFile.cs`, `SaveService.cs` | `Save/Load/SaveAutosave`, `PathForSlot` | ✅ | SHA256 checksum, atomic tmp→verify→.bak→rename, autosave 3 slot xoay vòng |
+| Pointer over UI | `Core/UI/PointerOverUI.cs` | `MarkHover(bool)`, `ConsumeIsHovering()` | ⬜ | Cờ dùng chung giữa panel OnGUI (DebugTools/UI) và gameplay (Presentation) — không tạo phụ thuộc chéo giữa 2 nhánh đó, cả hai chỉ phụ thuộc Core. Đọc-rồi-xoá mỗi frame (OnGUI chạy sau LateUpdate cùng frame nên luôn trễ đúng 1 frame) |
 
 ## LastHope.Data
 
@@ -113,12 +114,12 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
-| Camera | `Presentation/Camera/CameraRig.cs` | `SetTarget(t)`, `Target` | ⬜ | Orthographic 2D, `transparencySortMode = CustomAxis` trục (0,1,0) |
+| Camera | `Presentation/Camera/CameraRig.cs` | `SetTarget(t)`, `Target` | ⬜ | Orthographic 2D, `transparencySortMode = CustomAxis` trục (0,1,0). Zoom bỏ qua khi con trỏ đang ở trên panel OnGUI (`PointerOverUI.ConsumeIsHovering()`, 2026-07-27 — trước đó cuộn chuột trên panel vừa cuộn panel vừa zoom camera) |
 | Player | `Presentation/Player/PlayerController.cs` | `SpeedModifier`, `Facing`, `IsMoving` | ⬜ | `Rigidbody2D` kinematic; va chạm tự viết qua `Rigidbody2D.Cast` (kinematic không tự chặn) |
 | Player avatar sync | `Presentation/Player/PlayerAvatarSync.cs` | `TeleportTo(pos)` | ⬜ | Ghi transform → `PlayerState` mỗi frame; áp lại từ state khi `WorldStateReloaded` |
 | Movement modifier | `Presentation/Player/PlayerMovementModifierSync.cs` | — | ⬜ | Overload (hệ số) × Collapsed (chặn nhị phân) → `PlayerController.SpeedModifier`. Đổi tên từ `PlayerOverloadSync` 2026-07-27 khi thêm Collapsed |
 | Boot | `Presentation/Boot/BootLoader.cs` | — | ⬜ | `00_Boot` → additive persistent (không hard-code scene gameplay) |
-| Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint` |
+| Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint`. `RepositionPlayer` tìm spawn theo tên scene cụ thể (2026-07-27 — trước dùng `FindFirstObjectByType` toàn cục, trúng nhầm scene cũ chưa unload xong khi Travel) |
 | Interaction | `Presentation/Interaction/{IInteractable,InteractionDetector,InteractionPromptOverlay}.cs` | `CurrentTarget`, `HoldProgress01` | ⬜ | Nhấn tức thì (`HoldDurationSeconds` ≤0) hoặc giữ phím thật (progress bar, thả sớm = hủy). `SearchPointView` chỉ đòi hold ở lần mở **đầu tiên** — đã `Rolled` thì mở lại tức thì |
 | World views | `Presentation/World/{SearchPointView,StorageView,TravelPointView,PlayerSpawnPoint}.cs` | implement `IInteractable` | ⬜ | Chỉ submit Command/publish event, không biết UI nào phản hồi (tránh phụ thuộc `UI`) |
 
@@ -137,7 +138,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
 | Overlay | `DebugTools/Overlay/DebugOverlay.cs` | `SetTracked(t)` | ⬜ | F1: FPS + toạ độ X/Y |
-| Debug Panel | `DebugTools/Panel/DebugPanel.cs` | — | ⬜ | F2: tua giờ, time scale, thêm/dùng item, save/load. **Hệ thống mới phải thêm mục vào đây** |
+| Debug Panel | `DebugTools/Panel/DebugPanel.cs` | — | ⬜ | F2: tua giờ, time scale, thêm/dùng item, save/load. **Hệ thống mới phải thêm mục vào đây**. Chiều cao co theo `Screen.height` (2026-07-27 — trước cố định 760px, Game view nhỏ trong Editor bị cắt không cuộn tới được mục "Túi đồ") |
 
 ## LastHope.EditorTools
 

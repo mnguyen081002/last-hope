@@ -131,7 +131,7 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
 | BL-P2-10 | Equipment Protection | Verify | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
-| BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk |
+| BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk. `TravelPointView` (nhấn E cạnh prop) hiện tại là blockout tạm của P1-C (`docs/plans/2026-07-27-p1c-exploration-gameplay.md`) — chưa xác định World Map (`docs/03-mvp-black-rain/03-black-rain-world-map.md`) có thay thế hoàn toàn cách tương tác này hay chỉ bổ sung ETA/risk phía trên, cần quyết định khi lập plan BL-P2-11 |
 | BL-P2-12 | Content P2 | Backlog | Route + Location thứ hai (cao/thấp cho Flood chọn) |
 | BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 |
 | BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
@@ -190,12 +190,25 @@ Inventory Panel:
 6. Mặc rope, cheat Current Strength "Extreme", Travel — chi phí Stamina dùng đúng mức của
    Current thấp hơn một bậc (Strong thay vì Extreme), không phải mức gốc.
 
-**Fix kèm theo (2026-07-27):** `PlayerSpawnPoint` ở cả 2 scene (`20_MainShelter`,
-`41_Location_ConvenienceStore`) trước đặt cách xa `TravelPoint` (shelter: 5 ô, giữa phòng) —
-user báo Travel qua lại không thấy nhân vật xuất hiện gần cổng. Đã sửa `SceneSetup.cs` đặt
-spawn sát `TravelPoint` ở cả hai scene, xem `docs/plans/2026-07-27-p2c-equipment.md` không đề
-cập — đây là fix phát sinh khi user playtest tính năng Equipment, không thuộc phạm vi BL-P2-10
-gốc.
+**Fix kèm theo (2026-07-27), phát sinh khi user playtest Equipment — không thuộc phạm vi
+BL-P2-10 gốc:**
+
+1. `PlayerSpawnPoint` ở cả 2 scene (`20_MainShelter`, `41_Location_ConvenienceStore`) trước
+   đặt cách xa `TravelPoint` (shelter: 5 ô, giữa phòng) → đã sửa `SceneSetup.cs` đặt spawn sát
+   `TravelPoint`. **Nhưng đây không phải nguyên nhân chính** — bug thật nằm ở
+   `SceneFlowController.RepositionPlayer()`: gọi `FindFirstObjectByType<PlayerSpawnPoint>()`
+   ngay sau khi scene mới load xong nhưng **trước khi scene cũ unload xong** (unload chạy bất
+   đồng bộ, sau đó) — nên có lúc 2 scene cùng tồn tại `PlayerSpawnPoint`, và hàm này luôn trúng
+   phải cái của scene **vừa rời đi**, không phải scene vừa tới. Đã sửa: tìm đúng trong scene
+   theo tên (`SceneManager.GetSceneByName` + duyệt root objects), không dùng tìm toàn cục nữa.
+2. F2 Debug Panel cuộn chuột để xem mục "Túi đồ" (nơi gõ item id) đồng thời làm camera
+   zoom theo — IMGUI (`OnGUI`) và Input System đọc scroll wheel là hai đường tách biệt,
+   `Event.current` không chặn được Input System. Thêm `Core/UI/PointerOverUI.cs` (cờ dùng
+   chung: panel OnGUI báo con trỏ có đang ở trong rect của nó không, `CameraRig` đọc để bỏ
+   qua input zoom khi đang thao tác panel) — áp cho cả 4 panel OnGUI (Debug/Inventory/
+   Search/Storage).
+3. F2 Debug Panel cao cố định 760px — Game view nhỏ (Play trong Editor) bị cắt, không cuộn
+   tới được mục "Túi đồ". Đã đổi thành co theo `Screen.height`.
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút

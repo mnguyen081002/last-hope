@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LastHope.Core.Events;
 using LastHope.Core.State;
+using LastHope.Core.UI;
 using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
 using LastHope.Systems.Inventory;
@@ -83,6 +84,7 @@ namespace LastHope.UI.Panels
             const float width = 520f, height = 360f;
             var rect = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
             float columnWidth = width / 2f - 16f;
+            PointerOverUI.MarkHover(rect.Contains(Event.current.mousePosition));
 
             GUILayout.BeginArea(rect, GUI.skin.box);
             GUILayout.Label("Kho Shelter");
