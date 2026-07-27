@@ -108,7 +108,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa ambient nhân thêm `EquipmentSystem.ComputeWetMultiplier` (jacket); Black Water Exposure gain qua Hazard crossing |
 | Hazard | `Systems/Hazard/HazardSystem.cs` | `IsPassable`, `EffectiveFlood`, `TimeFactor`, `ApplyCrossingCost`, `ApplyCurrentCrossing`, `ApplyElectrifiedCrossing` | ✅ | Flood: `balance.json.hazard.crossing_*` (số thật). Current/Electrified: **số tự đề xuất 2026-07-27, chưa qua playtest**. `ApplyCrossingCost`/`ApplyCurrentCrossing` nhận tham số protection (default = không đổi hành vi cũ) từ boots/jacket/rope. Structural Collapse **chưa làm** |
 | Disaster Phase | `Systems/Hazard/DisasterPhaseSystem.cs` | `CurrentPhase`, `IsRaining` | ✅ | Suy thuần từ `WorldTimeMinutes`, không lưu state. **Số tự đề xuất, chưa qua playtest**. `IsRaining` nối vào `ConditionSystem.UpdateWet` (field `WetGainPerMinuteInRain` bỏ trống từ P2-A) |
-| Equipment | `Systems/Equipment/EquipmentSystem.cs` | `TryEquip/TryUnequip`, `ComputeWetMultiplier`, `ComputeBootsProtection`, `ComputeCurrentReduction` | ✅ | Đồ mặc không nằm trong `InventoryState.Slots` (không tính Carry Load); dry_bag cộng/trừ thẳng `CapacityKg/Liters` lúc equip/unequip, tháo bị từ chối nếu tràn túi. Gloves (`handles_contaminated`) **còn treo** — chưa có action "xử lý đồ nhiễm bẩn" |
+| Equipment | `Systems/Equipment/EquipmentSystem.cs` | `TryEquip/TryUnequip/CanUnequip`, `ComputeWetMultiplier`, `ComputeBootsProtection`, `ComputeCurrentReduction` | ✅ | Đồ mặc không nằm trong `InventoryState.Slots` (không tính Carry Load); dry_bag cộng/trừ thẳng `CapacityKg/Liters` lúc equip/unequip, tháo bị từ chối nếu tràn túi. `CanUnequip` (2026-07-27) kiểm tra thuần không mutate — `UnequipItemCommand.Validate` gọi hàm này để từ chối đúng lúc thay vì để `Execute` âm thầm no-op. Gloves (`handles_contaminated`) **còn treo** — chưa có action "xử lý đồ nhiễm bẩn" |
 
 ## LastHope.Presentation
 
@@ -129,7 +129,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
-| Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location + khu "Đang mặc" (nút Tháo) và nút "Mặc" cạnh item equipment trong túi. Đóng: nhấn lại `ToggleInventory` hoặc ESC (`Close`) |
+| Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location + khu "Đang mặc" (nút Tháo, hiện thông báo nếu bị từ chối) và nút "Mặc" cạnh item equipment trong túi + thanh progress tải trọng (đầy tới hard cap, 2026-07-27). Đóng: nhấn lại `ToggleInventory` hoặc ESC (`Close`) |
 | Search | `UI/Panels/SearchPanel.cs` | `Open(searchPointId)` | ⬜ | Tự mở khi nghe `SearchPointOpened`. Take lẻ / Take All, báo triage nếu còn sót. Đóng: tương tác lại đúng search point (toggle) hoặc ESC |
 | Storage | `UI/Panels/StoragePanel.cs` | — | ⬜ | Tự mở khi nghe `StorageOpened`. Chuyển 2 chiều player ↔ kho. Đóng: tương tác lại đúng kho (toggle) hoặc ESC |
 
@@ -138,7 +138,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
 | Overlay | `DebugTools/Overlay/DebugOverlay.cs` | `SetTracked(t)` | ⬜ | F1: FPS + toạ độ X/Y |
-| Debug Panel | `DebugTools/Panel/DebugPanel.cs` | — | ⬜ | F2: tua giờ, time scale, thêm/dùng item, save/load. **Hệ thống mới phải thêm mục vào đây**. Chiều cao co theo `Screen.height` (2026-07-27 — trước cố định 760px, Game view nhỏ trong Editor bị cắt không cuộn tới được mục "Túi đồ") |
+| Debug Panel | `DebugTools/Panel/DebugPanel.cs` | — | ⬜ | F2: tua giờ, time scale, thêm/dùng item, save/load. **Hệ thống mới phải thêm mục vào đây**. Chiều cao co theo `Screen.height` (2026-07-27 — trước cố định 760px, Game view nhỏ trong Editor bị cắt không cuộn tới được mục "Túi đồ"). Có ô tìm + danh sách toàn bộ item để bấm "Thêm" trực tiếp (2026-07-27), thay vì chỉ gõ tay id |
 
 ## LastHope.EditorTools
 

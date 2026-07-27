@@ -25,6 +25,7 @@ namespace LastHope.UI.Panels
         bool visible;
         Vector2 scroll;
         float openedAtRealTime;
+        string statusMessage = "";
 
         void Awake()
         {
@@ -91,8 +92,11 @@ namespace LastHope.UI.Panels
 
             float weight = InventoryOps.TotalWeightKg(inventory, services.Definitions);
             float volume = InventoryOps.TotalVolumeLiters(inventory, services.Definitions);
-            var tier = InventorySystem.ComputeLoadTier(inventory, services.Definitions, services.Definitions.Balance.Inventory);
+            var balance = services.Definitions.Balance.Inventory;
+            var tier = InventorySystem.ComputeLoadTier(inventory, services.Definitions, balance);
+            float ratio = InventorySystem.LoadRatio(inventory, services.Definitions);
             GUILayout.Label($"{weight:F1}/{inventory.CapacityKg:F0} kg   {volume:F1}/{inventory.CapacityLiters:F0} L   ({tier})");
+            DrawCapacityBar(ratio, tier, balance.HardCapMultiplier);
 
             DrawEquippedRow(services);
 
@@ -122,10 +126,41 @@ namespace LastHope.UI.Panels
                 }
             }
 
+            if (!string.IsNullOrEmpty(statusMessage))
+            {
+                GUILayout.Label(statusMessage);
+            }
+
             GUILayout.EndArea();
         }
 
-        static void DrawEquippedRow(GameServices services)
+        /// <summary>Thanh đầy tới hard cap (không phải capacity thường) — thấy rõ còn bao nhiêu
+        /// khoảng overload trước khi bị Blocked, không chỉ bao nhiêu so với sức chứa gốc.</summary>
+        static void DrawCapacityBar(float ratio, LoadTier tier, float hardCapMultiplier)
+        {
+            var barRect = GUILayoutUtility.GetRect(10f, 16f, GUILayout.ExpandWidth(true));
+            GUI.Box(barRect, GUIContent.none);
+
+            float fill = hardCapMultiplier > 0f ? Mathf.Clamp01(ratio / hardCapMultiplier) : 0f;
+            var fillRect = new Rect(barRect.x + 1f, barRect.y + 1f, (barRect.width - 2f) * fill, barRect.height - 2f);
+
+            var prevColor = GUI.color;
+            GUI.color = ColorForTier(tier);
+            GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
+            GUI.color = prevColor;
+
+            GUI.Label(barRect, $"{ratio * 100f:F0}%");
+        }
+
+        static Color ColorForTier(LoadTier tier) => tier switch
+        {
+            LoadTier.Blocked => new Color(0.8f, 0.2f, 0.2f),
+            LoadTier.Heavy => new Color(0.85f, 0.55f, 0.15f),
+            LoadTier.Light => new Color(0.85f, 0.8f, 0.2f),
+            _ => new Color(0.25f, 0.65f, 0.3f),
+        };
+
+        void DrawEquippedRow(GameServices services)
         {
             var equipped = services.World.Player.Equipped;
             if (equipped.Count == 0) return;
@@ -137,7 +172,8 @@ namespace LastHope.UI.Panels
                 GUILayout.Label($"[{pair.Key}] {pair.Value}", GUILayout.Width(220f));
                 if (GUILayout.Button("Tháo", GUILayout.Width(60f)))
                 {
-                    services.Commands.Submit(new UnequipItemCommand(pair.Key));
+                    var result = services.Commands.Submit(new UnequipItemCommand(pair.Key));
+                    statusMessage = result.Success ? "" : $"Không tháo được ({result.Error}).";
                 }
                 GUILayout.EndHorizontal();
             }

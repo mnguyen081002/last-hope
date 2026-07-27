@@ -209,6 +209,20 @@ BL-P2-10 gốc:**
    Search/Storage).
 3. F2 Debug Panel cao cố định 760px — Game view nhỏ (Play trong Editor) bị cắt, không cuộn
    tới được mục "Túi đồ". Đã đổi thành co theo `Screen.height`.
+4. F2 Debug Panel: thêm ô tìm kiếm + danh sách toàn bộ item (lọc theo tên, bấm "Thêm" trực
+   tiếp) thay vì phải gõ tay đúng id — theo yêu cầu user.
+5. `InventoryPanel`: thêm thanh progress hiển thị tải trọng (đầy tới **hard cap** 1.5×, không
+   phải sức chứa gốc — thấy được còn bao nhiêu khoảng overload trước khi bị `Blocked`), màu
+   theo `LoadTier`.
+6. `UnequipItemCommand.Validate` trước chỉ kiểm tra slot có đồ, không kiểm tra tháo ra có tràn
+   túi không — phần kiểm tra sức chứa nằm trong `Execute` (`EquipmentSystem.TryUnequip`) và khi
+   fail thì **âm thầm no-op**, không báo gì cho UI (item vẫn ở "Đang mặc" nhưng không rõ vì
+   sao). User báo "vẫn tháo được dù sức chứa thiếu" — có thể do không thấy phản hồi nên tưởng
+   nhầm, hoặc do đang test qua nút "Tháo" thật (không phải F2 cheat) nhưng số liệu vẫn nằm
+   trong dung sai hard cap 1.5× (xem giải thích dưới, chưa xác nhận là bug thật). Đã sửa để
+   quan sát rõ ràng: thêm `EquipmentSystem.CanUnequip` (kiểm tra thuần, không mutate) —
+   `Validate` gọi hàm này để từ chối đúng lúc (`NotEnoughCapacity`) thay vì để `Execute` no-op,
+   `InventoryPanel` hiện thông báo khi bị từ chối.
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút

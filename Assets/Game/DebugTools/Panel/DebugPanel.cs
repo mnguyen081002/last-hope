@@ -1,3 +1,4 @@
+using System.Linq;
 using LastHope.Core.Commands;
 using LastHope.Core.Diagnostics;
 using LastHope.Core.Save;
@@ -26,6 +27,8 @@ namespace LastHope.DebugTools.Panel
         string statusMessage = "";
         string addItemId = "item_water_bottle";
         string addItemQuantity = "1";
+        string itemFilter = "";
+        Vector2 itemListScroll;
 
         void Update()
         {
@@ -207,6 +210,30 @@ namespace LastHope.DebugTools.Panel
                 statusMessage = result.Success ? $"Đã dùng {addItemId}." : $"Lỗi: {result.Error}";
             }
             GUILayout.EndHorizontal();
+
+            GUILayout.Label("Tìm item để thêm nhanh:");
+            itemFilter = GUILayout.TextField(itemFilter);
+
+            itemListScroll = GUILayout.BeginScrollView(itemListScroll, GUILayout.Height(140f));
+            foreach (var pair in services.Definitions.Items.OrderBy(p => p.Key))
+            {
+                if (!string.IsNullOrEmpty(itemFilter) &&
+                    pair.Key.IndexOf(itemFilter, System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"{pair.Key} ({pair.Value.Category})");
+                if (GUILayout.Button("Thêm", GUILayout.Width(60f)))
+                {
+                    int.TryParse(addItemQuantity, out int quantity);
+                    InventoryOps.AddItem(inventory, services.Definitions, pair.Key, Mathf.Max(1, quantity));
+                    statusMessage = $"Đã thêm {pair.Key}.";
+                }
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.EndScrollView();
         }
 
         void DrawSaveControls(GameServices services)

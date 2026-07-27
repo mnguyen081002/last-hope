@@ -18,16 +18,17 @@ namespace LastHope.Systems.Commands
             if (!context.World.Player.Equipped.ContainsKey(Slot))
                 return CommandResult.Fail(CommandErrorCode.InvalidTarget, $"Slot {Slot} đang trống.");
 
+            if (!EquipmentSystem.CanUnequip(context.World.Player, context.Definitions, Slot))
+                return CommandResult.Fail(CommandErrorCode.NotEnoughCapacity,
+                    $"Tháo ra sẽ tràn túi (sức chứa co lại không đủ chỗ giữ món này).");
+
             return CommandResult.Ok();
         }
 
         public void Execute(GameContext context)
         {
-            if (EquipmentSystem.TryUnequip(context.World.Player, context.Definitions, Slot))
-            {
-                context.Events?.Publish(new InventoryChanged("player"));
-            }
-            // TryUnequip false (backpack không đủ chỗ) — không publish, coi như no-op an toàn.
+            EquipmentSystem.TryUnequip(context.World.Player, context.Definitions, Slot);
+            context.Events?.Publish(new InventoryChanged("player"));
         }
     }
 }

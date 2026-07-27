@@ -37,22 +37,39 @@ namespace LastHope.Systems.Equipment
         /// <summary>Tháo đồ ở slot về túi. False nếu slot trống hoặc túi không đủ chỗ chứa lại.</summary>
         public static bool TryUnequip(PlayerState player, DefinitionRegistry definitions, EquipSlot slot)
         {
-            if (!player.Equipped.TryGetValue(slot, out string itemId)) return false;
-            if (!definitions.TryGetItem(itemId, out var item)) return false;
+            if (!CanUnequip(player, definitions, slot)) return false;
 
-            // Bỏ bonus backpack TRƯỚC khi kiểm tra chỗ chứa — tháo dry_bag co capacity lại,
-            // đúng ràng buộc thực tế (không thể giữ nguyên sức chứa lớn sau khi cởi ra).
+            string itemId = player.Equipped[slot];
+            definitions.TryGetItem(itemId, out var item);
+
+            // Bỏ bonus backpack TRƯỚC khi thêm lại — tháo dry_bag co capacity lại, đúng ràng
+            // buộc thực tế (không thể giữ nguyên sức chứa lớn sau khi cởi ra).
             ApplyBackpackBonus(player, item, adding: false);
-
-            if (!InventorySystem.CanAdd(player.Inventory, definitions, definitions.Balance.Inventory, itemId, 1))
-            {
-                ApplyBackpackBonus(player, item, adding: true); // hoàn tác, tháo thất bại
-                return false;
-            }
-
             player.Equipped.Remove(slot);
             InventoryOps.AddItem(player.Inventory, definitions, itemId, 1);
             return true;
+        }
+
+        /// <summary>
+        /// Tháo có thành công không, không mutate gì — dùng cho <c>Validate</c> để báo đúng
+        /// lý do thất bại thay vì để <c>Execute</c> âm thầm no-op (item vẫn ở slot, không báo
+        /// tại sao). Mô phỏng: bỏ bonus backpack của item rồi kiểm tra bản thân nó còn nhét
+        /// vừa vào túi đã co lại không (item tháo ra cũng trở thành đồ mang trong túi).
+        /// </summary>
+        public static bool CanUnequip(PlayerState player, DefinitionRegistry definitions, EquipSlot slot)
+        {
+            if (!player.Equipped.TryGetValue(slot, out string itemId)) return false;
+            if (!definitions.TryGetItem(itemId, out var item)) return false;
+            if (item.Protection == null) return true;
+
+            var shrunk = new InventoryState
+            {
+                CapacityKg = player.Inventory.CapacityKg - item.Protection.BackpackCapacityKg,
+                CapacityLiters = player.Inventory.CapacityLiters - item.Protection.BackpackCapacityLiters,
+                Slots = player.Inventory.Slots,
+            };
+
+            return InventorySystem.CanAdd(shrunk, definitions, definitions.Balance.Inventory, itemId, 1);
         }
 
         static void ApplyBackpackBonus(PlayerState player, ItemDefinition item, bool adding)
