@@ -70,6 +70,31 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
+        public void Wet_GainsFromRain_WhenRainingAndNotAtShelter()
+        {
+            ConditionSystem.ApplyShortTick(player, balance, isAtShelter: false, isRaining: true);
+
+            Assert.AreEqual(balance.WetGainPerMinuteInRain, player.Wet, 0.0001f);
+        }
+
+        [Test]
+        public void Wet_RainGain_ScaledByJacketMultiplier()
+        {
+            ConditionSystem.ApplyShortTick(
+                player, balance, isAtShelter: false, isRaining: true, wetMultiplier: 0.3f);
+
+            Assert.AreEqual(balance.WetGainPerMinuteInRain * 0.3f, player.Wet, 0.0001f);
+        }
+
+        [Test]
+        public void Wet_NoRainGain_WhenNotRaining()
+        {
+            ConditionSystem.ApplyShortTick(player, balance, isAtShelter: false, isRaining: false);
+
+            Assert.AreEqual(0f, player.Wet);
+        }
+
+        [Test]
         public void BodyTemperature_DriftsDown_WhenWetAboveThreshold()
         {
             player.Wet = balance.WetThresholdForTempDrift;

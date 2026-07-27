@@ -250,5 +250,56 @@ namespace LastHope.Tests.EditMode
             Assert.Less(world.Player.Stamina, 100f);
             Assert.Greater(world.Player.BlackWaterExposure, 0f);
         }
+
+        // ---------- EquipItemCommand / UnequipItemCommand ----------
+
+        [Test]
+        public void EquipItem_Valid_MovesToEquippedSlot()
+        {
+            InventoryOps.AddItem(world.Player.Inventory, definitions, "item_jacket", 1);
+
+            var result = processor.Submit(new EquipItemCommand("item_jacket"));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("item_jacket", world.Player.Equipped[LastHope.Data.Definitions.EquipSlot.Body]);
+        }
+
+        [Test]
+        public void EquipItem_NotEquipment_IsRejected()
+        {
+            InventoryOps.AddItem(world.Player.Inventory, definitions, "item_water_bottle", 1);
+
+            var result = processor.Submit(new EquipItemCommand("item_water_bottle"));
+
+            Assert.AreEqual(CommandErrorCode.InvalidTarget, result.Error);
+        }
+
+        [Test]
+        public void EquipItem_NotInInventory_IsRejected()
+        {
+            var result = processor.Submit(new EquipItemCommand("item_jacket"));
+
+            Assert.AreEqual(CommandErrorCode.ItemNotFound, result.Error);
+        }
+
+        [Test]
+        public void UnequipItem_EmptySlot_IsRejected()
+        {
+            var result = processor.Submit(new UnequipItemCommand(LastHope.Data.Definitions.EquipSlot.Body));
+
+            Assert.AreEqual(CommandErrorCode.InvalidTarget, result.Error);
+        }
+
+        [Test]
+        public void UnequipItem_Valid_ReturnsToInventory()
+        {
+            InventoryOps.AddItem(world.Player.Inventory, definitions, "item_jacket", 1);
+            processor.Submit(new EquipItemCommand("item_jacket"));
+
+            var result = processor.Submit(new UnequipItemCommand(LastHope.Data.Definitions.EquipSlot.Body));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(1, InventoryOps.CountOf(world.Player.Inventory, "item_jacket"));
+        }
     }
 }

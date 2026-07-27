@@ -8,10 +8,11 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 
 ## Hiện trạng
 
-**Gate P1 PASS**. **P2-A + P2-B xong toàn bộ** (138 EditMode test). P2-B phần Current
-Strength/Electrified/Route Closure/Disaster Phase dùng **số tự đề xuất, chưa qua playtest**
-(khác các phần khác luôn bám số có sẵn `balance.json`) — user cần xem qua trước khi tin
-tưởng hoàn toàn. P2-C chưa bắt đầu. Chưa có: P3/P4.
+**Gate P1 PASS**. **P2-A + P2-B xong toàn bộ**, BL-P2-10 Equipment Protection xong (166
+EditMode test). P2-B phần Current Strength/Electrified/Route Closure/Disaster Phase dùng
+**số tự đề xuất, chưa qua playtest** (khác các phần khác luôn bám số có sẵn `balance.json`)
+— user cần xem qua trước khi tin tưởng hoàn toàn. P2-C còn lại: Return Window UI/Content
+P2/Scenario A-D. Chưa có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -101,11 +102,12 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Owner scheme | `Systems/Inventory/InventoryOwner.cs` | `InventoryOwner{Player,ShelterStorage,SearchPoint,DroppedItems}`, `InventoryOwnerOps` | ✅ | Struct tham số lệnh (không nằm trong save) quy đổi ra `List<ItemInstanceState>` thật |
 | Search | `Systems/Search/SearchSystem.cs` | `Open`, `TakeAll` | ✅ | Roll 1 lần qua stream `"loot"`; `TakeAll` binary-search phần lớn nhất còn nhặt được, trả `false` nếu sót (triage) |
 | Travel | `Systems/Travel/TravelSystem.cs` | `ComputeTravelMinutes`, `Travel` | ✅ | loadFactor × floodTimeFactor (nhân dồn, cố ý); `FastForward` từng phút qua `TickScheduler`; áp crossing cost một lần mỗi chuyến |
-| Commands | `Systems/Commands/{TransferItemCommand,OpenSearchPointCommand,TakeAllFromSearchPointCommand,BeginTravelCommand}.cs` | implement `IGameCommand` | ✅ | `TransferItemCommand` dùng chung cho Take/Store/Withdraw/Drop/PickUp qua `InventoryOwner` |
+| Commands | `Systems/Commands/{TransferItemCommand,OpenSearchPointCommand,TakeAllFromSearchPointCommand,BeginTravelCommand,EquipItemCommand,UnequipItemCommand}.cs` | implement `IGameCommand` | ✅ | `TransferItemCommand` dùng chung cho Take/Store/Withdraw/Drop/PickUp qua `InventoryOwner` |
 | Telemetry | `Systems/Telemetry/TelemetryLogger.cs` | `LogSearchClosed`, `LogInventoryOpenDuration` (+ tự subscribe Travel/Location/Search event) | ⬜ | JSONL `persistentDataPath/Telemetry/session_*.jsonl`. Sự kiện có EventBus sẵn thì tự nghe; sự kiện chỉ UI biết (đóng panel, thời gian mở) UI gọi thẳng |
-| Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa ambient **chưa nối nguồn** (chờ Disaster Phase); Black Water Exposure gain **đã nối** qua Hazard crossing |
-| Hazard | `Systems/Hazard/HazardSystem.cs` | `IsPassable`, `EffectiveFlood`, `TimeFactor`, `ApplyCrossingCost`, `ApplyCurrentCrossing`, `ApplyElectrifiedCrossing` | ✅ | Flood: `balance.json.hazard.crossing_*` (số thật). Current/Electrified: **số tự đề xuất 2026-07-27, chưa qua playtest**. Structural Collapse **chưa làm** |
+| Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa ambient nhân thêm `EquipmentSystem.ComputeWetMultiplier` (jacket); Black Water Exposure gain qua Hazard crossing |
+| Hazard | `Systems/Hazard/HazardSystem.cs` | `IsPassable`, `EffectiveFlood`, `TimeFactor`, `ApplyCrossingCost`, `ApplyCurrentCrossing`, `ApplyElectrifiedCrossing` | ✅ | Flood: `balance.json.hazard.crossing_*` (số thật). Current/Electrified: **số tự đề xuất 2026-07-27, chưa qua playtest**. `ApplyCrossingCost`/`ApplyCurrentCrossing` nhận tham số protection (default = không đổi hành vi cũ) từ boots/jacket/rope. Structural Collapse **chưa làm** |
 | Disaster Phase | `Systems/Hazard/DisasterPhaseSystem.cs` | `CurrentPhase`, `IsRaining` | ✅ | Suy thuần từ `WorldTimeMinutes`, không lưu state. **Số tự đề xuất, chưa qua playtest**. `IsRaining` nối vào `ConditionSystem.UpdateWet` (field `WetGainPerMinuteInRain` bỏ trống từ P2-A) |
+| Equipment | `Systems/Equipment/EquipmentSystem.cs` | `TryEquip/TryUnequip`, `ComputeWetMultiplier`, `ComputeBootsProtection`, `ComputeCurrentReduction` | ✅ | Đồ mặc không nằm trong `InventoryState.Slots` (không tính Carry Load); dry_bag cộng/trừ thẳng `CapacityKg/Liters` lúc equip/unequip, tháo bị từ chối nếu tràn túi. Gloves (`handles_contaminated`) **còn treo** — chưa có action "xử lý đồ nhiễm bẩn" |
 
 ## LastHope.Presentation
 
@@ -126,7 +128,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
-| Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location. Đóng: nhấn lại `ToggleInventory` hoặc ESC (`Close`) |
+| Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location + khu "Đang mặc" (nút Tháo) và nút "Mặc" cạnh item equipment trong túi. Đóng: nhấn lại `ToggleInventory` hoặc ESC (`Close`) |
 | Search | `UI/Panels/SearchPanel.cs` | `Open(searchPointId)` | ⬜ | Tự mở khi nghe `SearchPointOpened`. Take lẻ / Take All, báo triage nếu còn sót. Đóng: tương tác lại đúng search point (toggle) hoặc ESC |
 | Storage | `UI/Panels/StoragePanel.cs` | — | ⬜ | Tự mở khi nghe `StorageOpened`. Chuyển 2 chiều player ↔ kho. Đóng: tương tác lại đúng kho (toggle) hoặc ESC |
 

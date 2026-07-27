@@ -2,6 +2,7 @@ using LastHope.Core.Random;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Equipment;
 using LastHope.Systems.Hazard;
 using LastHope.Systems.Inventory;
 
@@ -63,8 +64,13 @@ namespace LastHope.Systems.Travel
             var routeState = world.GetOrCreateRoute(routeId);
             var flood = EffectiveFlood(world, definitions, routeId);
 
-            HazardSystem.ApplyCrossingCost(player, flood, balance.Hazard);
-            HazardSystem.ApplyCurrentCrossing(player, routeState.Current, balance.Hazard, hazardRng);
+            float wetMultiplier = EquipmentSystem.ComputeWetMultiplier(player, definitions);
+            var (bootsBlockLevel, bootsMediumMultiplier) = EquipmentSystem.ComputeBootsProtection(player, definitions);
+            int currentReduction = EquipmentSystem.ComputeCurrentReduction(player, definitions);
+
+            HazardSystem.ApplyCrossingCost(
+                player, flood, balance.Hazard, wetMultiplier, bootsBlockLevel, bootsMediumMultiplier);
+            HazardSystem.ApplyCurrentCrossing(player, routeState.Current, balance.Hazard, hazardRng, currentReduction);
             HazardSystem.ApplyElectrifiedCrossing(player, routeState.IsElectrified, balance.Hazard, balance.Condition);
 
             player.CurrentLocationId = toLocationId;

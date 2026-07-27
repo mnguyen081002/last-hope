@@ -80,6 +80,33 @@ namespace LastHope.Tests.EditMode
             Assert.AreEqual(100f, player.Wet, "Wet không vượt 100.");
         }
 
+        [Test]
+        public void ApplyCrossingCost_WetMultiplier_ScalesWetGain()
+        {
+            HazardSystem.ApplyCrossingCost(player, FloodState.Deep, balance, wetMultiplier: 0.3f);
+
+            Assert.AreEqual(90f * 0.3f, player.Wet, 0.0001f); // jacket wet_multiplier = 0.3
+        }
+
+        [Test]
+        public void ApplyCrossingCost_BootsBlockLevel_ZerosExposureAtOrBelowLevel()
+        {
+            // Boots block_level=1 -> Shallow (index 1) exposure = 0 dù crossing_exposure_gain[1]=5.
+            HazardSystem.ApplyCrossingCost(player, FloodState.Shallow, balance, exposureBlockLevel: 1);
+
+            Assert.AreEqual(0f, player.BlackWaterExposure);
+        }
+
+        [Test]
+        public void ApplyCrossingCost_BootsMediumMultiplier_ScalesExposureAboveBlockLevel()
+        {
+            // Deep (index 3) > block_level 1 -> exposure = crossing_exposure_gain[3] * multiplier.
+            HazardSystem.ApplyCrossingCost(
+                player, FloodState.Deep, balance, exposureBlockLevel: 1, exposureMediumMultiplier: 0.5f);
+
+            Assert.AreEqual(30f * 0.5f, player.BlackWaterExposure, 0.0001f);
+        }
+
         // ---------- EffectiveFlood (Route Closure) ----------
 
         [Test]
@@ -139,6 +166,27 @@ namespace LastHope.Tests.EditMode
             HazardSystem.ApplyCurrentCrossing(player, CurrentStrength.Extreme, balance, rng);
 
             Assert.AreEqual(100f - balance.CurrentStrengthStaminaCost[4], player.Stamina, 0.0001f);
+        }
+
+        [Test]
+        public void ApplyCurrentCrossing_RopeReduction_LowersEffectiveIndex()
+        {
+            var rng = new RngStream(1UL);
+
+            // Extreme(4) - reduction(1) = Strong(3) — dùng đúng chi phí của index 3, không phải 4.
+            HazardSystem.ApplyCurrentCrossing(player, CurrentStrength.Extreme, balance, rng, currentReduction: 1);
+
+            Assert.AreEqual(100f - balance.CurrentStrengthStaminaCost[3], player.Stamina, 0.0001f);
+        }
+
+        [Test]
+        public void ApplyCurrentCrossing_RopeReduction_NeverGoesBelowNone()
+        {
+            var rng = new RngStream(1UL);
+
+            HazardSystem.ApplyCurrentCrossing(player, CurrentStrength.Weak, balance, rng, currentReduction: 99);
+
+            Assert.AreEqual(100f - balance.CurrentStrengthStaminaCost[0], player.Stamina, 0.0001f);
         }
 
         [Test]

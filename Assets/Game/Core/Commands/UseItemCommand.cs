@@ -36,6 +36,7 @@ namespace LastHope.Core.Commands
             // use_effects ghi theo hướng "cộng vào chỉ số": thirst -40 = bớt khát 40.
             player.Thirst = Clamp01To100(player.Thirst + effects.Thirst);
             player.Hunger = Clamp01To100(player.Hunger + effects.Hunger);
+            player.Health = Clamp01To100(player.Health + effects.Health);
 
             InventoryOps.RemoveItem(player.Inventory, ItemId, 1);
 

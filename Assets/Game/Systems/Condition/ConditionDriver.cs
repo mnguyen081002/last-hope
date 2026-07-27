@@ -1,6 +1,7 @@
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Equipment;
 using LastHope.Systems.Hazard;
 
 namespace LastHope.Systems.Condition
@@ -28,8 +29,10 @@ namespace LastHope.Systems.Condition
         {
             var phase = DisasterPhaseSystem.CurrentPhase(worldTimeMinutes, definitions.Balance.DisasterPhase);
             bool isRaining = DisasterPhaseSystem.IsRaining(phase);
+            float wetMultiplier = EquipmentSystem.ComputeWetMultiplier(world.Player, definitions);
 
-            ConditionSystem.ApplyShortTick(world.Player, definitions.Balance.Condition, IsAtShelter(), isRaining);
+            ConditionSystem.ApplyShortTick(
+                world.Player, definitions.Balance.Condition, IsAtShelter(), isRaining, wetMultiplier);
         }
 
         void OnLongTick(long worldTimeMinutes) =>

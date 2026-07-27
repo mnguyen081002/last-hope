@@ -49,6 +49,29 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
+        public void UseItem_Medkit_HealsHealth()
+        {
+            context.World.Player.Health = 30f;
+            InventoryOps.AddItem(context.World.Player.Inventory, definitions, "item_medkit", 1);
+
+            var result = processor.Submit(new UseItemCommand("item_medkit"));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(80f, context.World.Player.Health, 0.001f); // use_effects.health = 50
+        }
+
+        [Test]
+        public void UseItem_Medkit_ClampsHealthAt100()
+        {
+            context.World.Player.Health = 90f;
+            InventoryOps.AddItem(context.World.Player.Inventory, definitions, "item_medkit", 1);
+
+            processor.Submit(new UseItemCommand("item_medkit"));
+
+            Assert.AreEqual(100f, context.World.Player.Health);
+        }
+
+        [Test]
         public void UseItem_PublishesInventoryChanged()
         {
             InventoryOps.AddItem(context.World.Player.Inventory, definitions, "item_water_bottle", 1);

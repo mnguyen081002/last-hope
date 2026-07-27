@@ -28,26 +28,39 @@ namespace LastHope.Systems.Hazard
             return state.Flood;
         }
 
-        /// <summary>Áp chi phí băng qua Flood một lần (gọi mỗi chuyến Travel, giống FatiguePerTravel).</summary>
-        public static void ApplyCrossingCost(PlayerState player, FloodState state, HazardBalance balance)
+        /// <summary>
+        /// Áp chi phí băng qua Flood một lần (gọi mỗi chuyến Travel, giống FatiguePerTravel).
+        /// <paramref name="wetMultiplier"/> từ jacket (mặc định 1 = không giảm). Boots
+        /// (<paramref name="exposureBlockLevel"/>/<paramref name="exposureMediumMultiplier"/>):
+        /// chặn hoàn toàn Exposure gain ở tier ≤ block level, tier cao hơn nhân multiplier —
+        /// ngữ nghĩa suy ra (JSON không cho công thức), xem plan P2-C.
+        /// </summary>
+        public static void ApplyCrossingCost(
+            PlayerState player, FloodState state, HazardBalance balance,
+            float wetMultiplier = 1f, int exposureBlockLevel = 0, float exposureMediumMultiplier = 1f)
         {
             int index = FloodIndex(state);
 
             player.Stamina = Mathf.Clamp(player.Stamina - balance.CrossingStaminaCost[index], 0f, 100f);
-            player.BlackWaterExposure = Mathf.Clamp(
-                player.BlackWaterExposure + balance.CrossingExposureGain[index], 0f, 100f);
-            player.Wet = Mathf.Clamp(player.Wet + balance.CrossingWetGain[index], 0f, 100f);
+
+            float exposureGain = index <= exposureBlockLevel
+                ? 0f
+                : balance.CrossingExposureGain[index] * exposureMediumMultiplier;
+            player.BlackWaterExposure = Mathf.Clamp(player.BlackWaterExposure + exposureGain, 0f, 100f);
+
+            player.Wet = Mathf.Clamp(player.Wet + balance.CrossingWetGain[index] * wetMultiplier, 0f, 100f);
         }
 
         /// <summary>
         /// Tốn stamina theo Current Strength, roll rủi ro "cuốn" — trúng thì Health giảm một
-        /// khoản cố định. Không có Rope-giảm-rủi-ro trong slice này (cần Equipment System
-        /// thật sự cho mặc đồ, để dành P2-C).
+        /// khoản cố định. <paramref name="currentReduction"/> từ rope (mặc định 0) hạ index
+        /// trước khi tra mảng, không xuống dưới 0.
         /// </summary>
         public static void ApplyCurrentCrossing(
-            PlayerState player, CurrentStrength current, HazardBalance balance, RngStream rng)
+            PlayerState player, CurrentStrength current, HazardBalance balance, RngStream rng,
+            int currentReduction = 0)
         {
-            int index = (int)current;
+            int index = Mathf.Max(0, (int)current - currentReduction);
             player.Stamina = Mathf.Clamp(player.Stamina - balance.CurrentStrengthStaminaCost[index], 0f, 100f);
 
             if (rng.NextChance(balance.CurrentStrengthSweepChancePercent[index]))

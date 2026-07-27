@@ -130,14 +130,14 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P2-10 | Equipment Protection | Backlog | Items P2 đã có trong `items_p2.json` (jacket/boots/gloves/rope/dry_bag), chưa có hệ thống dùng `EquipSlot`/`Protection` |
+| BL-P2-10 | Equipment Protection | Verify | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
 | BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk |
 | BL-P2-12 | Content P2 | Backlog | Route + Location thứ hai (cao/thấp cho Flood chọn) |
 | BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 |
 | BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
 
-**Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ** (138 EditMode test). Còn P2-C
-(Equipment/Return Window/Content P2/Scenario A-D) — content P2 (route+location thứ hai)
+**Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ**, BL-P2-10 (Equipment) xong (166 EditMode
+test). Còn Return Window/Content P2/Scenario A-D — content P2 (route+location thứ hai)
 cần thiết để test được kịch bản "đổi route vì flood" thật sự (hiện chỉ có 1 route).
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
 không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
@@ -167,6 +167,23 @@ nhất hiện có) rồi thử Travel:
 4. Route Closure hiện **không áp dụng cho route nào cả** (route duy nhất `route_shelter_store`
    cố tình không set `ClosesAtPhase` để tránh softlock) — cơ chế chỉ thật sự test được khi có
    route thứ hai (BL-P2-12, P2-C).
+
+## Cần user verify Equipment Protection (BL-P2-10)
+
+Inventory Panel (nhặt item ở `location_shelter`/`location_convenience_store` hoặc cheat qua F2):
+
+1. Nhặt jacket/boots/rope/dry_bag — mỗi item equipment có nút "Mặc" riêng bên cạnh nút "Bỏ".
+   Bấm Mặc — item chuyển lên khu "Đang mặc" phía trên, biến mất khỏi danh sách túi.
+2. Mặc dry_bag — capacity (kg/L) hiển thị ở đầu panel có tăng ngay không. Bấm "Tháo" — capacity
+   có trả về đúng không.
+3. Nhồi túi gần đầy rồi mặc dry_bag, sau đó cố tháo ra — nếu tháo ra sẽ tràn túi (vượt hard cap),
+   phải bị từ chối (item vẫn nằm ở "Đang mặc", không tháo).
+4. Mặc jacket, cheat mưa (Disaster Phase FirstRain qua F2 `+8h`) — Wet tăng chậm hơn rõ rệt so
+   với không mặc (tỉ lệ 0.3×).
+5. Mặc boots, Travel qua route Shallow — Black Water Exposure không tăng (block level 1). Đặt
+   Deep — Exposure vẫn tăng nhưng giảm một nửa so với không mặc boots.
+6. Mặc rope, cheat Current Strength "Extreme", Travel — chi phí Stamina dùng đúng mức của
+   Current thấp hơn một bậc (Strong thay vì Extreme), không phải mức gốc.
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút

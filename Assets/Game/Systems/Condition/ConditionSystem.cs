@@ -12,12 +12,13 @@ namespace LastHope.Systems.Condition
     public static class ConditionSystem
     {
         public static void ApplyShortTick(
-            PlayerState player, ConditionBalance balance, bool isAtShelter, bool isRaining = false)
+            PlayerState player, ConditionBalance balance, bool isAtShelter,
+            bool isRaining = false, float wetMultiplier = 1f)
         {
             player.Thirst = Clamp100(player.Thirst + balance.ThirstPerHour / 60f);
             player.Hunger = Clamp100(player.Hunger + balance.HungerPerHour / 60f);
 
-            UpdateWet(player, balance, isAtShelter, isRaining);
+            UpdateWet(player, balance, isAtShelter, isRaining, wetMultiplier);
             UpdateBodyTemperature(player, balance, isAtShelter);
             UpdateColdFlag(player, balance);
             UpdateStamina(player, balance);
@@ -49,7 +50,8 @@ namespace LastHope.Systems.Condition
         public static bool IsCollapsed(PlayerState player, ConditionBalance balance) =>
             player.Health <= balance.CollapsedHealthThreshold;
 
-        static void UpdateWet(PlayerState player, ConditionBalance balance, bool isAtShelter, bool isRaining)
+        static void UpdateWet(
+            PlayerState player, ConditionBalance balance, bool isAtShelter, bool isRaining, float wetMultiplier)
         {
             if (isAtShelter)
             {
@@ -57,7 +59,7 @@ namespace LastHope.Systems.Condition
             }
             else if (isRaining)
             {
-                player.Wet = Clamp100(player.Wet + balance.WetGainPerMinuteInRain);
+                player.Wet = Clamp100(player.Wet + balance.WetGainPerMinuteInRain * wetMultiplier);
             }
         }
 

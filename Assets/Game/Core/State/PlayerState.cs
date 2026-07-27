@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using LastHope.Data.Definitions;
+
 namespace LastHope.Core.State
 {
     public class PlayerState
@@ -9,6 +12,9 @@ namespace LastHope.Core.State
         public float PositionY;
 
         public InventoryState Inventory = new();
+
+        /// <summary>Item đang mặc theo slot. Slot chưa có entry = trống. Item mặc không nằm trong Inventory.Slots.</summary>
+        public Dictionary<EquipSlot, string> Equipped = new();
 
         // Condition (P2-A). Xem docs/plans/2026-07-27-p2a-condition-core.md — Injury/
         // Disoriented chưa làm vì balance.json chưa có số cho hai nhóm đó.
