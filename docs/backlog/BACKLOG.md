@@ -120,11 +120,11 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
 | BL-P2-04 | Flood State | Verify | Dry/Shallow/Medium/Deep/Impassable trên **Route** (chưa làm Zone trong Location — không có nội dung nào cần) — test tự động, user cần tự xem qua Debug Panel |
-| BL-P2-05 | Current Strength | Backlog | Rủi ro vượt dòng, Rope giảm rủi ro |
+| BL-P2-05 | Current Strength | Verify | **Số tự đề xuất, chưa qua playtest.** Rủi ro "cuốn" (sweep) theo tỉ lệ %/tier; Rope giảm rủi ro **chưa làm** (cần Equipment System P2-C thực sự mặc đồ) |
 | BL-P2-06 | Black Water Exposure | Verify | Nguồn tăng Exposure qua hazard crossing xong (nối vào field trống từ P2-A); `contaminated_handling_exposure_gain` — chưa có action "xử lý đồ nhiễm bẩn" để dùng tới |
-| BL-P2-07 | Electrified Water cục bộ | Backlog | Hazard Volume cục bộ, cảnh báo trước |
-| BL-P2-08 | Route Closure | Backlog | Route đổi theo Phase/Clock, không softlock |
-| BL-P2-09 | Disaster Phase rút gọn | Backlog | Dry → First Rain → Black Rain → Route Closure — cần trước khi nối `wet_gain_per_minute_in_rain` (đã giữ sẵn field ở P2-A) |
+| BL-P2-07 | Electrified Water cục bộ | Verify | **Số tự đề xuất, chưa qua playtest.** Instant Hazard, set thủ công qua Debug Panel (chưa có nguồn hạ tầng tự động — Power/Grid thuộc P3) |
+| BL-P2-08 | Route Closure | Verify | **Số tự đề xuất, chưa qua playtest.** `RouteDefinition.ClosesAtPhase` đè Flood thành Impassable theo Disaster Phase; route hiện có (`route_shelter_store`) không set field này (route sống còn duy nhất, tự đóng sẽ softlock) |
+| BL-P2-09 | Disaster Phase rút gọn | Verify | **Số tự đề xuất, chưa qua playtest.** Dry → First Rain → Black Rain → Route Closure, suy thuần từ world time. Đã nối `wet_gain_per_minute_in_rain` (field bỏ trống từ P2-A) |
 
 ### P2-C — Equipment Protection (M3)
 
@@ -136,10 +136,9 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 |
 | BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
 
-**Gate P2:** chưa chạy — xong P2-A (Condition Core) + phần Flood State của P2-B. Còn lại:
-Current Strength (BL-P2-05), Electrified Water (BL-P2-07), Route Closure (BL-P2-08),
-Disaster Phase (BL-P2-09) — **không có số trong `balance.json`**, chờ quyết định user (tự
-đề xuất số hay để lại). P2-C (Equipment/Return Window/Content/Scenario) chưa bắt đầu.
+**Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ** (138 EditMode test). Còn P2-C
+(Equipment/Return Window/Content P2/Scenario A-D) — content P2 (route+location thứ hai)
+cần thiết để test được kịch bản "đổi route vì flood" thật sự (hiện chỉ có 1 route).
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
 không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
 
@@ -153,6 +152,21 @@ nhất hiện có) rồi thử Travel:
 2. Mang nặng (Overload Heavy) + đặt Deep cùng lúc — thời gian phải nhân dồn cả hai (loadFactor
    × floodTimeFactor), không phải chỉ tính cái lớn hơn.
 3. Đặt Impassable rồi thử tương tác Travel Point — phải bị từ chối hoàn toàn, không đi được.
+
+## Cần user verify Disaster Phase / Current Strength / Electrified (BL-P2-05/07/08/09)
+
+**Toàn bộ số ở đây là tự đề xuất, chưa qua playtest** — cần ý kiến bạn nhiều hơn phần trên:
+
+1. F2: `+8h` vài lần liên tiếp, xem Disaster Phase đổi Dry→FirstRain (mốc 240 phút = 4 tiếng)
+   →BlackRain (600 phút = 10 tiếng)→RouteClosure (900 phút = 15 tiếng) — mốc thời gian này có
+   hợp lý với nhịp chơi 30-45 phút/phiên (theo Exit Criteria P2) không, hay quá nhanh/chậm?
+2. Cheat Current "Extreme", Travel qua lại nhiều lần — tỉ lệ "cuốn" (sweep, giảm Health) 50%
+   có cảm thấy hợp lý không? Damage mỗi lần trúng là 10 — quá nhẹ/nặng?
+3. Bật Electrified, Travel qua — Health giảm 15 nhưng dừng lại gần ngưỡng Collapse (không
+   chết ngay) — độ nguy hiểm này ổn không?
+4. Route Closure hiện **không áp dụng cho route nào cả** (route duy nhất `route_shelter_store`
+   cố tình không set `ClosesAtPhase` để tránh softlock) — cơ chế chỉ thật sự test được khi có
+   route thứ hai (BL-P2-12, P2-C).
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút

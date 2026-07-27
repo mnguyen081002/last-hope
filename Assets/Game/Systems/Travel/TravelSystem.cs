@@ -1,3 +1,4 @@
+using LastHope.Core.Random;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
@@ -22,7 +23,7 @@ namespace LastHope.Systems.Travel
                 _ => balance.Travel.LoadFactorNormal,
             };
 
-            var flood = world.GetOrCreateRoute(routeId).Flood;
+            var flood = EffectiveFlood(world, definitions, routeId);
             float floodTimeFactor = HazardSystem.IsPassable(flood)
                 ? HazardSystem.TimeFactor(flood, balance.Hazard)
                 : 1f; // Impassable chặn ở Command.Validate, không tới đây — giá trị này không dùng thực tế.
@@ -30,12 +31,21 @@ namespace LastHope.Systems.Travel
             return UnityEngine.Mathf.RoundToInt(route.TravelMinutes * loadFactor * floodTimeFactor);
         }
 
+        static FloodState EffectiveFlood(WorldState world, DefinitionRegistry definitions, string routeId)
+        {
+            var route = definitions.GetRoute(routeId);
+            var state = world.GetOrCreateRoute(routeId);
+            var phase = DisasterPhaseSystem.CurrentPhase(world.WorldTimeMinutes, definitions.Balance.DisasterPhase);
+
+            return HazardSystem.EffectiveFlood(route, state, phase);
+        }
+
         /// <summary>
         /// Di chuyển: bơm thời gian qua route rồi đổi location. Không đụng scene — Presentation
         /// nghe <see cref="LastHope.Core.Events.LocationChanged"/> để load scene tương ứng.
         /// </summary>
         public static void Travel(
-            WorldState world, DefinitionRegistry definitions, TickScheduler ticks, string routeId)
+            WorldState world, DefinitionRegistry definitions, TickScheduler ticks, RngStream hazardRng, string routeId)
         {
             var route = definitions.GetRoute(routeId);
             string fromLocationId = world.Player.CurrentLocationId;
@@ -45,13 +55,17 @@ namespace LastHope.Systems.Travel
             ticks.FastForward(minutes);
 
             var player = world.Player;
+            var balance = definitions.Balance;
 
             // Cộng một lần ngoài tick thường — chi phí của MỘT chuyến đi, không phải mỗi phút.
-            player.Fatigue = UnityEngine.Mathf.Clamp(
-                player.Fatigue + definitions.Balance.Condition.FatiguePerTravel, 0f, 100f);
+            player.Fatigue = UnityEngine.Mathf.Clamp(player.Fatigue + balance.Condition.FatiguePerTravel, 0f, 100f);
 
-            var flood = world.GetOrCreateRoute(routeId).Flood;
-            HazardSystem.ApplyCrossingCost(player, flood, definitions.Balance.Hazard);
+            var routeState = world.GetOrCreateRoute(routeId);
+            var flood = EffectiveFlood(world, definitions, routeId);
+
+            HazardSystem.ApplyCrossingCost(player, flood, balance.Hazard);
+            HazardSystem.ApplyCurrentCrossing(player, routeState.Current, balance.Hazard, hazardRng);
+            HazardSystem.ApplyElectrifiedCrossing(player, routeState.IsElectrified, balance.Hazard, balance.Condition);
 
             player.CurrentLocationId = toLocationId;
         }

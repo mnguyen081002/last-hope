@@ -1,3 +1,4 @@
+using LastHope.Core.Random;
 using LastHope.Core.State;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Hazard;
@@ -77,6 +78,121 @@ namespace LastHope.Tests.EditMode
             Assert.AreEqual(0f, player.Stamina, "Stamina không âm.");
             Assert.AreEqual(100f, player.BlackWaterExposure, "Exposure không vượt 100.");
             Assert.AreEqual(100f, player.Wet, "Wet không vượt 100.");
+        }
+
+        // ---------- EffectiveFlood (Route Closure) ----------
+
+        [Test]
+        public void EffectiveFlood_NoClosePhase_ReturnsManualFlood()
+        {
+            var route = new RouteDefinition { ClosesAtPhase = null };
+            var state = new RouteState { Flood = FloodState.Shallow };
+
+            var result = HazardSystem.EffectiveFlood(route, state, DisasterPhase.RouteClosure);
+
+            Assert.AreEqual(FloodState.Shallow, result);
+        }
+
+        [Test]
+        public void EffectiveFlood_PhaseNotReachedYet_ReturnsManualFlood()
+        {
+            var route = new RouteDefinition { ClosesAtPhase = DisasterPhase.BlackRain };
+            var state = new RouteState { Flood = FloodState.Dry };
+
+            var result = HazardSystem.EffectiveFlood(route, state, DisasterPhase.FirstRain);
+
+            Assert.AreEqual(FloodState.Dry, result);
+        }
+
+        [Test]
+        public void EffectiveFlood_PhaseReached_OverridesToImpassable()
+        {
+            var route = new RouteDefinition { ClosesAtPhase = DisasterPhase.BlackRain };
+            var state = new RouteState { Flood = FloodState.Dry }; // dù thủ công đang Dry
+
+            var result = HazardSystem.EffectiveFlood(route, state, DisasterPhase.BlackRain);
+
+            Assert.AreEqual(FloodState.Impassable, result);
+        }
+
+        // ---------- Current Strength ----------
+
+        [Test]
+        public void ApplyCurrentCrossing_None_NoStaminaCost_NeverSweeps()
+        {
+            var rng = new RngStream(1UL);
+
+            for (int i = 0; i < 100; i++)
+            {
+                HazardSystem.ApplyCurrentCrossing(player, CurrentStrength.None, balance, rng);
+            }
+
+            Assert.AreEqual(100f, player.Stamina);
+            Assert.AreEqual(100f, player.Health, "0% sweep chance không bao giờ trúng.");
+        }
+
+        [Test]
+        public void ApplyCurrentCrossing_Extreme_CostsStamina()
+        {
+            var rng = new RngStream(1UL);
+
+            HazardSystem.ApplyCurrentCrossing(player, CurrentStrength.Extreme, balance, rng);
+
+            Assert.AreEqual(100f - balance.CurrentStrengthStaminaCost[4], player.Stamina, 0.0001f);
+        }
+
+        [Test]
+        public void ApplyCurrentCrossing_SweepDamage_DoesNotHealBelowFloorFromOtherSource()
+        {
+            // Health đã thấp hơn mọi thứ do nguồn khác (vd Sick không floor) — sweep không
+            // được kéo nó lên, chỉ có thể làm giảm thêm hoặc giữ nguyên qua Mathf.Max(0,...).
+            player.Health = 2f;
+            var rng = new RngStream(1UL);
+
+            // Thử nhiều seed để chắc chắn bắt được ít nhất 1 lần trúng sweep ở Extreme (50%).
+            bool everWentBelowOrEqual = true;
+            for (int i = 0; i < 50; i++)
+            {
+                player.Health = 2f;
+                HazardSystem.ApplyCurrentCrossing(player, CurrentStrength.Extreme, balance, rng);
+                if (player.Health > 2f) everWentBelowOrEqual = false;
+            }
+
+            Assert.IsTrue(everWentBelowOrEqual, "Sweep không được hồi máu, chỉ giảm hoặc giữ nguyên.");
+        }
+
+        // ---------- Electrified Water ----------
+
+        [Test]
+        public void ApplyElectrifiedCrossing_False_NoEffect()
+        {
+            HazardSystem.ApplyElectrifiedCrossing(player, false, balance, new ConditionBalance());
+
+            Assert.AreEqual(100f, player.Stamina);
+            Assert.AreEqual(100f, player.Health);
+        }
+
+        [Test]
+        public void ApplyElectrifiedCrossing_True_DamagesButStopsAboveCollapseFloor()
+        {
+            var conditionBalance = new ConditionBalance();
+            player.Health = conditionBalance.CollapsedHealthThreshold + 2f; // gần floor
+
+            HazardSystem.ApplyElectrifiedCrossing(player, true, balance, conditionBalance);
+
+            Assert.AreEqual(conditionBalance.CollapsedHealthThreshold + 1f, player.Health,
+                "Không kill tức thời — dừng ngay trên ngưỡng Collapse.");
+        }
+
+        [Test]
+        public void ApplyElectrifiedCrossing_DoesNotHeal_IfAlreadyBelowFloor()
+        {
+            var conditionBalance = new ConditionBalance();
+            player.Health = 1f; // đã dưới floor (do Sick chẳng hạn) — Electrified không được hồi lên floor.
+
+            HazardSystem.ApplyElectrifiedCrossing(player, true, balance, conditionBalance);
+
+            Assert.AreEqual(1f, player.Health);
         }
     }
 }

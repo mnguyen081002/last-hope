@@ -1,5 +1,6 @@
 using System.IO;
 using LastHope.Core.Events;
+using LastHope.Core.Random;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
@@ -18,6 +19,7 @@ namespace LastHope.Tests.EditMode
         WorldState world;
         EventBus events;
         TickScheduler ticks;
+        RngStream hazardRng;
 
         [SetUp]
         public void SetUp()
@@ -32,6 +34,7 @@ namespace LastHope.Tests.EditMode
 
             events = new EventBus();
             ticks = new TickScheduler(world, events);
+            hazardRng = new RngStream(12345UL);
         }
 
         [Test]
@@ -61,7 +64,7 @@ namespace LastHope.Tests.EditMode
             long before = world.WorldTimeMinutes;
             int expectedMinutes = TravelSystem.ComputeTravelMinutes(world, definitions, RouteShelterStore);
 
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
 
             Assert.AreEqual(before + expectedMinutes, world.WorldTimeMinutes);
         }
@@ -69,7 +72,7 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void Travel_ChangesCurrentLocation_ToOtherEnd()
         {
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
 
             Assert.AreEqual("location_convenience_store", world.Player.CurrentLocationId);
         }
@@ -80,7 +83,7 @@ namespace LastHope.Tests.EditMode
             // TickScheduler ở đây không gắn ConditionDriver (test dựng thẳng, không qua
             // GameServices) nên fatigue theo tick không tự chạy — chỉ có cộng một lần của
             // TravelSystem.Travel. ConditionDriver được test riêng ở ConditionDriverTests.
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
 
             Assert.AreEqual(definitions.Balance.Condition.FatiguePerTravel, world.Player.Fatigue, 0.0001f);
         }
@@ -88,8 +91,8 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void Travel_RoundTrip_ReturnsToOriginalLocation()
         {
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
 
             Assert.AreEqual("location_shelter", world.Player.CurrentLocationId);
         }
@@ -100,7 +103,7 @@ namespace LastHope.Tests.EditMode
             int shortTickCount = 0;
             ticks.ShortTick += _ => shortTickCount++;
 
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
 
             Assert.AreEqual(25, shortTickCount, "FastForward phải chạy từng phút, không nhảy cộc.");
         }
@@ -125,7 +128,7 @@ namespace LastHope.Tests.EditMode
         {
             world.GetOrCreateRoute(RouteShelterStore).Flood = FloodState.Medium;
 
-            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+            TravelSystem.Travel(world, definitions, ticks, hazardRng, RouteShelterStore);
 
             var balance = definitions.Balance.Hazard;
             Assert.AreEqual(100f - balance.CrossingStaminaCost[2], world.Player.Stamina, 0.0001f);

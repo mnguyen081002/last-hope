@@ -12,6 +12,7 @@ namespace LastHope.Data.Definitions
         public NewGameBalance NewGame = new();
         public ConditionBalance Condition = new();
         public HazardBalance Hazard = new();
+        public DisasterPhaseBalance DisasterPhase = new();
     }
 
     public class InventoryBalance
@@ -91,5 +92,22 @@ namespace LastHope.Data.Definitions
         public float[] CrossingWetGain = { 10f, 30f, 60f, 90f };
         public float[] CrossingTimeFactor = { 1.0f, 1.2f, 1.5f, 2.0f };
         public float ContaminatedHandlingExposureGain = 10f;
+
+        // Tự đề xuất 2026-07-27, chưa qua playtest — xem docs/plans/2026-07-27-p2b-phase-2.md.
+        // Mảng 5 phần tử = index theo CurrentStrength None(0)..Extreme(4), không có mức nào chặn
+        // hoàn toàn (khác Flood) — Route đã có Flood/Route Closure lo việc chặn.
+        public float[] CurrentStrengthStaminaCost = { 0f, 8f, 20f, 35f, 55f };
+        public float[] CurrentStrengthSweepChancePercent = { 0f, 5f, 15f, 30f, 50f };
+        public float CurrentSweepHealthDamage = 10f;
+        public float ElectrifiedWaterDamage = 15f;
+        public float ElectrifiedWaterStaminaCost = 10f;
+    }
+
+    /// <summary>Tự đề xuất 2026-07-27, chưa qua playtest — mốc tính bằng phút game (Day 0 17:00 = phút 0).</summary>
+    public class DisasterPhaseBalance
+    {
+        public float FirstRainAtMinute = 240f;
+        public float BlackRainAtMinute = 600f;
+        public float RouteClosureAtMinute = 900f;
     }
 }

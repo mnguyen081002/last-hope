@@ -46,7 +46,19 @@
     "crossing_exposure_gain": [0, 5, 15, 30],
     "crossing_wet_gain": [10, 30, 60, 90],
     "crossing_time_factor": [1.0, 1.2, 1.5, 2.0],
-    "contaminated_handling_exposure_gain": 10
+    "contaminated_handling_exposure_gain": 10,
+    "_note_current_electrified": "Cac field duoi day (current_strength_*, electrified_water_*) la baseline TU DE XUAT 2026-07-27, chua qua playtest - xem docs/plans/2026-07-27-p2b-phase-2.md",
+    "current_strength_stamina_cost": [0, 8, 20, 35, 55],
+    "current_strength_sweep_chance_percent": [0, 5, 15, 30, 50],
+    "current_sweep_health_damage": 10,
+    "electrified_water_damage": 15,
+    "electrified_water_stamina_cost": 10
+  },
+  "disaster_phase": {
+    "_note": "Baseline TU DE XUAT 2026-07-27, chua qua playtest - xem docs/plans/2026-07-27-p2b-phase-2.md",
+    "first_rain_at_minute": 240,
+    "black_rain_at_minute": 600,
+    "route_closure_at_minute": 900
   },
   "shelter": {
     "damp_threshold": 10,

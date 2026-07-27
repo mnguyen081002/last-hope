@@ -11,12 +11,13 @@ namespace LastHope.Systems.Condition
     /// </summary>
     public static class ConditionSystem
     {
-        public static void ApplyShortTick(PlayerState player, ConditionBalance balance, bool isAtShelter)
+        public static void ApplyShortTick(
+            PlayerState player, ConditionBalance balance, bool isAtShelter, bool isRaining = false)
         {
             player.Thirst = Clamp100(player.Thirst + balance.ThirstPerHour / 60f);
             player.Hunger = Clamp100(player.Hunger + balance.HungerPerHour / 60f);
 
-            UpdateWet(player, balance, isAtShelter);
+            UpdateWet(player, balance, isAtShelter, isRaining);
             UpdateBodyTemperature(player, balance, isAtShelter);
             UpdateColdFlag(player, balance);
             UpdateStamina(player, balance);
@@ -38,22 +39,26 @@ namespace LastHope.Systems.Condition
 
             if (player.Hunger >= 100f || player.Thirst >= 100f)
             {
-                player.Health = Mathf.Max(balance.StarvationHealthFloor,
-                    player.Health - balance.StarvationHealthDecayPerLongTick);
+                // Min-Max: floor không được HỒI máu nếu Health đã thấp hơn floor từ nguồn
+                // khác (vd Sick không floor) — chỉ ngăn CHÍNH starvation kéo xuống dưới floor.
+                player.Health = Mathf.Min(player.Health, Mathf.Max(
+                    balance.StarvationHealthFloor, player.Health - balance.StarvationHealthDecayPerLongTick));
             }
         }
 
         public static bool IsCollapsed(PlayerState player, ConditionBalance balance) =>
             player.Health <= balance.CollapsedHealthThreshold;
 
-        static void UpdateWet(PlayerState player, ConditionBalance balance, bool isAtShelter)
+        static void UpdateWet(PlayerState player, ConditionBalance balance, bool isAtShelter, bool isRaining)
         {
             if (isAtShelter)
             {
                 player.Wet = Mathf.Max(0f, player.Wet - balance.WetDryPerMinuteAtShelter);
             }
-            // Wet gain do mưa ambient cần Disaster Phase (P2-B) để biết trời có mưa —
-            // chưa nối. Wet hiện chỉ tăng qua Hazard crossing khi hệ thống đó xây xong.
+            else if (isRaining)
+            {
+                player.Wet = Clamp100(player.Wet + balance.WetGainPerMinuteInRain);
+            }
         }
 
         static void UpdateBodyTemperature(PlayerState player, ConditionBalance balance, bool isAtShelter)

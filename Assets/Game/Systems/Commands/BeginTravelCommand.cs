@@ -1,5 +1,6 @@
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
+using LastHope.Core.Random;
 using LastHope.Systems.Hazard;
 using LastHope.Systems.Travel;
 
@@ -28,7 +29,9 @@ namespace LastHope.Systems.Commands
                 return CommandResult.Fail(CommandErrorCode.WrongLocation,
                     $"Route '{RouteId}' không nối location hiện tại.");
 
-            var flood = context.World.GetOrCreateRoute(RouteId).Flood;
+            var phase = DisasterPhaseSystem.CurrentPhase(
+                context.World.WorldTimeMinutes, context.Definitions.Balance.DisasterPhase);
+            var flood = HazardSystem.EffectiveFlood(route, context.World.GetOrCreateRoute(RouteId), phase);
             if (!HazardSystem.IsPassable(flood))
                 return CommandResult.Fail(CommandErrorCode.NotAllowedNow,
                     $"Route '{RouteId}' đang Impassable — không đi qua được.");
@@ -43,7 +46,8 @@ namespace LastHope.Systems.Commands
             int minutes = TravelSystem.ComputeTravelMinutes(context.World, context.Definitions, RouteId);
             context.Events?.Publish(new TravelStarted(RouteId, minutes));
 
-            TravelSystem.Travel(context.World, context.Definitions, context.Ticks, RouteId);
+            var hazardRng = context.Rng.Stream(RngService.Events);
+            TravelSystem.Travel(context.World, context.Definitions, context.Ticks, hazardRng, RouteId);
 
             context.Events?.Publish(new LocationChanged(fromLocationId, context.World.Player.CurrentLocationId));
         }

@@ -170,6 +170,20 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
+        public void Starvation_DoesNotHeal_IfHealthAlreadyBelowFloorFromOtherSource()
+        {
+            // Sick không có floor, có thể đưa Health xuống dưới StarvationHealthFloor.
+            // Starvation tick sau đó không được "hồi" nó lên floor.
+            player.Hunger = 100f;
+            player.Health = balance.StarvationHealthFloor - 0.5f;
+
+            ConditionSystem.ApplyLongTick(player, balance);
+
+            Assert.AreEqual(balance.StarvationHealthFloor - 0.5f, player.Health,
+                "Floor chỉ chặn CHÍNH starvation kéo xuống, không hồi máu từ nguồn khác.");
+        }
+
+        [Test]
         public void Starvation_TriggersOnThirstToo()
         {
             player.Thirst = 100f;

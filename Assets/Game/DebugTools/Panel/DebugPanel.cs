@@ -39,7 +39,7 @@ namespace LastHope.DebugTools.Panel
             var services = GameBootstrapper.Services;
             var world = services.World;
 
-            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 700f),
+            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 760f),
                 GUI.skin.box);
             scroll = GUILayout.BeginScrollView(scroll);
 
@@ -129,9 +129,14 @@ namespace LastHope.DebugTools.Panel
             GUILayout.Space(8f);
             GUILayout.Label("— Hazard —");
 
+            var phase = DisasterPhaseSystem.CurrentPhase(
+                services.World.WorldTimeMinutes, services.Definitions.Balance.DisasterPhase);
+            GUILayout.Label($"Disaster Phase: {phase} (raining: {DisasterPhaseSystem.IsRaining(phase)})");
+
             var routeState = services.World.GetOrCreateRoute(TestRouteId);
             GUILayout.Label($"{TestRouteId}: {routeState.Flood}" +
-                            (HazardSystem.IsPassable(routeState.Flood) ? "" : " (chặn)"));
+                            (HazardSystem.IsPassable(routeState.Flood) ? "" : " (chặn)") +
+                            $"  Current:{routeState.Current}  Electrified:{routeState.IsElectrified}");
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Dry")) routeState.Flood = FloodState.Dry;
@@ -142,6 +147,15 @@ namespace LastHope.DebugTools.Panel
             if (GUILayout.Button("Deep")) routeState.Flood = FloodState.Deep;
             if (GUILayout.Button("Impassable")) routeState.Flood = FloodState.Impassable;
             GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Current None")) routeState.Current = CurrentStrength.None;
+            if (GUILayout.Button("Current Strong")) routeState.Current = CurrentStrength.Strong;
+            if (GUILayout.Button("Current Extreme")) routeState.Current = CurrentStrength.Extreme;
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button(routeState.IsElectrified ? "Tắt Electrified" : "Bật Electrified"))
+                routeState.IsElectrified = !routeState.IsElectrified;
         }
 
         void DrawInventoryControls(GameServices services)
