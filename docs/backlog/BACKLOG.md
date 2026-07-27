@@ -107,13 +107,51 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 
 ## P2 — Flood and Hazard Loop
 
+### P2-A — Player Condition (M3)
+
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| S7 | Condition + Phase timeline | Backlog | |
-| S8 | Hazard/Flood + Equipment + Travel risk | Backlog | |
-| S9 | Shelter recovery + HUD + Scenario A-D | Backlog | |
+| BL-P2-01 | Player Condition Core | Verify | Health/Stamina/Fatigue/Hunger/Thirst/BodyTemp — test tự động; `Injury` **chưa làm** (balance.json không có số) |
+| BL-P2-02 | Status Effect | Verify | Wet/Cold/BlackWaterExposure→Sick xong; `Bleeding`/`Disoriented` **chưa làm** (không có số trong balance.json) |
+| BL-P2-03 | Condition UI debug | Verify | Thêm mục Condition vào F2 Debug Panel — user tự xem |
 
-**Gate P2:** chưa chạy.
+### P2-B — Hazard và Route State (M3)
+
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| BL-P2-04 | Flood State | Backlog | Dry/Shallow/Medium/Deep/Impassable trên Route+Zone |
+| BL-P2-05 | Current Strength | Backlog | Rủi ro vượt dòng, Rope giảm rủi ro |
+| BL-P2-06 | Black Water Exposure | Backlog | Nguồn tăng Exposure qua hazard crossing — nối vào field đã có sẵn ở P2-A |
+| BL-P2-07 | Electrified Water cục bộ | Backlog | Hazard Volume cục bộ, cảnh báo trước |
+| BL-P2-08 | Route Closure | Backlog | Route đổi theo Phase/Clock, không softlock |
+| BL-P2-09 | Disaster Phase rút gọn | Backlog | Dry → First Rain → Black Rain → Route Closure — cần trước khi nối `wet_gain_per_minute_in_rain` (đã giữ sẵn field ở P2-A) |
+
+### P2-C — Equipment Protection (M3)
+
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| BL-P2-10 | Equipment Protection | Backlog | Items P2 đã có trong `items_p2.json` (jacket/boots/gloves/rope/dry_bag), chưa có hệ thống dùng `EquipSlot`/`Protection` |
+| BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk |
+| BL-P2-12 | Content P2 | Backlog | Route + Location thứ hai (cao/thấp cho Flood chọn) |
+| BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 |
+| BL-P2-14 | Save Hazard State | Backlog | Hazard/Route/Condition State sống qua save/load — Condition state (P2-A) đã tự động qua vì nằm trong `PlayerState`/`WorldStateSerializer` sẵn có |
+
+**Gate P2:** chưa chạy — mới xong P2-A (Condition Core), còn P2-B/P2-C.
+Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
+không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
+
+## Cần user verify P2-A (không chặn tiếp tục code, chỉ để xác nhận số liệu hợp lý)
+
+Chạy build, F2 mở Debug Panel, xem mục Condition mới:
+
+1. Nút `+50 Wet` rồi chờ (hoặc fast-forward) — BodyTemperature tụt dần, Cold bật lên sau
+   vài phút khi xuống ≤35°C.
+2. Đi vào shelter (`location_shelter`) — Wet tự giảm, BodyTemperature hồi về 37°C.
+3. Nút `-20 HP` vài lần cho Health ≤5 — nhân vật đứng im, không đi được (Collapsed).
+4. `+50 Exposure` hai lần (đạt 100 ≥ ngưỡng 70) — `Sick` bật lên, Health bắt đầu giảm dần
+   mỗi 10 phút game (long tick), không có floor (khác starvation).
+5. Số hiển thị (Thirst/Hunger tăng dần theo phút) có tốc độ hợp lý theo cảm giác chơi không
+   — đây là baseline tự suy ra từ `balance.json`, có thể cần tune sau playtest thật.
 
 ---
 

@@ -10,10 +10,21 @@ namespace LastHope.Core.State
 
         public InventoryState Inventory = new();
 
-        // Condition đầy đủ thuộc P2 — giữ sẵn field để save schema không đổi giữa chừng.
-        public float Thirst;
-        public float Hunger;
+        // Condition (P2-A). Xem docs/plans/2026-07-27-p2a-condition-core.md — Injury/
+        // Disoriented chưa làm vì balance.json chưa có số cho hai nhóm đó.
+        public float Health = 100f;
+        public float Stamina = 100f;
         public float Fatigue;
+        public float Hunger;
+        public float Thirst;
+        public float BodyTemperature = 37f;
         public float Wet;
+        public float BlackWaterExposure;
+
+        /// <summary>Hysteresis theo BodyTemperature — bật ở ColdBodyTempThreshold, tắt ở ColdClearBodyTempThreshold.</summary>
+        public bool IsCold;
+
+        /// <summary>Bật khi BlackWaterExposure vượt ngưỡng; không tự tắt (cần Shelter treat — P3).</summary>
+        public bool IsSick;
     }
 }

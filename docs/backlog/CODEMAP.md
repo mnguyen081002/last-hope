@@ -8,9 +8,9 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 
 ## Hiện trạng
 
-Xong **P1-A** + **P1-B** (Gate M1 PASS) + toàn bộ hệ thống **P1-C** (84 EditMode test,
-Telemetry event-driven). Còn thiếu duy nhất: **user tự playtest** (BL-P1-22, checklist ở
-cuối `BACKLOG.md`) → chuyển Gate P1 Pass. Chưa có: P2/P3/P4.
+**Gate P1 PASS** (P1-A/B/C xong, user đã playtest). Đang làm **P2-A Player Condition Core**
+(105 EditMode test) — còn P2-B (Hazard/Flood/Route) và P2-C (Equipment/Content/Scenario).
+Chưa có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -101,6 +101,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Travel | `Systems/Travel/TravelSystem.cs` | `ComputeTravelMinutes`, `Travel` | ✅ | loadFactor theo `LoadTier`; `FastForward` từng phút qua `TickScheduler` |
 | Commands | `Systems/Commands/{TransferItemCommand,OpenSearchPointCommand,TakeAllFromSearchPointCommand,BeginTravelCommand}.cs` | implement `IGameCommand` | ✅ | `TransferItemCommand` dùng chung cho Take/Store/Withdraw/Drop/PickUp qua `InventoryOwner` |
 | Telemetry | `Systems/Telemetry/TelemetryLogger.cs` | `LogSearchClosed`, `LogInventoryOpenDuration` (+ tự subscribe Travel/Location/Search event) | ⬜ | JSONL `persistentDataPath/Telemetry/session_*.jsonl`. Sự kiện có EventBus sẵn thì tự nghe; sự kiện chỉ UI biết (đóng panel, thời gian mở) UI gọi thẳng |
+| Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa + Black Water Exposure gain **chưa nối nguồn** (chờ P2-B Hazard) |
 
 ## LastHope.Presentation
 
@@ -109,7 +110,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Camera | `Presentation/Camera/CameraRig.cs` | `SetTarget(t)`, `Target` | ⬜ | Orthographic 2D, `transparencySortMode = CustomAxis` trục (0,1,0) |
 | Player | `Presentation/Player/PlayerController.cs` | `SpeedModifier`, `Facing`, `IsMoving` | ⬜ | `Rigidbody2D` kinematic; va chạm tự viết qua `Rigidbody2D.Cast` (kinematic không tự chặn) |
 | Player avatar sync | `Presentation/Player/PlayerAvatarSync.cs` | `TeleportTo(pos)` | ⬜ | Ghi transform → `PlayerState` mỗi frame; áp lại từ state khi `WorldStateReloaded` |
-| Overload sync | `Presentation/Player/PlayerOverloadSync.cs` | — | ⬜ | Đẩy `LoadTier` → `PlayerController.SpeedModifier` mỗi frame |
+| Movement modifier | `Presentation/Player/PlayerMovementModifierSync.cs` | — | ⬜ | Overload (hệ số) × Collapsed (chặn nhị phân) → `PlayerController.SpeedModifier`. Đổi tên từ `PlayerOverloadSync` 2026-07-27 khi thêm Collapsed |
 | Boot | `Presentation/Boot/BootLoader.cs` | — | ⬜ | `00_Boot` → additive persistent (không hard-code scene gameplay) |
 | Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint` |
 | Interaction | `Presentation/Interaction/{IInteractable,InteractionDetector,InteractionPromptOverlay}.cs` | `CurrentTarget`, `HoldProgress01` | ⬜ | Nhấn tức thì (`HoldDurationSeconds` ≤0) hoặc giữ phím thật (progress bar, thả sớm = hủy). `SearchPointView` chỉ đòi hold ở lần mở **đầu tiên** — đã `Rolled` thì mở lại tức thì |

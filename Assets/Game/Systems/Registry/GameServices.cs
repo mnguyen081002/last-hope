@@ -5,6 +5,7 @@ using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Data;
+using LastHope.Systems.Condition;
 using LastHope.Systems.Telemetry;
 
 namespace LastHope.Systems.Registry
@@ -25,6 +26,7 @@ namespace LastHope.Systems.Registry
         public SaveService Saves { get; }
         public GameContext Context { get; private set; }
         public TelemetryLogger Telemetry { get; }
+        public ConditionDriver Condition { get; private set; }
 
         public GameServices(
             DefinitionRegistry definitions, WorldState world, string saveDirectory, string telemetryDirectory)
@@ -48,6 +50,7 @@ namespace LastHope.Systems.Registry
             World = world;
             Rng = new RngService(world.MasterSeed, world.RngStreams);
             Ticks = new TickScheduler(world, Events);
+            Condition = new ConditionDriver(world, Definitions, Ticks);
             Context = new GameContext
             {
                 World = world,

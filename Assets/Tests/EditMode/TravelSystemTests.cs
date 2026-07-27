@@ -74,6 +74,17 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
+        public void Travel_AddsFatiguePerTravel()
+        {
+            // TickScheduler ở đây không gắn ConditionDriver (test dựng thẳng, không qua
+            // GameServices) nên fatigue theo tick không tự chạy — chỉ có cộng một lần của
+            // TravelSystem.Travel. ConditionDriver được test riêng ở ConditionDriverTests.
+            TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);
+
+            Assert.AreEqual(definitions.Balance.Condition.FatiguePerTravel, world.Player.Fatigue, 0.0001f);
+        }
+
+        [Test]
         public void Travel_RoundTrip_ReturnsToOriginalLocation()
         {
             TravelSystem.Travel(world, definitions, ticks, RouteShelterStore);

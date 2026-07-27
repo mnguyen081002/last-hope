@@ -4,6 +4,7 @@ using LastHope.Core.Save;
 using LastHope.Core.State;
 using LastHope.Core.Time;
 using LastHope.Systems.Boot;
+using LastHope.Systems.Condition;
 using LastHope.Systems.Registry;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -37,7 +38,7 @@ namespace LastHope.DebugTools.Panel
             var services = GameBootstrapper.Services;
             var world = services.World;
 
-            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 460f),
+            GUILayout.BeginArea(new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, 620f),
                 GUI.skin.box);
             scroll = GUILayout.BeginScrollView(scroll);
 
@@ -47,6 +48,7 @@ namespace LastHope.DebugTools.Panel
             GUILayout.Label($"Location: {world.Player.CurrentLocationId}");
 
             DrawTimeControls(services);
+            DrawConditionControls(services);
             DrawInventoryControls(services);
             DrawSaveControls(services);
 
@@ -75,6 +77,47 @@ namespace LastHope.DebugTools.Panel
             clock.Paused = GUILayout.Toggle(clock.Paused, "Tạm dừng");
             GUILayout.Label($"Tốc độ: ×{clock.TimeScale:F1}");
             clock.TimeScale = GUILayout.HorizontalSlider(clock.TimeScale, 0f, 60f);
+        }
+
+        void DrawConditionControls(GameServices services)
+        {
+            GUILayout.Space(8f);
+            GUILayout.Label("— Condition —");
+
+            var player = services.World.Player;
+            var balance = services.Definitions.Balance.Condition;
+
+            GUILayout.Label($"HP {player.Health:F0}  Stamina {player.Stamina:F0}  Fatigue {player.Fatigue:F0}");
+            GUILayout.Label($"Hunger {player.Hunger:F0}  Thirst {player.Thirst:F0}  BodyTemp {player.BodyTemperature:F1}°C");
+            GUILayout.Label($"Wet {player.Wet:F0}  Exposure {player.BlackWaterExposure:F0}" +
+                            $"  Cold:{player.IsCold}  Sick:{player.IsSick}" +
+                            $"  Collapsed:{ConditionSystem.IsCollapsed(player, balance)}");
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("+20 Thirst")) player.Thirst = Mathf.Min(100f, player.Thirst + 20f);
+            if (GUILayout.Button("+20 Hunger")) player.Hunger = Mathf.Min(100f, player.Hunger + 20f);
+            if (GUILayout.Button("+50 Wet")) player.Wet = Mathf.Min(100f, player.Wet + 50f);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("-20 HP")) player.Health = Mathf.Max(0f, player.Health - 20f);
+            if (GUILayout.Button("+50 Exposure")) player.BlackWaterExposure = Mathf.Min(100f, player.BlackWaterExposure + 50f);
+            if (GUILayout.Button("Reset")) ResetCondition(player);
+            GUILayout.EndHorizontal();
+        }
+
+        static void ResetCondition(PlayerState player)
+        {
+            player.Health = 100f;
+            player.Stamina = 100f;
+            player.Fatigue = 0f;
+            player.Hunger = 0f;
+            player.Thirst = 0f;
+            player.BodyTemperature = 37f;
+            player.Wet = 0f;
+            player.BlackWaterExposure = 0f;
+            player.IsCold = false;
+            player.IsSick = false;
         }
 
         void DrawInventoryControls(GameServices services)

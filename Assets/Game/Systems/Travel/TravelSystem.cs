@@ -38,7 +38,12 @@ namespace LastHope.Systems.Travel
             int minutes = ComputeTravelMinutes(world, definitions, routeId);
             ticks.FastForward(minutes);
 
-            world.Player.CurrentLocationId = toLocationId;
+            // Cộng một lần ngoài tick thường — chi phí thể lực của MỘT chuyến đi, không phải mỗi phút.
+            var player = world.Player;
+            player.Fatigue = UnityEngine.Mathf.Clamp(
+                player.Fatigue + definitions.Balance.Condition.FatiguePerTravel, 0f, 100f);
+
+            player.CurrentLocationId = toLocationId;
         }
     }
 }

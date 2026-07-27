@@ -198,7 +198,7 @@ namespace LastHope.EditorTools
                 so.FindProperty("controls").objectReferenceValue = controls);
 
             root.AddComponent<PlayerAvatarSync>();
-            root.AddComponent<PlayerOverloadSync>();
+            root.AddComponent<PlayerMovementModifierSync>();
 
             var detector = root.AddComponent<InteractionDetector>();
             SetSerialized(detector, so =>
