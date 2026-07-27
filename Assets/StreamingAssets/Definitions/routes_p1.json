@@ -3,6 +3,7 @@
     "id": "route_shelter_store",
     "from_location_id": "location_shelter",
     "to_location_id": "location_convenience_store",
-    "travel_minutes": 25
+    "travel_minutes": 25,
+    "closes_at_phase": "route_closure"
   }
 ]

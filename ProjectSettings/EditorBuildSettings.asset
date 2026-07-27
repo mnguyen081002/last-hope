@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Locations/41_Location_ConvenienceStore.unity
     guid: f66448231d473574c8c3806ea871707c
+  - enabled: 1
+    path: Assets/Scenes/Locations/42_Location_UtilityGarage.unity
+    guid: 7a601aeb354ea7f4b86670333466b7e2
   m_configObjects: {}

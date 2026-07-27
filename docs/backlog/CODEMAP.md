@@ -11,8 +11,8 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 **Gate P1 PASS**. **P2-A + P2-B xong toàn bộ**, BL-P2-10 Equipment Protection xong (166
 EditMode test). P2-B phần Current Strength/Electrified/Route Closure/Disaster Phase dùng
 **số tự đề xuất, chưa qua playtest** (khác các phần khác luôn bám số có sẵn `balance.json`)
-— user cần xem qua trước khi tin tưởng hoàn toàn. P2-C còn lại: Return Window UI/Content
-P2/Scenario A-D. Chưa có: P3/P4.
+— user cần xem qua trước khi tin tưởng hoàn toàn. BL-P2-12 Content P2 xong (route+location
+thứ hai — gara). P2-C còn lại: Return Window UI/Scenario A-D. Chưa có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -29,9 +29,9 @@ load `20_MainShelter` theo `location_shelter` → tìm `PlayerSpawnPoint` → ca
 | `manifest.json` | `definition_version` | Definition Registry (BL-P1-06) |
 | `balance.json` | inventory cap/overload, travel load factor, condition rates, new_game | baseline số liệu, xuyên suốt |
 | `items_p1.json`, `items_p2.json`, `items_p3_materials.json` | item def: weight/volume/stack/use_effects | P1, P2, P3 |
-| `locations_p1.json`, `locations_p4.json` | location def | P1, P4 |
-| `routes_p1.json`, `routes_p4.json` | route def | P1, P4 |
-| `searchpoints_p1.json`, `searchpoints_p4.json` | search point + loot table | P1, P4 |
+| `locations_p1.json`, `locations_p4.json` | location def | P1, P4 (`location_garage` trong file p4 dùng từ BL-P2-12; `location_school` vẫn để dành P4) |
+| `routes_p1.json`, `routes_p4.json` | route def | P1, P4 (`route_shelter_garage` dùng từ BL-P2-12) |
+| `searchpoints_p1.json`, `searchpoints_p4.json` | search point + loot table | P1, P4 (2 điểm garage dùng từ BL-P2-12; 2 điểm school để dành P4). **Lưu ý**: `DefinitionLoader` nạp mọi file khớp tiền tố bất kể hậu tố p1/p4 — nội dung "p4" đã sống trong registry từ trước, chỉ thiếu scene/travel point để chơi được |
 | `modules_p3.json`, `shelterzones_p3.json` | build module + shelter zone | P3 |
 | `events_p3.json`, `events_p4.json`, `events_p4_minh.json` | event def | P3, P4 |
 | `npcs_p4.json`, `phases_p4.json` | NPC + disaster phase timeline | P4 |
@@ -119,9 +119,9 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Player avatar sync | `Presentation/Player/PlayerAvatarSync.cs` | `TeleportTo(pos)` | ⬜ | Ghi transform → `PlayerState` mỗi frame; áp lại từ state khi `WorldStateReloaded` |
 | Movement modifier | `Presentation/Player/PlayerMovementModifierSync.cs` | — | ⬜ | Overload (hệ số) × Collapsed (chặn nhị phân) → `PlayerController.SpeedModifier`. Đổi tên từ `PlayerOverloadSync` 2026-07-27 khi thêm Collapsed |
 | Boot | `Presentation/Boot/BootLoader.cs` | — | ⬜ | `00_Boot` → additive persistent (không hard-code scene gameplay) |
-| Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint`. `RepositionPlayer` tìm spawn theo tên scene cụ thể (2026-07-27 — trước dùng `FindFirstObjectByType` toàn cục, trúng nhầm scene cũ chưa unload xong khi Travel) |
+| Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint`. `RepositionPlayer` tìm spawn theo tên scene cụ thể (2026-07-27 — trước dùng `FindFirstObjectByType` toàn cục, trúng nhầm scene cũ chưa unload xong khi Travel). Nghe thêm `TravelStarted` (đã có `RouteId`) để chọn đúng `PlayerSpawnPoint` khi scene có nhiều cổng ra vào (BL-P2-12, 2026-07-27) |
 | Interaction | `Presentation/Interaction/{IInteractable,InteractionDetector,InteractionPromptOverlay}.cs` | `CurrentTarget`, `HoldProgress01` | ⬜ | Nhấn tức thì (`HoldDurationSeconds` ≤0) hoặc giữ phím thật (progress bar, thả sớm = hủy). `SearchPointView` chỉ đòi hold ở lần mở **đầu tiên** — đã `Rolled` thì mở lại tức thì |
-| World views | `Presentation/World/{SearchPointView,StorageView,TravelPointView,PlayerSpawnPoint}.cs` | implement `IInteractable` | ⬜ | Chỉ submit Command/publish event, không biết UI nào phản hồi (tránh phụ thuộc `UI`) |
+| World views | `Presentation/World/{SearchPointView,StorageView,TravelPointView,PlayerSpawnPoint}.cs` | implement `IInteractable` | ⬜ | Chỉ submit Command/publish event, không biết UI nào phản hồi (tránh phụ thuộc `UI`). `PlayerSpawnPoint.RouteId` (2026-07-27) — scene nhiều `TravelPoint` thì nhiều spawn, mỗi cái gắn đúng route dẫn tới nó |
 
 Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi P1-C, xem plan doc.
 
@@ -154,8 +154,9 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | `00_Boot` | `BootCamera`, `BootLoader` |
 | `10_GamePersistent` | `GameServices` (Bootstrapper+Driver+DebugPanel), `Player` (Controller+AvatarSync+OverloadSync+InteractionDetector), `Main Camera`+`CameraRig`, `DebugOverlay`, `InteractionPrompt`, `SceneFlowController`, `InventoryPanel`, `SearchPanel`, `StoragePanel` |
 | `90_TestSystems` | Ground tiled 32×20, 4 tường biên, 4 prop test Y-sort — không còn nằm trong luồng boot chính, chỉ để test thủ công |
-| `Shelters/20_MainShelter` | `location_shelter` — `StorageView`, `TravelPointView` (→ store), `PlayerSpawnPoint` đặt sát `TravelPoint` (2026-07-27, trước ở giữa phòng cách cổng 5 ô) |
+| `Shelters/20_MainShelter` | `location_shelter` — `StorageView`, 2 `TravelPointView` (→ store, → gara — BL-P2-12), mỗi cái 1 `PlayerSpawnPoint` riêng sát cạnh, gắn đúng `RouteId` |
 | `Locations/41_Location_ConvenienceStore` | `location_convenience_store` — 6 `SearchPointView` khớp `searchpoints_p1.json`, `TravelPointView` (→ shelter), `PlayerSpawnPoint` đặt sát `TravelPoint` (2026-07-27) |
+| `Locations/42_Location_UtilityGarage` | `location_garage` — 2 `SearchPointView` khớp `searchpoints_p4.json` (workbench/shelf), `TravelPointView` (→ shelter), `PlayerSpawnPoint` sát `TravelPoint` (BL-P2-12, 2026-07-27) |
 
 ---
 

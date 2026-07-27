@@ -25,6 +25,11 @@ namespace LastHope.Presentation.Boot
 
         string loadedGameplayScene;
 
+        /// <summary>RouteId của chuyến đi vừa bắt đầu — dùng để chọn đúng spawn point (gần
+        /// cổng nào) khi <see cref="LocationChanged"/> bắn ngay sau đó. Rỗng ở lúc boot lần
+        /// đầu (không có route nào vừa đi qua) → spawn mặc định.</summary>
+        string pendingRouteId = "";
+
         void OnEnable()
         {
             if (GameBootstrapper.IsReady) OnReady();
@@ -36,6 +41,7 @@ namespace LastHope.Presentation.Boot
             GameBootstrapper.Ready -= OnReady;
             if (GameBootstrapper.IsReady)
             {
+                GameBootstrapper.Services.Events.Unsubscribe<TravelStarted>(OnTravelStarted);
                 GameBootstrapper.Services.Events.Unsubscribe<LocationChanged>(OnLocationChanged);
             }
         }
@@ -43,11 +49,14 @@ namespace LastHope.Presentation.Boot
         void OnReady()
         {
             GameBootstrapper.Ready -= OnReady;
+            GameBootstrapper.Services.Events.Subscribe<TravelStarted>(OnTravelStarted);
             GameBootstrapper.Services.Events.Subscribe<LocationChanged>(OnLocationChanged);
 
             string locationId = GameBootstrapper.Services.World.Player.CurrentLocationId;
             LoadScene(SceneNameFor(locationId));
         }
+
+        void OnTravelStarted(TravelStarted e) => pendingRouteId = e.RouteId;
 
         void OnLocationChanged(LocationChanged e) => LoadScene(SceneNameFor(e.ToLocationId));
 
@@ -89,7 +98,10 @@ namespace LastHope.Presentation.Boot
         {
             if (playerAvatar == null) return;
 
-            var spawn = FindSpawnPointInScene(SceneManager.GetSceneByName(sceneName));
+            string routeId = pendingRouteId;
+            pendingRouteId = ""; // dùng một lần — LocationChanged kế tiếp không phải do Travel này nữa
+
+            var spawn = FindSpawnPointInScene(SceneManager.GetSceneByName(sceneName), routeId);
             if (spawn == null)
             {
                 GameLog.Warn(LogCategory.Boot, $"Không thấy PlayerSpawnPoint trong '{sceneName}'.");
@@ -100,14 +112,21 @@ namespace LastHope.Presentation.Boot
             if (cameraRig != null) cameraRig.SetTarget(playerAvatar.transform);
         }
 
-        static PlayerSpawnPoint FindSpawnPointInScene(Scene scene)
+        /// <summary>Scene nhiều cổng ra vào có nhiều spawn point — ưu tiên cái khớp
+        /// <paramref name="routeId"/> vừa đi qua, không khớp (hoặc rỗng, vd. boot lần đầu)
+        /// thì lấy cái đầu tiên tìm thấy.</summary>
+        static PlayerSpawnPoint FindSpawnPointInScene(Scene scene, string routeId)
         {
+            PlayerSpawnPoint fallback = null;
             foreach (var root in scene.GetRootGameObjects())
             {
-                var spawn = root.GetComponentInChildren<PlayerSpawnPoint>(true);
-                if (spawn != null) return spawn;
+                foreach (var spawn in root.GetComponentsInChildren<PlayerSpawnPoint>(true))
+                {
+                    if (!string.IsNullOrEmpty(routeId) && spawn.RouteId == routeId) return spawn;
+                    fallback ??= spawn;
+                }
             }
-            return null;
+            return fallback;
         }
     }
 }

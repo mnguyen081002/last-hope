@@ -132,15 +132,27 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | --- | --- | --- | --- |
 | BL-P2-10 | Equipment Protection | Verify | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
 | BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk. `TravelPointView` (nhấn E cạnh prop) hiện tại là blockout tạm của P1-C (`docs/plans/2026-07-27-p1c-exploration-gameplay.md`) — chưa xác định World Map (`docs/03-mvp-black-rain/03-black-rain-world-map.md`) có thay thế hoàn toàn cách tương tác này hay chỉ bổ sung ETA/risk phía trên, cần quyết định khi lập plan BL-P2-11 |
-| BL-P2-12 | Content P2 | Backlog | Route + Location thứ hai (cao/thấp cho Flood chọn) |
-| BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 |
+| BL-P2-12 | Content P2 | Verify | `location_garage` + `route_shelter_garage` — data đã có sẵn từ trước (locations_p4.json/routes_p4.json/searchpoints_p4.json, `DefinitionLoader` nạp mọi file khớp tiền tố bất kể hậu tố p1/p4), chỉ thiếu scene + travel point. Đã thêm scene `42_Location_UtilityGarage` + `TravelPointView` thứ hai ở Shelter. `route_shelter_store` (thấp/ngắn) nay `closes_at_phase: route_closure`; `route_shelter_garage` (cao/dài, 35 phút) không set — tạo lựa chọn cao/thấp đúng yêu cầu |
+| BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 — Scenario A (route ngắn ngập/route dài an toàn) giờ đã có nội dung để test thật (BL-P2-12 xong) |
 | BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
 
-**Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ**, BL-P2-10 (Equipment) xong (166 EditMode
-test). Còn Return Window/Content P2/Scenario A-D — content P2 (route+location thứ hai)
-cần thiết để test được kịch bản "đổi route vì flood" thật sự (hiện chỉ có 1 route).
+**Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ**, BL-P2-10 (Equipment) + BL-P2-12
+(Content P2) xong (166 EditMode test). Còn Return Window/Scenario A-D.
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
 không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
+
+## Cần user verify Content P2 (BL-P2-12)
+
+1. Từ Shelter, giờ có **2** điểm Travel (đi cửa hàng, đi gara sửa xe) — đi gara, tới nơi thấy
+   2 search point mới (workbench/shelf), nhặt được pump_part/toolbox/scrap/filter.
+2. Quay lại Shelter từ gara — nhân vật phải xuất hiện gần cổng gara (khác vị trí cổng cửa
+   hàng) — đây là fix kèm theo: mỗi cổng giờ có spawn riêng, chọn theo route vừa đi qua
+   (`TravelStarted` event), không còn 1 spawn cố định cho cả 2 cổng.
+3. Quay lại Shelter từ cửa hàng (route cũ) — spawn vẫn đúng gần cổng cửa hàng như trước,
+   không bị đổi do thêm route mới.
+4. F2: `+8h` nhiều lần tới khi Disaster Phase = RouteClosure (mốc 900 phút = 15 tiếng, xem
+   `DrawHazardControls`) — route đi cửa hàng phải hoá Impassable (bị chặn), route đi gara vẫn
+   đi được bình thường — đúng ý "đổi route vì flood/phase", không phải ép kịch bản.
 
 ## Cần user verify Flood State (BL-P2-04/06, không chặn tiếp tục code)
 

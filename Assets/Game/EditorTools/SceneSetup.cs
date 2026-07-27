@@ -44,12 +44,13 @@ namespace LastHope.EditorTools
             BuildTestRoomScene();
             BuildMainShelterScene();
             BuildConvenienceStoreScene();
+            BuildUtilityGarageScene();
 
             RegisterScenesInBuildSettings();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[SceneSetup] Đã sinh xong 5 scene và cập nhật Build Settings.");
+            Debug.Log("[SceneSetup] Đã sinh xong 6 scene và cập nhật Build Settings.");
         }
 
         // ---------- Scene builders ----------
@@ -148,9 +149,11 @@ namespace LastHope.EditorTools
             var root = new GameObject("Interactables");
             BuildStorage(root, "location_shelter", new Vector2(-4f, 3f));
             BuildTravelPoint(root, "route_shelter_store", "cửa hàng tiện lợi", new Vector2(4f, -3f));
-            // Spawn ngay cạnh TravelPoint — mỗi lần Travel tới đây phải xuất hiện gần cổng
-            // vừa đi qua, không phải giữa phòng (bug user báo, spawn cũ (0,0) cách cổng 5 ô).
-            BuildPlayerSpawnPoint(root, new Vector2(3f, -2f));
+            BuildTravelPoint(root, "route_shelter_garage", "gara sửa xe", new Vector2(-8f, -6f));
+            // Mỗi TravelPoint có spawn riêng sát cạnh, gắn đúng routeId — 2 cổng ra vào thì
+            // phải có 2 spawn (bug user báo trước đó: spawn (0,0) cách xa cổng, giữa phòng).
+            BuildPlayerSpawnPoint(root, new Vector2(3f, -2f), "route_shelter_store");
+            BuildPlayerSpawnPoint(root, new Vector2(-7f, -5f), "route_shelter_garage");
 
             SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
         }
@@ -171,11 +174,26 @@ namespace LastHope.EditorTools
             BuildSearchPoint(root, "searchpoint_counter", new Vector2(6f, 0f));
             BuildSearchPoint(root, "searchpoint_back_room", new Vector2(6f, -4f));
             BuildTravelPoint(root, "route_shelter_store", "shelter", new Vector2(-6f, -5f));
-            // Spawn ngay cạnh TravelPoint, cùng khoảng cách với shelter — xem ghi chú ở
-            // BuildMainShelterScene.
-            BuildPlayerSpawnPoint(root, new Vector2(-5f, -4f));
+            BuildPlayerSpawnPoint(root, new Vector2(-5f, -4f), "route_shelter_store");
 
             SaveScene(scene, $"{ScenesRoot}/Locations/41_Location_ConvenienceStore.unity");
+        }
+
+        static void BuildUtilityGarageScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            const float halfWidth = 10f, halfHeight = 8f;
+            BuildGround(halfWidth, halfHeight);
+            BuildBoundary(halfWidth, halfHeight);
+
+            var root = new GameObject("Interactables");
+            BuildSearchPoint(root, "searchpoint_garage_workbench", new Vector2(-4f, 4f));
+            BuildSearchPoint(root, "searchpoint_garage_shelf", new Vector2(4f, 4f));
+            BuildTravelPoint(root, "route_shelter_garage", "shelter", new Vector2(-6f, -5f));
+            BuildPlayerSpawnPoint(root, new Vector2(-5f, -4f), "route_shelter_garage");
+
+            SaveScene(scene, $"{ScenesRoot}/Locations/42_Location_UtilityGarage.unity");
         }
 
         // ---------- Pieces ----------
@@ -326,12 +344,13 @@ namespace LastHope.EditorTools
             });
         }
 
-        static void BuildPlayerSpawnPoint(GameObject parent, Vector2 position)
+        static void BuildPlayerSpawnPoint(GameObject parent, Vector2 position, string routeId = "")
         {
             var go = new GameObject("PlayerSpawnPoint");
             go.transform.SetParent(parent.transform, false);
             go.transform.position = position;
-            go.AddComponent<PlayerSpawnPoint>();
+            var spawn = go.AddComponent<PlayerSpawnPoint>();
+            SetSerialized(spawn, so => so.FindProperty("routeId").stringValue = routeId);
         }
 
         static GameObject NewCamera(string name, float orthographicSize)
@@ -442,6 +461,7 @@ namespace LastHope.EditorTools
                 new EditorBuildSettingsScene($"{ScenesRoot}/90_TestSystems.unity", true),
                 new EditorBuildSettingsScene($"{ScenesRoot}/Shelters/20_MainShelter.unity", true),
                 new EditorBuildSettingsScene($"{ScenesRoot}/Locations/41_Location_ConvenienceStore.unity", true),
+                new EditorBuildSettingsScene($"{ScenesRoot}/Locations/42_Location_UtilityGarage.unity", true),
             };
         }
     }
