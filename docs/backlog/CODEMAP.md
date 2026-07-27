@@ -153,8 +153,8 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | `00_Boot` | `BootCamera`, `BootLoader` |
 | `10_GamePersistent` | `GameServices` (Bootstrapper+Driver+DebugPanel), `Player` (Controller+AvatarSync+OverloadSync+InteractionDetector), `Main Camera`+`CameraRig`, `DebugOverlay`, `InteractionPrompt`, `SceneFlowController`, `InventoryPanel`, `SearchPanel`, `StoragePanel` |
 | `90_TestSystems` | Ground tiled 32×20, 4 tường biên, 4 prop test Y-sort — không còn nằm trong luồng boot chính, chỉ để test thủ công |
-| `Shelters/20_MainShelter` | `location_shelter` — `StorageView`, `TravelPointView` (→ store), `PlayerSpawnPoint` |
-| `Locations/41_Location_ConvenienceStore` | `location_convenience_store` — 6 `SearchPointView` khớp `searchpoints_p1.json`, `TravelPointView` (→ shelter), `PlayerSpawnPoint` |
+| `Shelters/20_MainShelter` | `location_shelter` — `StorageView`, `TravelPointView` (→ store), `PlayerSpawnPoint` đặt sát `TravelPoint` (2026-07-27, trước ở giữa phòng cách cổng 5 ô) |
+| `Locations/41_Location_ConvenienceStore` | `location_convenience_store` — 6 `SearchPointView` khớp `searchpoints_p1.json`, `TravelPointView` (→ shelter), `PlayerSpawnPoint` đặt sát `TravelPoint` (2026-07-27) |
 
 ---
 

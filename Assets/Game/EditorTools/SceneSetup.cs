@@ -148,7 +148,9 @@ namespace LastHope.EditorTools
             var root = new GameObject("Interactables");
             BuildStorage(root, "location_shelter", new Vector2(-4f, 3f));
             BuildTravelPoint(root, "route_shelter_store", "cửa hàng tiện lợi", new Vector2(4f, -3f));
-            BuildPlayerSpawnPoint(root, new Vector2(0f, 0f));
+            // Spawn ngay cạnh TravelPoint — mỗi lần Travel tới đây phải xuất hiện gần cổng
+            // vừa đi qua, không phải giữa phòng (bug user báo, spawn cũ (0,0) cách cổng 5 ô).
+            BuildPlayerSpawnPoint(root, new Vector2(3f, -2f));
 
             SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
         }
@@ -169,7 +171,9 @@ namespace LastHope.EditorTools
             BuildSearchPoint(root, "searchpoint_counter", new Vector2(6f, 0f));
             BuildSearchPoint(root, "searchpoint_back_room", new Vector2(6f, -4f));
             BuildTravelPoint(root, "route_shelter_store", "shelter", new Vector2(-6f, -5f));
-            BuildPlayerSpawnPoint(root, new Vector2(-6f, -3f));
+            // Spawn ngay cạnh TravelPoint, cùng khoảng cách với shelter — xem ghi chú ở
+            // BuildMainShelterScene.
+            BuildPlayerSpawnPoint(root, new Vector2(-5f, -4f));
 
             SaveScene(scene, $"{ScenesRoot}/Locations/41_Location_ConvenienceStore.unity");
         }

@@ -170,9 +170,14 @@ nhất hiện có) rồi thử Travel:
 
 ## Cần user verify Equipment Protection (BL-P2-10)
 
-Inventory Panel (nhặt item ở `location_shelter`/`location_convenience_store` hoặc cheat qua F2):
+**Sửa lại hướng dẫn cũ:** jacket/boots/rope/dry_bag **chưa nhặt được trong game** — chưa có
+search point/loot table nào chứa 4 item này (Content P2 — BL-P2-12 — vẫn Backlog). Cách lấy
+item để test: mở **F2 Debug Panel**, gõ đúng id (`item_jacket`, `item_boots`, `item_rope`,
+`item_dry_bag`) vào ô nhập rồi bấm "Thêm".
 
-1. Nhặt jacket/boots/rope/dry_bag — mỗi item equipment có nút "Mặc" riêng bên cạnh nút "Bỏ".
+Inventory Panel:
+
+1. Sau khi thêm item bằng F2 — mỗi item equipment có nút "Mặc" riêng bên cạnh nút "Bỏ".
    Bấm Mặc — item chuyển lên khu "Đang mặc" phía trên, biến mất khỏi danh sách túi.
 2. Mặc dry_bag — capacity (kg/L) hiển thị ở đầu panel có tăng ngay không. Bấm "Tháo" — capacity
    có trả về đúng không.
@@ -184,6 +189,13 @@ Inventory Panel (nhặt item ở `location_shelter`/`location_convenience_store`
    Deep — Exposure vẫn tăng nhưng giảm một nửa so với không mặc boots.
 6. Mặc rope, cheat Current Strength "Extreme", Travel — chi phí Stamina dùng đúng mức của
    Current thấp hơn một bậc (Strong thay vì Extreme), không phải mức gốc.
+
+**Fix kèm theo (2026-07-27):** `PlayerSpawnPoint` ở cả 2 scene (`20_MainShelter`,
+`41_Location_ConvenienceStore`) trước đặt cách xa `TravelPoint` (shelter: 5 ô, giữa phòng) —
+user báo Travel qua lại không thấy nhân vật xuất hiện gần cổng. Đã sửa `SceneSetup.cs` đặt
+spawn sát `TravelPoint` ở cả hai scene, xem `docs/plans/2026-07-27-p2c-equipment.md` không đề
+cập — đây là fix phát sinh khi user playtest tính năng Equipment, không thuộc phạm vi BL-P2-10
+gốc.
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút
