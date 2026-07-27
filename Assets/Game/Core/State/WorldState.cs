@@ -41,6 +41,12 @@ namespace LastHope.Core.State
 
         /// <summary>Đồ người chơi vứt xuống đất, nằm lại qua save/load.</summary>
         public List<ItemInstanceState> DroppedItems = new();
+
+        /// <summary>
+        /// Kho lưu trữ tại location (chỉ shelter dùng tới). Không giới hạn sức chứa — luật
+        /// capacity chỉ áp cho backpack người chơi.
+        /// </summary>
+        public List<ItemInstanceState> StorageContainer = new();
     }
 
     /// <summary>

@@ -23,8 +23,11 @@ namespace LastHope.Data.Definitions
     {
         public string LocationId;
 
-        /// <summary>0 = mở tức thì. Là lever tune qua JSON, không sửa code.</summary>
-        public int OpenTimeMinutes;
+        /// <summary>
+        /// Số giây thực phải giữ phím Interact mới mở được (0 = mở tức thì khi nhấn).
+        /// Đại diện loại thao tác mở (mở tay không vs cạy khóa) — lever tune qua JSON.
+        /// </summary>
+        public float OpenHoldSeconds;
 
         public List<LootTableEntry> LootTable = new();
     }

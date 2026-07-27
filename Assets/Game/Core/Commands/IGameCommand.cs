@@ -1,6 +1,7 @@
 using LastHope.Core.Events;
 using LastHope.Core.Random;
 using LastHope.Core.State;
+using LastHope.Core.Time;
 using LastHope.Data;
 
 namespace LastHope.Core.Commands
@@ -44,6 +45,7 @@ namespace LastHope.Core.Commands
         public DefinitionRegistry Definitions;
         public EventBus Events;
         public RngService Rng;
+        public TickScheduler Ticks;
     }
 
     /// <summary>

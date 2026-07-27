@@ -49,6 +49,7 @@ namespace LastHope.Systems.Registry
                 Definitions = Definitions,
                 Events = Events,
                 Rng = Rng,
+                Ticks = Ticks,
             };
             Commands = new CommandProcessor(Context);
         }

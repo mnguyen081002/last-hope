@@ -40,6 +40,19 @@ namespace LastHope.Core.Events
         public SearchPointOpened(string searchPointId) => SearchPointId = searchPointId;
     }
 
+    /// <summary>Bắn lúc bắt đầu di chuyển; <see cref="LocationChanged"/> bắn khi tới nơi.</summary>
+    public readonly struct TravelStarted
+    {
+        public readonly string RouteId;
+        public readonly int TravelMinutes;
+
+        public TravelStarted(string routeId, int travelMinutes)
+        {
+            RouteId = routeId;
+            TravelMinutes = travelMinutes;
+        }
+    }
+
     /// <summary>Bắn sau khi load save — view phải đọc lại toàn bộ state, không tin cache cũ.</summary>
     public readonly struct WorldStateReloaded
     {

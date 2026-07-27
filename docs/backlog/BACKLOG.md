@@ -58,9 +58,9 @@ chạy P0 khi muốn kiểm chứng lại các số đó, không phải điều 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
 | BL-P1-01 | Project setup | Done | 9 asmdef, cây folder, scene sinh bằng `SceneSetup` |
-| BL-P1-02 | Camera isometric | Verify | `CameraRig` xong — cần user nhìn: căn giữa, zoom có hợp lý không |
-| BL-P1-03 | Input + movement | Verify | `PlayerController` xong — cần user nhìn: WASD đúng hướng world |
-| BL-P1-04 | Logging + debug overlay | Verify | `GameLog` Done; `DebugOverlay` F1 cần user nhìn |
+| BL-P1-02 | Camera isometric | Done | User xác nhận bằng mắt 2026-07-27 |
+| BL-P1-03 | Input + movement | Done | User xác nhận; đã sửa lỗi đi lọt map (kinematic không tự chặn va chạm — `Rigidbody2D.Cast`) |
+| BL-P1-04 | Logging + debug overlay | Done | User xác nhận F1; đã sửa cửa sổ mờ/lệch (`defaultIsNativeResolution`) |
 | BL-P1-05 | Build PC đầu tiên | Done | Build Windows + smoke test headless pass (boot → persistent → test room) |
 
 ## P1-B — Technical Foundation (M1)
@@ -73,12 +73,11 @@ chạy P0 khi muốn kiểm chứng lại các số đó, không phải điều 
 | BL-P1-09 | Simulation Tick | Done | `TickScheduler` — nơi duy nhất tăng `WorldTimeMinutes` |
 | BL-P1-10 | Command Layer | Done | Pipeline + `UseItemCommand`. Command gameplay khác thêm ở S5-S6 |
 | BL-P1-11 | Save Foundation | Done | Checksum SHA256, atomic write, .bak, autosave rotation 3 slot |
-| BL-P1-12 | Debug Panel v1 | Verify | `DebugPanel` F2 xong — cần user tự bấm thử |
+| BL-P1-12 | Debug Panel v1 | Done | User xác nhận F2 |
 | BL-P1-13 | Test Foundation | Done | 51 EditMode test xanh |
 
-**Gate M1:** phần tự động **PASS** (51/51 test: clock 24h không drift, tick chính xác,
-save/load roundtrip canonical JSON bằng nhau, RNG chạy tiếp đúng sau load, validate fail
-không mutate state). Phần thủ công **chờ user** — xem mục "Cần user verify" cuối file.
+**Gate M1: PASS** (2026-07-27) — 51/51 test tự động + user xác nhận bằng mắt (camera,
+movement, tường biên, Y-sort, F1, F2).
 
 ## P1-C — Exploration Gameplay (M2)
 
@@ -134,24 +133,6 @@ không mutate state). Phần thủ công **chờ user** — xem mục "Cần use
 | S18 | Outcome + Causal Report + Save full + Art tối thiểu | Backlog | |
 
 **Gate P4:** chưa chạy.
-
----
-
-## Cần user verify (chặn Gate M1 chuyển sang Done)
-
-Chạy `Builds/Windows/LastHope.exe` hoặc mở scene `00_Boot` trong Editor rồi Play:
-
-1. Nhân vật hiện ra, camera căn giữa nhân vật (không lệch tâm).
-2. WASD di chuyển đúng hướng world — W lên, S xuống, không đảo/xiên.
-3. Cuộn chuột zoom: nấc rõ ràng, không quá nhanh/chậm; giới hạn 3–12 hợp lý.
-4. Đi tới rìa map: bị tường biên chặn, không lọt ra ngoài.
-5. Đi trước/sau 4 prop trong test room: sprite sort đúng (đứng dưới thì che, đứng trên thì bị che).
-6. **F1** — overlay hiện FPS + toạ độ X/Y, số liệu cập nhật khi di chuyển.
-7. **F2** — Debug Panel: bấm `+1h` thấy đồng hồ nhảy; `Thêm` item vào túi thấy kg/L tăng;
-   `Dùng` item_water_bottle thấy số lượng giảm; `Save manual` rồi `Load manual` không lỗi.
-
-Kích thước nhân vật hiện dùng sprite 256px ở PPU 100 (= 2.56 unit) — **nhiều khả năng
-quá to** so với 1.7 m thiết kế. Nếu nhìn thấy sai tỉ lệ, báo tôi để chỉnh PPU/scale.
 
 ---
 

@@ -1,0 +1,229 @@
+using System.IO;
+using LastHope.Core.Commands;
+using LastHope.Core.Events;
+using LastHope.Core.Random;
+using LastHope.Core.State;
+using LastHope.Core.Time;
+using LastHope.Data;
+using LastHope.Systems.Commands;
+using LastHope.Systems.Inventory;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace LastHope.Tests.EditMode
+{
+    public class GameplayCommandTests
+    {
+        const string DrinkShelf1 = "searchpoint_drink_shelf_1";
+        const string RouteShelterStore = "route_shelter_store";
+
+        DefinitionRegistry definitions;
+        WorldState world;
+        GameContext context;
+        CommandProcessor processor;
+
+        [SetUp]
+        public void SetUp()
+        {
+            definitions = DefinitionLoader.LoadFromDirectory(
+                Path.Combine(Application.streamingAssetsPath, "Definitions"));
+
+            world = new WorldState { MasterSeed = 7UL };
+            world.Player.CurrentLocationId = "location_shelter";
+            world.Player.Inventory.CapacityKg = definitions.Balance.Inventory.BackpackCapacityKg;
+            world.Player.Inventory.CapacityLiters = definitions.Balance.Inventory.BackpackCapacityLiters;
+
+            var events = new EventBus();
+            context = new GameContext
+            {
+                World = world,
+                Definitions = definitions,
+                Events = events,
+                Rng = new RngService(world.MasterSeed, world.RngStreams),
+                Ticks = new TickScheduler(world, events),
+            };
+            processor = new CommandProcessor(context);
+        }
+
+        // ---------- OpenSearchPointCommand ----------
+
+        [Test]
+        public void OpenSearchPoint_WrongLocation_IsRejected()
+        {
+            world.Player.CurrentLocationId = "location_shelter"; // drink_shelf_1 ở convenience_store
+
+            var result = processor.Submit(new OpenSearchPointCommand(DrinkShelf1));
+
+            Assert.AreEqual(CommandErrorCode.WrongLocation, result.Error);
+        }
+
+        [Test]
+        public void OpenSearchPoint_CorrectLocation_RollsLoot()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store";
+
+            var result = processor.Submit(new OpenSearchPointCommand(DrinkShelf1));
+
+            Assert.IsTrue(result.Success);
+            var state = world.Locations["location_convenience_store"].SearchPoints[DrinkShelf1];
+            Assert.IsTrue(state.Rolled);
+        }
+
+        // ---------- TakeAllFromSearchPointCommand ----------
+
+        [Test]
+        public void TakeAllFromSearchPoint_BeforeOpen_IsRejected()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store";
+
+            var result = processor.Submit(new TakeAllFromSearchPointCommand(DrinkShelf1));
+
+            Assert.AreEqual(CommandErrorCode.NotAllowedNow, result.Error);
+        }
+
+        [Test]
+        public void TakeAllFromSearchPoint_AfterOpen_MovesItemsToPlayer()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store";
+            processor.Submit(new OpenSearchPointCommand(DrinkShelf1));
+
+            var take = new TakeAllFromSearchPointCommand(DrinkShelf1);
+            var result = processor.Submit(take);
+
+            Assert.IsTrue(result.Success);
+            Assert.IsTrue(take.TookEverything);
+            Assert.AreEqual(3, InventoryOps.CountOf(world.Player.Inventory, "item_water_bottle"));
+        }
+
+        // ---------- TransferItemCommand ----------
+
+        [Test]
+        public void Transfer_PlayerToShelterStorage_MovesItem()
+        {
+            InventoryOps.AddItem(world.Player.Inventory, definitions, "item_battery", 2);
+
+            var command = new TransferItemCommand(
+                InventoryOwner.Player, InventoryOwner.ShelterStorage("location_shelter"),
+                "item_battery", 2);
+            var result = processor.Submit(command);
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(0, InventoryOps.CountOf(world.Player.Inventory, "item_battery"));
+            Assert.AreEqual(2, InventoryOps.CountOf(
+                world.GetOrCreateLocation("location_shelter").StorageContainer, "item_battery"));
+        }
+
+        [Test]
+        public void Transfer_ShelterStorageToPlayer_RoundTrips()
+        {
+            var storage = world.GetOrCreateLocation("location_shelter").StorageContainer;
+            InventoryOps.AddItem(storage, definitions, "item_canned_food", 3);
+
+            var result = processor.Submit(new TransferItemCommand(
+                InventoryOwner.ShelterStorage("location_shelter"), InventoryOwner.Player,
+                "item_canned_food", 3));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(3, InventoryOps.CountOf(world.Player.Inventory, "item_canned_food"));
+        }
+
+        [Test]
+        public void Transfer_MoreThanAvailable_IsRejected_DoesNotMutate()
+        {
+            InventoryOps.AddItem(world.Player.Inventory, definitions, "item_battery", 1);
+
+            var result = processor.Submit(new TransferItemCommand(
+                InventoryOwner.Player, InventoryOwner.ShelterStorage("location_shelter"),
+                "item_battery", 5));
+
+            Assert.AreEqual(CommandErrorCode.ItemNotFound, result.Error);
+            Assert.AreEqual(1, InventoryOps.CountOf(world.Player.Inventory, "item_battery"));
+        }
+
+        [Test]
+        public void Transfer_PastHardCap_IsRejected()
+        {
+            world.Player.Inventory.CapacityKg = 1f;
+            var storage = world.GetOrCreateLocation("location_shelter").StorageContainer;
+            InventoryOps.AddItem(storage, definitions, "item_toolbox", 1); // 8kg > hard cap của 1kg
+
+            var result = processor.Submit(new TransferItemCommand(
+                InventoryOwner.ShelterStorage("location_shelter"), InventoryOwner.Player,
+                "item_toolbox", 1));
+
+            Assert.AreEqual(CommandErrorCode.NotEnoughCapacity, result.Error);
+        }
+
+        [Test]
+        public void Transfer_FromUnopenedSearchPoint_IsRejected()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store";
+            // Chưa Open — search point chưa Rolled.
+
+            var result = processor.Submit(new TransferItemCommand(
+                InventoryOwner.SearchPoint(DrinkShelf1), InventoryOwner.Player,
+                "item_water_bottle", 1));
+
+            Assert.AreEqual(CommandErrorCode.ItemNotFound, result.Error);
+        }
+
+        [Test]
+        public void Transfer_TwoHandCarryItem_RoutesToCarriedSlot_NotStorage()
+        {
+            var storage = world.GetOrCreateLocation("location_shelter").StorageContainer;
+            InventoryOps.AddItem(storage, definitions, "item_water_container_20l", 1);
+
+            var result = processor.Submit(new TransferItemCommand(
+                InventoryOwner.ShelterStorage("location_shelter"), InventoryOwner.Player,
+                "item_water_container_20l", 1));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("item_water_container_20l", world.Player.Inventory.CarriedObjectItemId);
+        }
+
+        [Test]
+        public void Transfer_DropThenPickUp_RoundTrips()
+        {
+            InventoryOps.AddItem(world.Player.Inventory, definitions, "item_canned_food", 2);
+
+            processor.Submit(new TransferItemCommand(
+                InventoryOwner.Player, InventoryOwner.DroppedItems("location_shelter"),
+                "item_canned_food", 2));
+            Assert.AreEqual(0, InventoryOps.CountOf(world.Player.Inventory, "item_canned_food"));
+
+            var pickUp = processor.Submit(new TransferItemCommand(
+                InventoryOwner.DroppedItems("location_shelter"), InventoryOwner.Player,
+                "item_canned_food", 2));
+
+            Assert.IsTrue(pickUp.Success);
+            Assert.AreEqual(2, InventoryOps.CountOf(world.Player.Inventory, "item_canned_food"));
+        }
+
+        // ---------- BeginTravelCommand ----------
+
+        [Test]
+        public void BeginTravel_RouteNotConnected_IsRejected()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store"; // route nối shelter<->store, thử route khác không liên quan
+
+            var result = processor.Submit(new BeginTravelCommand("route_khong_ton_tai"));
+
+            Assert.AreEqual(CommandErrorCode.UnknownDefinition, result.Error);
+        }
+
+        [Test]
+        public void BeginTravel_Valid_AdvancesTimeAndPublishesLocationChanged()
+        {
+            LocationChanged? received = null;
+            context.Events.Subscribe<LocationChanged>(e => received = e);
+
+            var result = processor.Submit(new BeginTravelCommand(RouteShelterStore));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(25, world.WorldTimeMinutes);
+            Assert.IsTrue(received.HasValue);
+            Assert.AreEqual("location_shelter", received.Value.FromLocationId);
+            Assert.AreEqual("location_convenience_store", received.Value.ToLocationId);
+        }
+    }
+}
