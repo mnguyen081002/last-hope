@@ -138,7 +138,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | Hệ thống | File | API chính | Test | Ghi chú |
 | --- | --- | --- | --- | --- |
 | Overlay | `DebugTools/Overlay/DebugOverlay.cs` | `SetTracked(t)` | ⬜ | F1: FPS + toạ độ X/Y |
-| Debug Panel | `DebugTools/Panel/DebugPanel.cs` | — | ⬜ | F2: tua giờ, time scale, thêm/dùng item, save/load. **Hệ thống mới phải thêm mục vào đây**. Chiều cao co theo `Screen.height` (2026-07-27 — trước cố định 760px, Game view nhỏ trong Editor bị cắt không cuộn tới được mục "Túi đồ"). Có ô tìm + danh sách toàn bộ item để bấm "Thêm" trực tiếp (2026-07-27), thay vì chỉ gõ tay id |
+| Debug Panel | `DebugTools/Panel/DebugPanel.cs` | — | ⬜ | F2: tua giờ, time scale, thêm/dùng item, save/load. **Hệ thống mới phải thêm mục vào đây**. Chiều cao co theo `Screen.height` (2026-07-27 — trước cố định 760px, Game view nhỏ trong Editor bị cắt không cuộn tới được mục "Túi đồ"). Có ô tìm + danh sách toàn bộ item để bấm "Thêm" trực tiếp (2026-07-27), thay vì chỉ gõ tay id. Mục Hazard chọn được **route bất kỳ** để chỉnh Flood/Current/Electrified (2026-07-28, BL-P2-13 — trước hard-code chỉ `route_shelter_store`, không chỉnh được route gara mới) |
 
 ## LastHope.EditorTools
 

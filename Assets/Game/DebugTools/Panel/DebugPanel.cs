@@ -131,7 +131,7 @@ namespace LastHope.DebugTools.Panel
             player.IsSick = false;
         }
 
-        const string TestRouteId = "route_shelter_store";
+        string selectedRouteId = "route_shelter_store";
 
         void DrawHazardControls(GameServices services)
         {
@@ -142,10 +142,26 @@ namespace LastHope.DebugTools.Panel
                 services.World.WorldTimeMinutes, services.Definitions.Balance.DisasterPhase);
             GUILayout.Label($"Disaster Phase: {phase} (raining: {DisasterPhaseSystem.IsRaining(phase)})");
 
-            var routeState = services.World.GetOrCreateRoute(TestRouteId);
-            GUILayout.Label($"{TestRouteId}: {routeState.Flood}" +
+            GUILayout.Label("Route đang chỉnh:");
+            GUILayout.BeginHorizontal();
+            foreach (string routeId in services.Definitions.Routes.Keys.OrderBy(id => id))
+            {
+                bool isSelected = GUILayout.Toggle(selectedRouteId == routeId,
+                    routeId.Replace("route_shelter_", ""), "Button");
+                if (isSelected) selectedRouteId = routeId;
+            }
+            GUILayout.EndHorizontal();
+
+            var routeState = services.World.GetOrCreateRoute(selectedRouteId);
+            var closesAtPhase = services.Definitions.TryGetRoute(selectedRouteId, out var routeDef)
+                ? routeDef.ClosesAtPhase
+                : null;
+            GUILayout.Label($"{selectedRouteId}: {routeState.Flood}" +
                             (HazardSystem.IsPassable(routeState.Flood) ? "" : " (chặn)") +
                             $"  Current:{routeState.Current}  Electrified:{routeState.IsElectrified}");
+            GUILayout.Label(closesAtPhase.HasValue
+                ? $"Tự đóng ở phase: {closesAtPhase.Value}"
+                : "Không tự đóng theo Disaster Phase");
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Dry")) routeState.Flood = FloodState.Dry;

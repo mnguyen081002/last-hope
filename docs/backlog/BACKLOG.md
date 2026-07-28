@@ -133,13 +133,30 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | BL-P2-10 | Equipment Protection | Verify | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
 | BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk. `TravelPointView` (nhấn E cạnh prop) hiện tại là blockout tạm của P1-C (`docs/plans/2026-07-27-p1c-exploration-gameplay.md`) — chưa xác định World Map (`docs/03-mvp-black-rain/03-black-rain-world-map.md`) có thay thế hoàn toàn cách tương tác này hay chỉ bổ sung ETA/risk phía trên, cần quyết định khi lập plan BL-P2-11 |
 | BL-P2-12 | Content P2 | Verify | `location_garage` + `route_shelter_garage` — data đã có sẵn từ trước (locations_p4.json/routes_p4.json/searchpoints_p4.json, `DefinitionLoader` nạp mọi file khớp tiền tố bất kể hậu tố p1/p4), chỉ thiếu scene + travel point. Đã thêm scene `42_Location_UtilityGarage` + `TravelPointView` thứ hai ở Shelter. `route_shelter_store` (thấp/ngắn) nay `closes_at_phase: route_closure`; `route_shelter_garage` (cao/dài, 35 phút) không set — tạo lựa chọn cao/thấp đúng yêu cầu |
-| BL-P2-13 | Test Scenario A–D | Backlog | 4 kịch bản theo prototype plan mục 6.6 — Scenario A (route ngắn ngập/route dài an toàn) giờ đã có nội dung để test thật (BL-P2-12 xong) |
+| BL-P2-13 | Test Scenario A–D | Verify | Kịch bản playtest tay (không phải tính năng mới), script đầy đủ ở `docs/plans/2026-07-28-p2-test-scenarios.md`. Scenario C điều chỉnh phạm vi (chưa có Event Framework — P3/P4). Sửa kèm: F2 Debug Panel Hazard trước hard-code chỉ chỉnh `route_shelter_store`, giờ chọn được route bất kỳ (cần thiết để test Scenario A/D với route gara mới) |
 | BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
 
 **Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ**, BL-P2-10 (Equipment) + BL-P2-12
-(Content P2) xong (166 EditMode test). Còn Return Window/Scenario A-D.
+(Content P2) + BL-P2-13 (Test Scenario, script sẵn sàng) xong (166 EditMode test). Còn Return
+Window UI (BL-P2-11).
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
-không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu; Route Closure không softlock.
+không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu (**chưa làm**); Route Closure
+không softlock (**⚠ rủi ro chưa xử lý — xem Scenario D bên dưới**).
+
+## ⚠ Phát hiện từ Scenario D — rủi ro softlock thật, chưa xử lý
+
+`location_convenience_store` chỉ nối **một** route (`route_shelter_store`) về shelter. Route
+này có `closes_at_phase: route_closure` (thêm ở BL-P2-12). Nếu player đang đứng ở cửa hàng
+đúng lúc world time vượt mốc RouteClosure (900 phút = 15 tiếng), route đóng **vĩnh viễn**
+(time chỉ tăng, không có cơ chế mở lại) — hết đường về shelter từ cửa hàng. Đúng "Redesign
+Trigger" đã ghi sẵn trong `docs/03-mvp-black-rain/10-mvp-prototype-plan.md` mục 6.8: "Route
+đóng khiến người chơi mắc kẹt không có phương án".
+
+**Chưa sửa preemptive** — buffer 15 tiếng game rất dài so với phiên chơi thật 30-45 phút nên
+có thể không bao giờ gặp trong thực tế; cơ chế giảm rủi ro đúng đắn là BL-P2-11 (Return Window
+UI, cảnh báo ETA/risk *trước khi* đi). Cần user tự chạy Scenario D (script ở
+`docs/plans/2026-07-28-p2-test-scenarios.md`) rồi quyết định: chấp nhận rủi ro tạm thời tới
+khi làm BL-P2-11, hay cần xử lý sớm hơn (vd. exempt chiều về, cảnh báo sớm).
 
 ## Cần user verify Content P2 (BL-P2-12)
 
