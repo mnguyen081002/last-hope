@@ -1,15 +1,38 @@
 # Isometric Game Placement Rules
 
-> Dành cho Unity 2D isometric (Tilemap), kiểu Project Zomboid — sprite phẳng trên lưới iso, camera không xoay.
-> Mục tiêu: AI phải đặt công trình, cửa, cầu thang và vật phẩm đúng ô tile, dễ nhìn và không chặn gameplay.
+> Dành cho Unity 2D isometric, kiểu Project Zomboid — sprite phẳng, camera không xoay.
+> Mục tiêu: AI phải đặt công trình, cửa, cầu thang và vật phẩm dễ nhìn và không chặn gameplay.
+
+## 0. Thực tế triển khai hiện tại — đọc trước khi áp dụng phần còn lại
+
+`technical-specification.md` mô tả kiến trúc dự định dùng Unity Tilemap
+(`Grid.CellLayout.Isometric`, `TilemapCollider2D`). **Code thực tế không dùng Tilemap ở bất
+kỳ đâu** — `SceneSetup.cs` (nơi duy nhất dựng scene) dùng:
+
+```text
+Ground   : 1 SpriteRenderer duy nhất, drawMode Tiled, phủ toàn bộ vùng chơi được (BuildGround)
+Boundary : 4 BoxCollider2D không renderer quanh biên (BuildBoundary/AddWall)
+Prop     : GameObject world position tự do (Vector2 chọn tay) + SpriteRenderer + BoxCollider2D
+           nhỏ làm chân đế (BuildWorldProp) — KHÔNG snap theo lưới ô
+Pathfinding : chưa có (kể cả flood-fill/A*) — cắt phạm vi có ghi rõ trong
+           technical-specification.md dòng 139, kiểm tra path bằng mắt khi dựng scene
+Placement   : đặt tay trong SceneSetup.cs, không có pipeline tự động
+           (CandidateGenerator/PlacementScorer ở mục 10 dưới đây là kiến trúc dự định, chưa
+           triển khai)
+```
+
+Các mục bên dưới đã viết lại theo đúng cách triển khai thật ở trên (world position tự do,
+`Collider2D` thường, `SetActive` cho floor toggle) — không còn giả định có Tilemap. Không tự
+ý dựng Tilemap thật để "làm đúng theo tinh thần isometric" — sẽ lệch khỏi mọi scene hiện có.
+
+---
 
 ## 1. Nguyên tắc bắt buộc
 
 Một object chỉ được xem là đặt đúng khi:
 
 ```text
-Đúng ô lưới
-+ có tile sàn hỗ trợ
+Nằm trong vùng Ground (sprite "Ground", kiểm bounds)
 + không chồng collider2D
 + có đường đi
 + tương tác được
@@ -18,36 +41,37 @@ Một object chỉ được xem là đặt đúng khi:
 
 AI **MUST NOT**:
 
-- Đặt object bằng world position đoán, không snap theo lưới tile.
-- Chỉ kiểm tra trong Scene View.
-- Chỉ kiểm tra collider2D overlap.
+- Đặt object đè lên collider khác hoặc ngoài vùng Ground mà không kiểm tra bằng mắt/Scene View.
+- Chỉ kiểm tra collider2D overlap mà bỏ qua navigation.
 - Đặt decoration trước đường đi gameplay.
 - Báo hoàn thành khi chưa kiểm tra visibility (sorting) và navigation.
 
 ---
 
-## 2. Grid, anchor và socket
+## 2. Grid, anchor và socket (diễn giải theo world position tự do — xem mục 0)
 
-Object gameplay **MUST** được đặt bằng một trong ba cách, luôn snap theo `Grid.CellLayout.Isometric`:
+Object gameplay **MUST** được đặt theo một trong ba vai trò sau (không có lưới thật để snap
+vào, nhưng vẫn phải khai báo rõ vai trò và các thuộc tính đi kèm):
 
 ```text
-Grid   : công trình, tường, nội thất lớn (chiếm N×M ô tile)
-Anchor : cửa, cầu thang, điểm chuyển tầng — 1 ô tile cụ thể
-Socket : vật trên bàn, kệ, tường hoặc máy móc — offset cố định trong ô cha
+Grid   : công trình, tường, nội thất lớn (chiếm vùng world lớn, vd Boundary)
+Anchor : cửa, cầu thang, điểm chuyển tầng — 1 vị trí world cụ thể, cố định
+Socket : vật trên bàn, kệ, tường hoặc máy móc — offset cố định so với object cha
 ```
 
 Mỗi object **MUST** khai báo:
 
 ```text
-footprint (số ô tile chiếm, không phải kích thước world tuyệt đối)
-allowed rotations (thường chỉ 0°/90°/180°/270° trên lưới iso)
-placement type
-clearance (số ô trống xung quanh)
-interaction point
+footprint (kích thước world thực chiếm — bán kính/box collider)
+allowed rotations (thường bỏ qua ở MVP — sprite luôn nhìn 1 hướng cố định)
+placement type (Grid/Anchor/Socket ở trên)
+clearance (khoảng trống world quanh object, đủ cho InteractionDetector + đường đi)
+interaction point (vị trí IInteractable, nằm trong bán kính OverlapCircle của InteractionDetector)
 sorting layer / order-in-layer
 ```
 
-AI **MUST NOT** đặt cửa xuyên vào tường hoặc đặt vật nhỏ bằng world position gần đúng không snap theo ô.
+AI **MUST NOT** đặt cửa xuyên vào tường hoặc đặt vật chồng lên collider khác mà không kiểm
+tra lại trong Scene View.
 
 ---
 
@@ -68,23 +92,25 @@ AI **MUST NOT** hard-code order-in-layer cố định cho object di chuyển đ�
 
 ## 4. Cửa và lối vào
 
-Cửa gameplay **MUST** có:
+Game hiện tại chưa có cửa vật lý riêng (mở/đóng) — location chuyển cảnh qua `TravelPointView`
+(đổi scene) hoặc chuyển tầng qua Anchor loại staircase (mục 5). Nếu sau này dựng cửa thật
+trong một scene (không đổi scene/tầng, chỉ chặn/mở lối), áp dụng:
 
 ```text
-InsideApproachPoint (ô tile)
-OutsideApproachPoint (ô tile)
+InsideApproachPoint (world position)
+OutsideApproachPoint (world position)
 InteractionPoint
 Sorting layer riêng biệt so với tường (để không bị tường đè sai lúc mở)
-FrontClearance / BackClearance (ô tile trống)
+FrontClearance / BackClearance (world position trống, đủ bán kính InteractionDetector)
 ```
 
 Cửa chỉ hợp lệ khi:
 
-- Có tile sàn ở cả hai phía.
-- Player đi tới được (không bị `TilemapCollider2D` chặn ô approach).
-- Không bị vật cản chặn (collider2D khác đè lên ô cửa).
+- Nằm trong vùng Ground ở cả hai phía.
+- Player đi tới được (không bị `Collider2D` khác chặn vị trí approach).
+- Không bị vật cản chặn (collider2D khác đè lên vị trí cửa).
 - Cánh cửa mở không xuyên collider2D khác.
-- Cửa mở không khóa kín lối đi (grid pathfinding vẫn có đường qua).
+- Cửa mở không khóa kín lối đi duy nhất (kiểm tra bằng mắt — chưa có pathfinding tự động).
 - Người chơi nhận biết được cửa từ hướng tiếp cận (silhouette/màu khác tường).
 
 Cửa quan trọng **SHOULD** có ít nhất hai tín hiệu:
@@ -98,24 +124,30 @@ Cửa quan trọng **SHOULD** có ít nhất hai tín hiệu:
 
 ## 5. Cầu thang và chuyển tầng
 
-2D isometric không có độ dốc vật lý — cầu thang là **1 tile trigger** đổi tầng hiển thị tức thời, không di chuyển liên tục theo cao độ.
+2D isometric không có độ dốc vật lý — cầu thang đổi tầng hiển thị tức thời, không di chuyển
+liên tục theo cao độ. **Dùng `IInteractable` (nhấn phím tương tác) giống mọi prop khác trong
+game** (SearchPoint/Storage/TravelPoint/ShelterConsole/Bed) — **không** dùng
+`TriggerCollider2D` đi-vào-là-kích-hoạt, để nhất quán với toàn bộ InteractionDetector hiện có
+(một cơ chế tương tác duy nhất trong cả game, không có ngoại lệ dùng va chạm).
 
 Cầu thang **MUST** có:
 
 ```text
-BottomAccessPoint (ô tile, tầng dưới)
-TopAccessPoint (ô tile, tầng trên)
-TriggerCollider2D (kích hoạt đổi tầng khi player đi vào ô)
-FloorSwitchTarget (floor index / sorting layer nhóm tầng trên bật/tắt)
+BottomAccessPoint (world position, tầng dưới) — nơi player đứng khi ở tầng dưới
+TopAccessPoint (world position, tầng trên) — nơi player đứng khi ở tầng trên
+FloorSwitchController — MonoBehaviour giữ tham chiếu 2 GameObject root (tầng dưới/tầng trên),
+  bật/tắt bằng SetActive khi chuyển tầng, đồng thời set player.transform.position sang đầu kia
 ```
 
 Cầu thang chỉ hợp lệ khi:
 
-- Cả hai đầu có tile sàn hỗ trợ đúng tầng tương ứng.
-- Player và NPC (khi có visual) đi qua được.
+- Cả hai đầu nằm trong vùng Ground của tầng tương ứng.
 - Không dẫn ra ngoài level bounds.
-- Đổi tầng đúng: object/zone của tầng cũ ẩn, tầng mới hiện (không hiện chồng cả hai tầng cùng lúc).
-- Có visual/label rõ ràng đây là điểm chuyển tầng (không lẫn với tile sàn thường).
+- Đổi tầng đúng: GameObject root của tầng cũ `SetActive(false)`, tầng mới `SetActive(true)`
+  (không hiện chồng cả hai tầng cùng lúc — colliders của tầng ẩn cũng tự động ngừng tương tác
+  vật lý vì Unity không chạy Physics2D trên GameObject inactive).
+- Có visual/label rõ ràng đây là điểm chuyển tầng, và prompt tương tác riêng cho mỗi chiều
+  (vd "Lên gác" / "Xuống dưới") — không dùng chung 1 label mơ hồ.
 
 ---
 
@@ -132,10 +164,12 @@ objective bắt buộc
 
 Critical object **MUST** sort đúng lớp và không bị object cùng ô che khuất hoàn toàn theo order-in-layer.
 
-Đa tầng (Ground/Upper, theo `ShelterZoneDefinition.Floor` đã có sẵn trong Data) xử lý bằng:
+Đa tầng (Ground/Upper, theo `ShelterZoneDefinition.Floor` ở Data — dùng cho luật gameplay,
+độc lập với Presentation) xử lý bằng:
 
 ```text
-Floor visibility toggle: chỉ tầng hiện tại của player active/hiện, tầng khác ẩn hoặc mờ
+Floor visibility toggle: SetActive(true/false) trên GameObject root của từng tầng — chỉ tầng
+hiện tại của player active, tầng khác inactive hoàn toàn (không phải mờ/ẩn sprite riêng lẻ)
 ```
 
 **KHÔNG** dùng raycast occlusion, wall fade hay roof hide — camera 2D không có khái niệm "vật cản giữa camera và object", chỉ có sort order và floor toggle.
@@ -146,21 +180,20 @@ AI **MUST NOT** để 2 tầng cùng hiện đầy đủ cùng lúc gây rối m
 
 ## 7. Navigation và interaction
 
-Sau mỗi object có thể chặn đường, hệ thống **MUST** kiểm tra:
+Chưa có pathfinding tự động (flood-fill/A*) — cắt phạm vi có ghi rõ trong
+`technical-specification.md` dòng 139. Sau mỗi object có thể chặn đường, **kiểm tra bằng mắt
+trong Scene View** (đứng ở PlayerSpawn, dò mắt tới từng prop tương tác):
 
 ```text
-PlayerSpawn -> MainEntrance
-MainEntrance -> RoomEntrances
-MainEntrance -> StairTile
-StairTile (dưới) -> StairTile (trên)
-RoomEntrance -> CriticalObjects
+PlayerSpawn -> Interactable chính (Storage/Console/TravelPoint/SearchPoint...)
+PlayerSpawn -> Staircase (nếu có tầng trên)
+BottomAccessPoint -> TopAccessPoint (sau khi đổi tầng)
 ```
 
 Placement bị từ chối nếu:
 
-- Không còn path (kiểm bằng flood-fill/grid traversal trên các ô không bị `TilemapCollider2D`/`Collider2D` chặn).
-- Lối đi hẹp hơn 1 ô tile.
-- Approach point nằm trên ô bị chặn.
+- Không còn đường đi rõ ràng bằng mắt (object mới chặn hết lối duy nhất).
+- Approach point nằm đè lên collider khác.
 - Interaction point nằm ngoài bán kính `InteractionDetector` (`Physics2D.OverlapCircleNonAlloc`).
 - Cửa hoặc nội thất chặn đường bắt buộc.
 
@@ -168,16 +201,18 @@ Placement bị từ chối nếu:
 
 ## 8. Ground và level bounds
 
-Mọi ô tile player có thể đi tới **MUST** có:
+Mọi vị trí player có thể đi tới **MUST** có:
 
 ```text
-Tile sàn (Tilemap layer Ground)
-Không bị TilemapCollider2D chặn tại chính ô đó
+Nằm trong bounds sprite "Ground" (SpriteRenderer Tiled, xem BuildGround trong SceneSetup.cs)
+Không bị Collider2D nào chặn tại đúng vị trí đó
 Approach point hợp lệ
 Khoảng an toàn quanh mép map
 ```
 
-Level bounds bao bọc bằng `TilemapCollider2D`/`CompositeCollider2D` (hoặc `EdgeCollider2D`/`BoxCollider2D` không renderer cho tường biên). Không có trục trọng lực nên không có khái niệm "rơi khỏi map", nhưng vẫn phải chặn player đi ra ngoài footprint thiết kế.
+Level bounds bao bọc bằng 4 `BoxCollider2D` không renderer quanh biên (`BuildBoundary`/
+`AddWall` trong `SceneSetup.cs`). Không có trục trọng lực nên không có khái niệm "rơi khỏi
+map", nhưng vẫn phải chặn player đi ra ngoài footprint thiết kế.
 
 Ground phải bao phủ:
 
@@ -185,7 +220,7 @@ Ground phải bao phủ:
 walkable area
 + object footprint
 + approach point
-+ stair tile (cả 2 đầu)
++ staircase (cả 2 đầu, nếu có tầng trên)
 + safety margin quanh biên
 ```
 
@@ -193,26 +228,25 @@ walkable area
 
 ## 9. Thứ tự dựng level
 
-AI **MUST** dựng theo thứ tự:
+AI **MUST** dựng theo thứ tự (khớp thứ tự gọi hàm trong `SceneSetup.cs`):
 
 ```text
-1. Level bounds (Tilemap + boundary collider2D)
-2. Ground tile (Tilemap Isometric layer)
-3. Đường đi chính
-4. Phòng và tường (tile/sprite tường + Collider2D)
-5. Cửa, cầu thang/điểm chuyển tầng
-6. Sorting layer / Y-sort setup
-7. Floor visibility toggle (đa tầng)
-8. Object tương tác
-9. Nội thất lớn
-10. Decoration
+1. Level bounds (BuildBoundary — 4 BoxCollider2D)
+2. Ground sprite (BuildGround — SpriteRenderer Tiled)
+3. Đường đi chính (chừa khoảng trống khi đặt prop ở bước sau)
+4. Cửa, cầu thang/điểm chuyển tầng (nếu đa tầng — xem mục 5)
+5. Sorting layer / Y-sort setup
+6. Floor visibility toggle (nếu đa tầng — SetActive theo GameObject root)
+7. Object tương tác (BuildStorage/BuildSearchPoint/BuildTravelPoint/...)
+8. Nội thất lớn
+9. Decoration
 ```
 
 Sau khi đặt nội thất lớn hoặc decoration, phải kiểm tra lại:
 
 ```text
 sort order đúng
-navigation (path còn thông)
+navigation (path còn thông, kiểm bằng mắt)
 interaction access
 ```
 
@@ -220,40 +254,42 @@ interaction access
 
 ## 10. Placement pipeline
 
-Mọi object gameplay **MUST** đi qua:
+Chưa triển khai — hiện tại đặt bằng world position chọn tay khi viết `SceneSetup.cs`, không
+có pipeline tự động sinh/chấm điểm candidate. Nếu về sau cần tự động hoá (nhiều content hơn,
+dễ đặt lệch), quy trình tham khảo:
 
 ```text
 PlacementRequest
-    -> CandidateGenerator (theo ô tile)
-    -> GroundValidator
+    -> CandidateGenerator (theo vị trí world rời rạc, không phải ô tile)
+    -> GroundValidator (trong bounds sprite Ground)
     -> CollisionValidator (Collider2D)
-    -> PathValidator (grid traversal)
+    -> PathValidator (kiểm tra bằng mắt tới khi có pathfinding thật)
     -> SortOrderValidator
     -> InteractionValidator
     -> PlacementScorer
     -> PrefabSpawner (SpriteRenderer + Collider2D)
 ```
 
-AI **MUST** chọn candidate hợp lệ có điểm cao nhất.
-
-AI **MUST NOT** spawn critical object nếu không có candidate hợp lệ.
+Tới khi có pipeline: AI **MUST** tự kiểm tra checklist mục 12 bằng mắt trước khi báo hoàn
+thành, không giả định "đặt trong SceneSetup.cs là tự động đúng".
 
 ---
 
 ## 11. Quy tắc dành cho AI coding agent
 
 ```text
-1. Kiểm tra gameplay camera (không xoay), level bounds, ground tile và navigation trước khi sửa scene.
-2. Không đặt object bằng world position tùy ý — luôn snap theo Grid.CellLayout.Isometric.
+1. Kiểm tra gameplay camera (không xoay), level bounds, ground sprite và navigation trước khi sửa scene.
+2. Đặt object bằng world position tự do (không có Tilemap để snap) — nhưng phải nằm trong bounds Ground và khai báo rõ Grid/Anchor/Socket (mục 2).
 3. Dùng grid, anchor hoặc socket.
 4. Dựng đường đi trước decoration.
 5. Sort order tính động theo vị trí Y cho object di chuyển được — không hard-code.
 6. Cửa, cầu thang và lối vào phải dễ nhận biết qua sorting/silhouette, không phụ thuộc góc camera.
 7. Kiểm tra cả hai phía cửa và cả hai đầu cầu thang/điểm chuyển tầng.
-8. Đa tầng dùng floor visibility toggle, không dùng occlusion.
+8. Đa tầng dùng floor visibility toggle (SetActive GameObject root), không dùng occlusion.
 9. Kiểm tra lại sort order sau khi đặt nội thất và decoration.
-10. Reject object không có path, sort sai lớp hoặc không tương tác được.
-11. Không báo hoàn thành trước khi các kiểm tra bắt buộc pass.
+10. Cầu thang/điểm chuyển tầng dùng IInteractable (phím tương tác), không dùng TriggerCollider2D đi-vào-là-kích-hoạt.
+11. Reject object không có path (kiểm bằng mắt), sort sai lớp hoặc không tương tác được.
+12. Không báo hoàn thành trước khi các kiểm tra bắt buộc pass.
 ```
 
 ---
@@ -263,22 +299,21 @@ AI **MUST NOT** spawn critical object nếu không có candidate hợp lệ.
 Một critical object chỉ hoàn thành khi:
 
 ```text
-[ ] Nằm trong level bounds, snap đúng ô tile
-[ ] Có tile sàn hỗ trợ
+[ ] Nằm trong level bounds, trong vùng Ground
 [ ] Không chồng Collider2D
-[ ] Footprint và rotation đúng
-[ ] Có path hợp lệ
+[ ] Footprint đúng (bán kính/box collider hợp lý)
+[ ] Có path hợp lệ (kiểm bằng mắt)
 [ ] Approach point tiếp cận được
-[ ] Interaction hoạt động (trong bán kính InteractionDetector)
+[ ] Interaction hoạt động (trong bán kính InteractionDetector, qua IInteractable)
 [ ] Sort order đúng, không bị object khác đè sai lớp
-[ ] Floor visibility toggle đúng nếu thuộc tầng trên
+[ ] Floor visibility toggle đúng nếu thuộc tầng trên (SetActive GameObject root)
 [ ] Không bị decoration chặn
 ```
 
 Quy tắc kết luận:
 
 ```text
-Đúng ô lưới nhưng sort sai lớp = sai.
+Đúng vị trí (trong Ground, không chồng collider) nhưng sort sai lớp = sai.
 Sort đúng nhưng không tiếp cận được = sai.
 Tiếp cận được nhưng phá đường đi = sai.
 ```
