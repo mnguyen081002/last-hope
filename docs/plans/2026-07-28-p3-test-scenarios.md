@@ -69,12 +69,26 @@ thật, không phải giả lập riêng.
 
 1. Ghi lại Fatigue hiện tại (F2 mục Condition).
 2. F2 → `+50 Exposure` để Black Water Exposure vượt ngưỡng Sick (70) — `Sick:True` phải hiện.
-3. Đứng tại Shelter, tương tác giường (Bed) — panel Ngủ hiện ra, kéo slider chọn 6 giờ, bấm
-   "Ngủ".
+3. Đứng tại Shelter (Ground Floor), tương tác Cầu thang ("Lên gác") — camera/player chuyển
+   lên Upper Floor (đổi tầng thật, `StaircaseView`). Tương tác giường (Bed) — panel Ngủ hiện
+   ra, kéo slider chọn 6 giờ, bấm "Ngủ".
 4. Sau khi ngủ: Fatigue phải thấp hơn trước lúc ngủ (F2 mục Condition).
 5. Black Water Exposure phải giảm dần (6 giờ ngủ tại Shelter vượt xa ngưỡng
    `shelter_treat_exposure_minutes` = 60 phút) — nếu Exposure tụt dưới 70, `Sick` phải tự
    chuyển về `False` (trước P3 cờ này không tự tắt).
+
+## Scenario G — Cầu thang đổi tầng (BL-P3-01, dựng lại sau review 2026-07-28)
+
+1. Từ Ground Floor (điểm spawn mặc định), tương tác Cầu thang "Lên gác" — Storage/Console/
+   TravelPoint (đồ Ground Floor) phải biến mất khỏi màn hình, chỉ còn Bed + Cầu thang "Xuống
+   dưới" (đồ Upper Floor).
+2. Tương tác Cầu thang "Xuống dưới" — quay lại đúng Ground Floor như cũ (Storage/Console/
+   TravelPoint hiện lại, Bed biến mất).
+3. Thử Travel đi cửa hàng/gara trong lúc đang ở Upper Floor (nếu tương tác được TravelPoint từ
+   xa — không nên, vì đã bị ẩn/không active) — xác nhận không cách nào tương tác nhầm đồ Ground
+   Floor khi đang ở Upper.
+4. **Giới hạn đã biết**: Save/Load không nhớ đang ở tầng nào — F2 Save rồi Load trong lúc ở
+   Upper Floor sẽ về lại Ground Floor (giống scope cut "Save/Load không đổi scene" ở P1).
 
 ## Verification
 

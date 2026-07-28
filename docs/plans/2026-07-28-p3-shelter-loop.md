@@ -11,9 +11,14 @@ thang thật, Elevated Storage là kho vật lý riêng...). Theo `isometric-gam
 việc dựng cầu thang + floor-toggle thật là chi phí lớn. Giữ đúng tinh thần "blockout" đã dùng
 cho P1-C (location chỉ là scene phẳng + prop tương tác, không phải building vật lý đầy đủ):
 
-- **Không dựng multi-floor vật lý** (không cầu thang, không floor visibility toggle). Ground/
-  Upper/Roof chỉ là **thuộc tính logic** của Zone (`ShelterZoneDefinition.Floor`) ảnh hưởng tới
-  luật (Ground bị Water Intrusion, Upper an toàn) — không phải không gian điều hướng riêng.
+- ~~Không dựng multi-floor vật lý~~ **(đảo ngược 2026-07-28 sau khi user yêu cầu review lại)**
+  — đã dựng Ground/Upper Floor thật: 2 GameObject root cùng chiếm 1 footprint world, chỉ 1
+  active tại một thời điểm (`SetActive`), nối bằng `StaircaseView` (IInteractable, không dùng
+  `TriggerCollider2D` — xem `isometric-game-placement-rules.md` mục 5, cũng được sửa lại
+  trong đợt này để khớp thực tế code không dùng Tilemap). Roof vẫn chỉ là thuộc tính logic
+  (`ShelterZoneDefinition.Floor`) vì không module nào target zone đó.
+  **Giới hạn còn lại**: Save/Load không nhớ đang ở tầng nào trong Shelter (giống scope cut P1
+  "Save/Load không đổi scene") — load lại luôn về Ground Floor.
 - **Elevated Storage không phải kho vật lý riêng** — là modifier: có module này thì
   `StorageContainer` của shelter được miễn Storage Flood Risk event. Không thêm
   `InventoryOwner` mới, không thêm capacity riêng.

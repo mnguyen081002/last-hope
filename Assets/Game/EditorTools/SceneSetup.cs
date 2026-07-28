@@ -152,19 +152,40 @@ namespace LastHope.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             const float halfWidth = 10f, halfHeight = 8f;
-            BuildGround(halfWidth, halfHeight);
-            BuildBoundary(halfWidth, halfHeight);
 
-            var root = new GameObject("Interactables");
-            BuildStorage(root, "location_shelter", new Vector2(-4f, 3f));
-            BuildShelterConsole(root, new Vector2(0f, 3f));
-            BuildBed(root, new Vector2(4f, 3f));
-            BuildTravelPoint(root, "route_shelter_store", "cửa hàng tiện lợi", new Vector2(4f, -3f));
-            BuildTravelPoint(root, "route_shelter_garage", "gara sửa xe", new Vector2(-8f, -6f));
+            // Ground/Upper là 2 GameObject root cùng chiếm 1 footprint world (đè lên nhau) —
+            // chỉ 1 cái active tại một thời điểm (BL-P3-01, xem isometric-game-placement-rules.md
+            // mục 5-6: floor visibility toggle bằng SetActive, không dựng Tilemap/cầu thang vật lý).
+            var groundFloor = new GameObject("GroundFloor");
+            BuildGround(halfWidth, halfHeight, groundFloor);
+            BuildBoundary(halfWidth, halfHeight, groundFloor);
+
+            var upperFloor = new GameObject("UpperFloor");
+            BuildGround(halfWidth, halfHeight, upperFloor);
+            BuildBoundary(halfWidth, halfHeight, upperFloor);
+            upperFloor.SetActive(false); // mặc định player ở Ground khi vào Shelter.
+
+            var groundInteractables = new GameObject("Interactables");
+            groundInteractables.transform.SetParent(groundFloor.transform, false);
+            BuildStorage(groundInteractables, "location_shelter", new Vector2(-4f, 3f));
+            BuildShelterConsole(groundInteractables, new Vector2(0f, 3f));
+            BuildTravelPoint(groundInteractables, "route_shelter_store", "cửa hàng tiện lợi", new Vector2(4f, -3f));
+            BuildTravelPoint(groundInteractables, "route_shelter_garage", "gara sửa xe", new Vector2(-8f, -6f));
             // Mỗi TravelPoint có spawn riêng sát cạnh, gắn đúng routeId — 2 cổng ra vào thì
             // phải có 2 spawn (bug user báo trước đó: spawn (0,0) cách xa cổng, giữa phòng).
-            BuildPlayerSpawnPoint(root, new Vector2(3f, -2f), "route_shelter_store");
-            BuildPlayerSpawnPoint(root, new Vector2(-7f, -5f), "route_shelter_garage");
+            BuildPlayerSpawnPoint(groundInteractables, new Vector2(3f, -2f), "route_shelter_store");
+            BuildPlayerSpawnPoint(groundInteractables, new Vector2(-7f, -5f), "route_shelter_garage");
+
+            var upperInteractables = new GameObject("Interactables");
+            upperInteractables.transform.SetParent(upperFloor.transform, false);
+            BuildBed(upperInteractables, new Vector2(0f, 2f));
+
+            // Cầu thang: 1 điểm mỗi tầng, cùng vị trí world (4,3) — điểm đến lệch (4,2) để
+            // không đứng đè lên chính prop vừa tương tác.
+            BuildStaircase(groundInteractables, new Vector2(4f, 3f), "Lên gác",
+                ownFloorRoot: groundFloor, otherFloorRoot: upperFloor, landingPosition: new Vector2(4f, 2f));
+            BuildStaircase(upperInteractables, new Vector2(4f, 3f), "Xuống dưới",
+                ownFloorRoot: upperFloor, otherFloorRoot: groundFloor, landingPosition: new Vector2(4f, 2f));
 
             SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
         }
@@ -252,9 +273,10 @@ namespace LastHope.EditorTools
             return root;
         }
 
-        static void BuildGround(float halfWidth, float halfHeight)
+        static void BuildGround(float halfWidth, float halfHeight, GameObject parent = null)
         {
             var go = new GameObject("Ground");
+            if (parent != null) go.transform.SetParent(parent.transform, false);
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = LoadPlaceholder("placeholder-ground.png");
             renderer.drawMode = SpriteDrawMode.Tiled;
@@ -262,9 +284,10 @@ namespace LastHope.EditorTools
             renderer.sortingOrder = GroundOrder;
         }
 
-        static void BuildBoundary(float halfWidth, float halfHeight)
+        static void BuildBoundary(float halfWidth, float halfHeight, GameObject parent = null)
         {
             var root = new GameObject("Boundary");
+            if (parent != null) root.transform.SetParent(parent.transform, false);
             const float thickness = 1f;
 
             AddWall(root, "Wall_Top",
@@ -354,6 +377,21 @@ namespace LastHope.EditorTools
         {
             var go = BuildWorldProp(parent, "Bed", position, new Color(0.6f, 0.45f, 0.5f));
             go.AddComponent<BedView>();
+        }
+
+        static void BuildStaircase(
+            GameObject parent, Vector2 position, string promptText,
+            GameObject ownFloorRoot, GameObject otherFloorRoot, Vector2 landingPosition)
+        {
+            var go = BuildWorldProp(parent, "Staircase", position, new Color(0.5f, 0.4f, 0.3f));
+            var view = go.AddComponent<StaircaseView>();
+            SetSerialized(view, so =>
+            {
+                so.FindProperty("ownFloorRoot").objectReferenceValue = ownFloorRoot;
+                so.FindProperty("otherFloorRoot").objectReferenceValue = otherFloorRoot;
+                so.FindProperty("landingPosition").vector2Value = landingPosition;
+                so.FindProperty("promptText").stringValue = promptText;
+            });
         }
 
         static void BuildTravelPoint(GameObject parent, string routeId, string destinationLabel, Vector2 position)

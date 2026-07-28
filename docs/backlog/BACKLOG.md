@@ -198,7 +198,7 @@ Storage không phải kho riêng, và mọi tương tác đi qua 1 prop "Shelter
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P3-01 | Main Shelter blockout | Verify | 8 Zone (`shelterzones_p3.json`) hiển thị trong `ShelterPanel`, không dựng vật lý riêng từng Zone — xem phạm vi rút gọn |
+| BL-P3-01 | Main Shelter blockout | Verify | 8 Zone (`shelterzones_p3.json`) hiển thị trong `ShelterPanel` (không dựng phòng riêng từng Zone). **Có Ground/Upper Floor vật lý thật** (2 GameObject root cùng footprint, toggle bằng `SetActive`) nối bằng `StaircaseView` — 2026-07-28, sau khi user review lại quyết định ban đầu "không dựng multi-floor". Roof vẫn chỉ là logic (không module nào target zone `roof`) |
 | BL-P3-02 | Shelter State | Verify | `ShelterState` — Structural Integrity, Water Intrusion, Clean/Untreated Water, Battery, Build Slots. Living Capacity/Occupants/Cleanliness/Security **chưa làm** (không có nội dung nào cần tới — không NPC, không multi-occupant trong P3) |
 | BL-P3-03 | Build và Placement | Verify | `BuildSystem` — Build Slot theo Zone (`ShelterZoneDefinition.BuildSlotIds`), validate zone/material, construction tick theo phút, Pause/Resume/Cancel, Dismantle (không hoàn vật liệu). Không có placement vật lý (tile/grid) — chọn Slot qua UI |
 | BL-P3-04 | Task System | Verify | Gộp vào Construction (không dựng abstraction Active/Passive Task riêng) — chạy qua `TickScheduler.ShortTick` sẵn có nên tự "Passive" (tiếp tục dù rời Shelter/Sleep) |
