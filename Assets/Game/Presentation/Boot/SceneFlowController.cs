@@ -22,6 +22,7 @@ namespace LastHope.Presentation.Boot
     {
         [SerializeField] PlayerAvatarSync playerAvatar;
         [SerializeField] CameraRig cameraRig;
+        [SerializeField] PlayerFloorState playerFloorState;
 
         string loadedGameplayScene;
 
@@ -110,6 +111,9 @@ namespace LastHope.Presentation.Boot
 
             playerAvatar.TeleportTo(spawn.transform.position);
             if (cameraRig != null) cameraRig.SetTarget(playerAvatar.transform);
+            // Tầng (Z-level) là state cục bộ theo scene — sang scene mới luôn về tầng 0, tránh
+            // mang nhầm tầng cũ (vd đang đứng Upper Floor lúc Travel rời Shelter).
+            playerFloorState?.ResetFloor();
         }
 
         /// <summary>Scene nhiều cổng ra vào có nhiều spawn point — ưu tiên cái khớp

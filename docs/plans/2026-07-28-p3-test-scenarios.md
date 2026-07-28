@@ -69,25 +69,28 @@ thật, không phải giả lập riêng.
 
 1. Ghi lại Fatigue hiện tại (F2 mục Condition).
 2. F2 → `+50 Exposure` để Black Water Exposure vượt ngưỡng Sick (70) — `Sick:True` phải hiện.
-3. Đứng tại Shelter (Ground Floor), tương tác Cầu thang ("Lên gác") — camera/player chuyển
-   lên Upper Floor (đổi tầng thật, `StaircaseView`). Tương tác giường (Bed) — panel Ngủ hiện
+3. Đứng tại Shelter (Ground Floor), đi bộ về phía góc có vùng cầu thang (không cần bấm phím —
+   đi ngang qua tự động đổi tầng) để lên Upper Floor. Tương tác giường (Bed) — panel Ngủ hiện
    ra, kéo slider chọn 6 giờ, bấm "Ngủ".
 4. Sau khi ngủ: Fatigue phải thấp hơn trước lúc ngủ (F2 mục Condition).
 5. Black Water Exposure phải giảm dần (6 giờ ngủ tại Shelter vượt xa ngưỡng
    `shelter_treat_exposure_minutes` = 60 phút) — nếu Exposure tụt dưới 70, `Sick` phải tự
    chuyển về `False` (trước P3 cờ này không tự tắt).
 
-## Scenario G — Cầu thang đổi tầng (BL-P3-01, dựng lại sau review 2026-07-28)
+## Scenario G — Z-level đổi tầng kiểu Project Zomboid (BL-P3-01, dựng lại lần 2 sau review 2026-07-28)
 
-1. Từ Ground Floor (điểm spawn mặc định), tương tác Cầu thang "Lên gác" — Storage/Console/
-   TravelPoint (đồ Ground Floor) phải biến mất khỏi màn hình, chỉ còn Bed + Cầu thang "Xuống
-   dưới" (đồ Upper Floor).
-2. Tương tác Cầu thang "Xuống dưới" — quay lại đúng Ground Floor như cũ (Storage/Console/
-   TravelPoint hiện lại, Bed biến mất).
-3. Thử Travel đi cửa hàng/gara trong lúc đang ở Upper Floor (nếu tương tác được TravelPoint từ
-   xa — không nên, vì đã bị ẩn/không active) — xác nhận không cách nào tương tác nhầm đồ Ground
-   Floor khi đang ở Upper.
-4. **Giới hạn đã biết**: Save/Load không nhớ đang ở tầng nào — F2 Save rồi Load trong lúc ở
+1. Từ Ground Floor (điểm spawn mặc định), đi bộ về góc có vùng cầu thang (khu vực gần vị trí
+   Bed cũ trước đây) — **không cần bấm phím**, đi qua là tự đổi tầng. Storage/Console/
+   TravelPoint (đồ Ground Floor) phải hiện **mờ đi** (không biến mất hẳn — thấy lờ mờ bố cục
+   tầng dưới qua sàn), Bed + vùng cầu thang xuống (đồ Upper Floor) hiện rõ nét.
+2. Thử đi lại gần vị trí Storage khi đang ở Upper Floor — không tương tác được (E không có tác
+   dụng, đúng "tầng dưới không va chạm/tương tác được khi đang đứng Dimmed").
+3. Đi bộ ngược lại qua vùng cầu thang xuống — quay lại đúng Ground Floor rõ nét, Upper Floor
+   giờ mờ đi (không biến mất hẳn).
+4. Đi qua lại nhanh nhiều lần gần ranh giới hai vùng trigger — không được xảy ra hiện tượng
+   "nhấp nháy" đổi tầng liên tục (oscillation) — hai vùng trigger đã thiết kế lệch nhau để
+   tránh việc này, nếu vẫn thấy nhấp nháy là bug cần báo lại.
+5. **Giới hạn đã biết**: Save/Load không nhớ đang ở tầng nào — F2 Save rồi Load trong lúc ở
    Upper Floor sẽ về lại Ground Floor (giống scope cut "Save/Load không đổi scene" ở P1).
 
 ## Verification

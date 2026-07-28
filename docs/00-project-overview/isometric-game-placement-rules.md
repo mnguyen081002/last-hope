@@ -124,34 +124,35 @@ Cửa quan trọng **SHOULD** có ít nhất hai tín hiệu:
 
 ## 5. Cầu thang và chuyển tầng
 
-2D isometric không có độ dốc vật lý — cầu thang đổi tầng hiển thị tức thời, không di chuyển
-liên tục theo cao độ. **Dùng `IInteractable` (nhấn phím tương tác) giống mọi prop khác trong
-game** (SearchPoint/Storage/TravelPoint/ShelterConsole/Bed) — **không** dùng
-`TriggerCollider2D` đi-vào-là-kích-hoạt, để nhất quán với toàn bộ InteractionDetector hiện có
-(một cơ chế tương tác duy nhất trong cả game, không có ngoại lệ dùng va chạm).
+2D isometric không có độ dốc vật lý — nhưng đổi tầng **là di chuyển liên tục qua vùng cầu
+thang, không phải điểm bấm phím**, kiểu Z-level Project Zomboid (game tham chiếu chính của
+doc này): đi bộ ngang qua vùng cầu thang là tự động đổi tầng, không cần xác nhận. **Không**
+dùng `IInteractable`/`InteractionDetector` cho cầu thang — đây là ngoại lệ có chủ đích duy
+nhất dùng va chạm (`Collider2D.isTrigger` + `OnTriggerEnter2D`) thay vì phím tương tác, vì đổi
+tầng là di chuyển thuần tuý (không mở UI, không tốn thời gian game, không có gì cần xác nhận)
+— khác về bản chất với Search/Storage/Travel/ShelterConsole (đều có hệ quả thật, xứng đáng
+cần bấm phím để tránh nhầm).
 
 Cầu thang **MUST** có:
 
 ```text
-BottomAccessPoint (world position, tầng dưới) — nơi player đứng khi ở tầng dưới
-TopAccessPoint (world position, tầng trên) — nơi player đứng khi ở tầng trên
-FloorSwitchController — MonoBehaviour giữ tham chiếu 2 GameObject root (tầng dưới/tầng trên),
-  bật/tắt bằng SetActive khi chuyển tầng, đồng thời set player.transform.position sang đầu kia
+2 vùng trigger (Collider2D isTrigger) — 1 ở đầu tầng dưới, 1 ở đầu tầng trên, LỆCH NHAU (không
+  chồng lấn, cách nhau tối thiểu nửa đơn vị) để tránh vừa đổi tầng xong lập tức bị trigger đầu
+  kia bắt lại (oscillation)
+Component đổi tầng (FloorTransitionTrigger) trên mỗi vùng, set floor hiện tại của player khi
+  Enter — không cần di chuyển vị trí player (2 tầng cùng world position, xem mục 6)
 ```
 
 Cầu thang chỉ hợp lệ khi:
 
-- Cả hai đầu nằm trong vùng Ground của tầng tương ứng.
+- Cả hai vùng trigger nằm trong vùng Ground của tầng tương ứng.
 - Không dẫn ra ngoài level bounds.
-- Đổi tầng đúng: GameObject root của tầng cũ `SetActive(false)`, tầng mới `SetActive(true)`
-  (không hiện chồng cả hai tầng cùng lúc — colliders của tầng ẩn cũng tự động ngừng tương tác
-  vật lý vì Unity không chạy Physics2D trên GameObject inactive).
-- Có visual/label rõ ràng đây là điểm chuyển tầng, và prompt tương tác riêng cho mỗi chiều
-  (vd "Lên gác" / "Xuống dưới") — không dùng chung 1 label mơ hồ.
+- Hai vùng trigger không chồng lấn (buffer rõ ràng — xem trên).
+- Có visual rõ ràng đây là khu vực cầu thang (không cần prompt tương tác vì không bấm phím).
 
 ---
 
-## 6. Visibility và tầng
+## 6. Visibility và tầng (Z-level kiểu Project Zomboid)
 
 Critical object gồm:
 
@@ -164,17 +165,28 @@ objective bắt buộc
 
 Critical object **MUST** sort đúng lớp và không bị object cùng ô che khuất hoàn toàn theo order-in-layer.
 
-Đa tầng (Ground/Upper, theo `ShelterZoneDefinition.Floor` ở Data — dùng cho luật gameplay,
-độc lập với Presentation) xử lý bằng:
+Đa tầng (Ground/Upper...) xử lý bằng **Z-level**: mỗi GameObject root của một tầng gắn
+`FloorLevel(floor: int)`. `FloorRenderController` đọc tầng hiện tại của player
+(`PlayerFloorState`) và áp cho từng `FloorLevel` theo hiệu số:
 
 ```text
-Floor visibility toggle: SetActive(true/false) trên GameObject root của từng tầng — chỉ tầng
-hiện tại của player active, tầng khác inactive hoàn toàn (không phải mờ/ẩn sprite riêng lẻ)
+diff = floor_của_root - floor_hiện_tại_player
+
+diff == 0  (tầng hiện tại) : Full     — alpha 1, Collider2D bật, sortingOrder gốc
+diff == -1 (tầng ngay dưới): Dimmed   — alpha thấp (~0.35), Collider2D tắt (đi xuyên, không va
+                                        chạm/tương tác), sortingOrder đẩy xuống dưới hẳn tầng
+                                        hiện tại (không dùng Y-sort thường vì 2 tầng cùng
+                                        world position, sẽ lẫn lộn nếu chỉ dựa Y)
+diff > 0 hoặc diff < -1    : Hidden   — SetActive(false) hoàn toàn (không thấy tầng trên đầu,
+                                        không thấy tầng xa hơn 1 tầng dưới)
 ```
 
-**KHÔNG** dùng raycast occlusion, wall fade hay roof hide — camera 2D không có khái niệm "vật cản giữa camera và object", chỉ có sort order và floor toggle.
+Đây **là** dạng "wall fade" có chủ đích (khác quy tắc "KHÔNG dùng wall fade" ở các mục khác
+— ngoại lệ riêng cho floor-below, vì đây chính là cách Project Zomboid tạo cảm giác đứng trên
+tầng thật: thấy mờ mờ bố cục tầng dưới qua sàn, không phải hoàn toàn tách biệt hai không gian).
 
-AI **MUST NOT** để 2 tầng cùng hiện đầy đủ cùng lúc gây rối mắt (trừ khi chủ đích thiết kế "nhìn xuyên tầng" — phải khai báo rõ).
+AI **MUST NOT** để tầng trên hiện khi đứng dưới tầng đó (không thể nhìn xuyên mái) hoặc để 2
+tầng cùng có Collider2D bật (gây va chạm/tương tác nhầm giữa 2 tầng).
 
 ---
 
@@ -236,7 +248,7 @@ AI **MUST** dựng theo thứ tự (khớp thứ tự gọi hàm trong `SceneSet
 3. Đường đi chính (chừa khoảng trống khi đặt prop ở bước sau)
 4. Cửa, cầu thang/điểm chuyển tầng (nếu đa tầng — xem mục 5)
 5. Sorting layer / Y-sort setup
-6. Floor visibility toggle (nếu đa tầng — SetActive theo GameObject root)
+6. Z-level (nếu đa tầng — FloorLevel + FloorRenderController, xem mục 6)
 7. Object tương tác (BuildStorage/BuildSearchPoint/BuildTravelPoint/...)
 8. Nội thất lớn
 9. Decoration
@@ -285,9 +297,9 @@ thành, không giả định "đặt trong SceneSetup.cs là tự động đúng
 5. Sort order tính động theo vị trí Y cho object di chuyển được — không hard-code.
 6. Cửa, cầu thang và lối vào phải dễ nhận biết qua sorting/silhouette, không phụ thuộc góc camera.
 7. Kiểm tra cả hai phía cửa và cả hai đầu cầu thang/điểm chuyển tầng.
-8. Đa tầng dùng floor visibility toggle (SetActive GameObject root), không dùng occlusion.
+8. Đa tầng dùng Z-level (`FloorLevel` + `FloorRenderController`): tầng hiện tại Full, tầng ngay dưới Dimmed (mờ, không va chạm), còn lại Hidden — xem mục 6.
 9. Kiểm tra lại sort order sau khi đặt nội thất và decoration.
-10. Cầu thang/điểm chuyển tầng dùng IInteractable (phím tương tác), không dùng TriggerCollider2D đi-vào-là-kích-hoạt.
+10. Cầu thang/điểm chuyển tầng dùng vùng trigger đi-qua-là-đổi-tầng (`Collider2D.isTrigger` + `OnTriggerEnter2D`) — **ngoại lệ duy nhất** không dùng `IInteractable`, vì đổi tầng là di chuyển thuần tuý không có hệ quả cần xác nhận (mục 5).
 11. Reject object không có path (kiểm bằng mắt), sort sai lớp hoặc không tương tác được.
 12. Không báo hoàn thành trước khi các kiểm tra bắt buộc pass.
 ```
@@ -304,9 +316,9 @@ Một critical object chỉ hoàn thành khi:
 [ ] Footprint đúng (bán kính/box collider hợp lý)
 [ ] Có path hợp lệ (kiểm bằng mắt)
 [ ] Approach point tiếp cận được
-[ ] Interaction hoạt động (trong bán kính InteractionDetector, qua IInteractable)
+[ ] Interaction hoạt động (trong bán kính InteractionDetector, qua IInteractable — trừ cầu thang dùng trigger, xem mục 5)
 [ ] Sort order đúng, không bị object khác đè sai lớp
-[ ] Floor visibility toggle đúng nếu thuộc tầng trên (SetActive GameObject root)
+[ ] Z-level đúng nếu thuộc tầng trên/dưới (Full/Dimmed/Hidden qua FloorRenderController, không phải chỉ SetActive nhị phân)
 [ ] Không bị decoration chặn
 ```
 

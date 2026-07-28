@@ -109,6 +109,7 @@ namespace LastHope.EditorTools
             {
                 so.FindProperty("playerAvatar").objectReferenceValue = player.GetComponent<PlayerAvatarSync>();
                 so.FindProperty("cameraRig").objectReferenceValue = rig;
+                so.FindProperty("playerFloorState").objectReferenceValue = player.GetComponent<PlayerFloorState>();
             });
 
             var inventoryPanelGo = new GameObject("InventoryPanel");
@@ -154,16 +155,20 @@ namespace LastHope.EditorTools
             const float halfWidth = 10f, halfHeight = 8f;
 
             // Ground/Upper là 2 GameObject root cùng chiếm 1 footprint world (đè lên nhau) —
-            // chỉ 1 cái active tại một thời điểm (BL-P3-01, xem isometric-game-placement-rules.md
-            // mục 5-6: floor visibility toggle bằng SetActive, không dựng Tilemap/cầu thang vật lý).
+            // FloorRenderController (đọc FloorLevel + PlayerFloorState lúc runtime) quyết định
+            // Full/Dimmed/Hidden theo tầng player đang đứng, kiểu Z-level Project Zomboid
+            // (BL-P3-01, xem isometric-game-placement-rules.md mục 5-6).
             var groundFloor = new GameObject("GroundFloor");
+            groundFloor.AddComponent<FloorLevel>(); // mặc định floor=0
             BuildGround(halfWidth, halfHeight, groundFloor);
             BuildBoundary(halfWidth, halfHeight, groundFloor);
 
             var upperFloor = new GameObject("UpperFloor");
+            var upperLevel = upperFloor.AddComponent<FloorLevel>();
+            SetSerialized(upperLevel, so => so.FindProperty("floor").intValue = 1);
             BuildGround(halfWidth, halfHeight, upperFloor);
             BuildBoundary(halfWidth, halfHeight, upperFloor);
-            upperFloor.SetActive(false); // mặc định player ở Ground khi vào Shelter.
+            upperFloor.SetActive(false); // FloorRenderController.Awake() sẽ giữ đúng trạng thái này (floor 0 → Upper Hidden).
 
             var groundInteractables = new GameObject("Interactables");
             groundInteractables.transform.SetParent(groundFloor.transform, false);
@@ -180,12 +185,13 @@ namespace LastHope.EditorTools
             upperInteractables.transform.SetParent(upperFloor.transform, false);
             BuildBed(upperInteractables, new Vector2(0f, 2f));
 
-            // Cầu thang: 1 điểm mỗi tầng, cùng vị trí world (4,3) — điểm đến lệch (4,2) để
-            // không đứng đè lên chính prop vừa tương tác.
-            BuildStaircase(groundInteractables, new Vector2(4f, 3f), "Lên gác",
-                ownFloorRoot: groundFloor, otherFloorRoot: upperFloor, landingPosition: new Vector2(4f, 2f));
-            BuildStaircase(upperInteractables, new Vector2(4f, 3f), "Xuống dưới",
-                ownFloorRoot: upperFloor, otherFloorRoot: groundFloor, landingPosition: new Vector2(4f, 2f));
+            // Cầu thang: đi bộ qua là đổi tầng (không bấm phím — xem FloorTransitionTrigger).
+            // Hai vùng trigger lệch 0.5 đơn vị (y=[3,4] và y=[1.5,2.5]) để không chồng lấn —
+            // tránh vừa đổi tầng xong lập tức bị trigger tầng kia bắt lại (oscillation).
+            BuildFloorTransitionTrigger(groundInteractables, new Vector2(4f, 3.5f), new Vector2(1.5f, 1f), targetFloor: 1);
+            BuildFloorTransitionTrigger(upperInteractables, new Vector2(4f, 2f), new Vector2(1.5f, 1f), targetFloor: 0);
+
+            new GameObject("FloorRenderController").AddComponent<FloorRenderController>();
 
             SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
         }
@@ -253,6 +259,7 @@ namespace LastHope.EditorTools
 
             root.AddComponent<PlayerAvatarSync>();
             root.AddComponent<PlayerMovementModifierSync>();
+            root.AddComponent<PlayerFloorState>();
 
             var detector = root.AddComponent<InteractionDetector>();
             SetSerialized(detector, so =>
@@ -379,19 +386,29 @@ namespace LastHope.EditorTools
             go.AddComponent<BedView>();
         }
 
-        static void BuildStaircase(
-            GameObject parent, Vector2 position, string promptText,
-            GameObject ownFloorRoot, GameObject otherFloorRoot, Vector2 landingPosition)
+        /// <summary>Vùng đi-qua-là-đổi-tầng (không phải prop chặn đường — Collider2D isTrigger).</summary>
+        static void BuildFloorTransitionTrigger(GameObject parent, Vector2 position, Vector2 size, int targetFloor)
         {
-            var go = BuildWorldProp(parent, "Staircase", position, new Color(0.5f, 0.4f, 0.3f));
-            var view = go.AddComponent<StaircaseView>();
-            SetSerialized(view, so =>
+            var go = new GameObject("Staircase");
+            go.transform.SetParent(parent.transform, false);
+            go.transform.position = position;
+
+            var spriteGo = new GameObject("Sprite");
+            spriteGo.transform.SetParent(go.transform, false);
+            var renderer = spriteGo.AddComponent<SpriteRenderer>();
+            renderer.sprite = LoadPlaceholder("placeholder-prop.png");
+            renderer.color = new Color(0.5f, 0.4f, 0.3f);
+            if (renderer.sprite != null)
             {
-                so.FindProperty("ownFloorRoot").objectReferenceValue = ownFloorRoot;
-                so.FindProperty("otherFloorRoot").objectReferenceValue = otherFloorRoot;
-                so.FindProperty("landingPosition").vector2Value = landingPosition;
-                so.FindProperty("promptText").stringValue = promptText;
-            });
+                spriteGo.transform.localPosition = new Vector3(0f, renderer.sprite.bounds.extents.y, 0f);
+            }
+
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.isTrigger = true;
+            collider.size = size;
+
+            var trigger = go.AddComponent<FloorTransitionTrigger>();
+            SetSerialized(trigger, so => so.FindProperty("targetFloor").intValue = targetFloor);
         }
 
         static void BuildTravelPoint(GameObject parent, string routeId, string destinationLabel, Vector2 position)
