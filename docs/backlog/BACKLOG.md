@@ -119,158 +119,67 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P2-04 | Flood State | Verify | Dry/Shallow/Medium/Deep/Impassable trên **Route** (chưa làm Zone trong Location — không có nội dung nào cần) — test tự động, user cần tự xem qua Debug Panel |
-| BL-P2-05 | Current Strength | Verify | **Số tự đề xuất, chưa qua playtest.** Rủi ro "cuốn" (sweep) theo tỉ lệ %/tier; Rope giảm rủi ro **chưa làm** (cần Equipment System P2-C thực sự mặc đồ) |
-| BL-P2-06 | Black Water Exposure | Verify | Nguồn tăng Exposure qua hazard crossing xong (nối vào field trống từ P2-A); `contaminated_handling_exposure_gain` — chưa có action "xử lý đồ nhiễm bẩn" để dùng tới |
-| BL-P2-07 | Electrified Water cục bộ | Verify | **Số tự đề xuất, chưa qua playtest.** Instant Hazard, set thủ công qua Debug Panel (chưa có nguồn hạ tầng tự động — Power/Grid thuộc P3) |
-| BL-P2-08 | Route Closure | Verify | **Số tự đề xuất, chưa qua playtest.** `RouteDefinition.ClosesAtPhase` đè Flood thành Impassable theo Disaster Phase; route hiện có (`route_shelter_store`) không set field này (route sống còn duy nhất, tự đóng sẽ softlock) |
-| BL-P2-09 | Disaster Phase rút gọn | Verify | **Số tự đề xuất, chưa qua playtest.** Dry → First Rain → Black Rain → Route Closure, suy thuần từ world time. Đã nối `wet_gain_per_minute_in_rain` (field bỏ trống từ P2-A) |
+| BL-P2-04 | Flood State | Done | Dry/Shallow/Medium/Deep/Impassable trên **Route** (chưa làm Zone trong Location — không có nội dung nào cần) — user đã verify 2026-07-28 |
+| BL-P2-05 | Current Strength | Done | User đã verify 2026-07-28, chấp nhận số hiện hành (sweep %/tier). Rope giảm rủi ro **chưa làm** (cần Equipment System P2-C thực sự mặc đồ) |
+| BL-P2-06 | Black Water Exposure | Done | Nguồn tăng Exposure qua hazard crossing xong (nối vào field trống từ P2-A); user đã verify 2026-07-28. `contaminated_handling_exposure_gain` — chưa có action "xử lý đồ nhiễm bẩn" để dùng tới |
+| BL-P2-07 | Electrified Water cục bộ | Done | User đã verify 2026-07-28, chấp nhận số hiện hành. Instant Hazard, set thủ công qua Debug Panel (chưa có nguồn hạ tầng tự động — Power/Grid thuộc P3) |
+| BL-P2-08 | Route Closure | Done | User đã verify 2026-07-28, chấp nhận rủi ro softlock còn lại (xem ghi chú Scenario D bên dưới). `RouteDefinition.ClosesAtPhase` đè Flood thành Impassable theo Disaster Phase |
+| BL-P2-09 | Disaster Phase rút gọn | Done | User đã verify 2026-07-28, chấp nhận mốc thời gian hiện hành. Dry → First Rain → Black Rain → Route Closure, suy thuần từ world time |
 
 ### P2-C — Equipment Protection (M3)
 
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| BL-P2-10 | Equipment Protection | Verify | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
-| BL-P2-11 | Return Window UI | Verify | Phạm vi rút gọn cho P2 (quyết định cùng user 2026-07-28): **không** dựng World Map đầy đủ (`docs/03-mvp-black-rain/03-black-rain-world-map.md` là phạm vi P4 — 7 location/4 district/Observation Point). Thay vào đó: nhấn E ở `TravelPointView` giờ mở `TravelConfirmPanel` (thay vì đi thẳng) — hiện Travel Time một chiều, Estimated Return Time (khứ hồi), Known Hazard (Flood/Current/Electrified hiện tại), và cảnh báo nếu Disaster Phase dự kiến đổi trước khi quay lại (đúng câu trong world-map.md mục 16). Xác nhận mới thật sự submit `BeginTravelCommand`; Hủy không tốn thời gian |
-| BL-P2-12 | Content P2 | Verify | `location_garage` + `route_shelter_garage` — data đã có sẵn từ trước (locations_p4.json/routes_p4.json/searchpoints_p4.json, `DefinitionLoader` nạp mọi file khớp tiền tố bất kể hậu tố p1/p4), chỉ thiếu scene + travel point. Đã thêm scene `42_Location_UtilityGarage` + `TravelPointView` thứ hai ở Shelter. `route_shelter_store` (thấp/ngắn) nay `closes_at_phase: route_closure`; `route_shelter_garage` (cao/dài, 35 phút) không set — tạo lựa chọn cao/thấp đúng yêu cầu |
-| BL-P2-13 | Test Scenario A–D | Verify | Kịch bản playtest tay (không phải tính năng mới), script đầy đủ ở `docs/plans/2026-07-28-p2-test-scenarios.md`. Scenario C điều chỉnh phạm vi (chưa có Event Framework — P3/P4). Sửa kèm: F2 Debug Panel Hazard trước hard-code chỉ chỉnh `route_shelter_store`, giờ chọn được route bất kỳ (cần thiết để test Scenario A/D với route gara mới) |
-| BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
+| BL-P2-10 | Equipment Protection | Done | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. User đã verify 2026-07-28. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
+| BL-P2-11 | Return Window UI | Done | Phạm vi rút gọn cho P2 (quyết định cùng user 2026-07-28): **không** dựng World Map đầy đủ (`docs/03-mvp-black-rain/03-black-rain-world-map.md` là phạm vi P4). Nhấn E ở `TravelPointView` mở `TravelConfirmPanel` — Travel Time một chiều, Estimated Return Time (khứ hồi), Known Hazard, cảnh báo nếu Disaster Phase dự kiến đổi trước khi quay lại. User đã verify 2026-07-28 |
+| BL-P2-12 | Content P2 | Done | `location_garage` + `route_shelter_garage` — scene `42_Location_UtilityGarage` + `TravelPointView` thứ hai ở Shelter. `route_shelter_store` (thấp/ngắn) `closes_at_phase: route_closure`; `route_shelter_garage` (cao/dài, 35 phút) không set. User đã verify 2026-07-28 |
+| BL-P2-13 | Test Scenario A–D | Done | Kịch bản playtest tay, script đầy đủ ở `docs/plans/2026-07-28-p2-test-scenarios.md`. User đã chạy hết A–D 2026-07-28, chấp nhận rủi ro còn lại ở Scenario D (xem ghi chú bên dưới) |
+| BL-P2-14 | Save Hazard State | Done | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load |
 
-**Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ**, BL-P2-10 (Equipment) + BL-P2-12
-(Content P2) + BL-P2-13 (Test Scenario, script sẵn sàng) + BL-P2-11 (Return Window UI, phạm
-vi rút gọn) xong (166 EditMode test — panel UI mới không có test tự động, cùng quy ước với
-Inventory/Search/Storage panel, verify bằng mắt). Toàn bộ hạng mục P2 đã có code, chỉ còn chờ
-user playtest xác nhận rồi mới chạy Gate.
-Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
-không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu (**chưa làm**); Route Closure
-không softlock (**⚠ rủi ro chưa xử lý — xem Scenario D bên dưới**).
+**Gate P2: PASS** (2026-07-28) — 166 EditMode test + user đã playtest toàn bộ P2-A/B/C
+(Flood, Current, Exposure, Electrified, Route Closure, Disaster Phase, Equipment, Return
+Window UI, Content P2, Scenario A–D).
+Exit Criteria: đổi Route vì Flood ✅; Equipment thay đổi Loadout ✅; không Failure tức thời
+thiếu cảnh báo ✅; Return Window dễ hiểu ✅ (phạm vi rút gọn); Route Closure không softlock
+⚠ **rủi ro chấp nhận có kiểm soát** — xem ghi chú Scenario D bên dưới.
 
-## ⚠ Phát hiện từ Scenario D — rủi ro softlock thật, chưa xử lý
+## Ghi chú rủi ro softlock từ Scenario D — chấp nhận, không chặn Gate
 
 `location_convenience_store` chỉ nối **một** route (`route_shelter_store`) về shelter. Route
-này có `closes_at_phase: route_closure` (thêm ở BL-P2-12). Nếu player đang đứng ở cửa hàng
-đúng lúc world time vượt mốc RouteClosure (900 phút = 15 tiếng), route đóng **vĩnh viễn**
-(time chỉ tăng, không có cơ chế mở lại) — hết đường về shelter từ cửa hàng. Đúng "Redesign
-Trigger" đã ghi sẵn trong `docs/03-mvp-black-rain/10-mvp-prototype-plan.md` mục 6.8: "Route
-đóng khiến người chơi mắc kẹt không có phương án".
+này có `closes_at_phase: route_closure`. Nếu player đang đứng ở cửa hàng đúng lúc world time
+vượt mốc RouteClosure (900 phút = 15 tiếng), route đóng **vĩnh viễn** — hết đường về shelter
+từ cửa hàng. `TravelConfirmPanel` (BL-P2-11) cảnh báo trước khi đi nếu khứ hồi dự kiến vượt
+mốc đổi phase, nhưng không chặn — người chơi vẫn có thể bấm "Xác nhận đi".
 
-**Đã giảm nhẹ, chưa loại bỏ hoàn toàn** — BL-P2-11 (Return Window UI) giờ cảnh báo *trước khi*
-đi nếu Disaster Phase dự kiến đổi trước lúc quay lại, nhưng chỉ là cảnh báo, không chặn hành
-động (người chơi vẫn có thể bấm "Xác nhận đi" bất chấp cảnh báo — đúng ý "không tự động chọn
-Route" trong world-map.md). Route vẫn có thể đóng vĩnh viễn nếu người chơi phớt lờ cảnh báo
-hoặc route đóng trong lúc đang đứng tại location (không đi qua panel). Cần user tự chạy
-Scenario D (script ở `docs/plans/2026-07-28-p2-test-scenarios.md`) và thử panel xác nhận mới,
-rồi quyết định: chấp nhận rủi ro còn lại, hay cần xử lý sớm hơn (vd. exempt chiều về, chặn hẳn
-thay vì chỉ cảnh báo).
+**Quyết định 2026-07-28 (user):** chấp nhận rủi ro còn lại, không xử lý thêm cho P2 — buffer
+15 tiếng game rất dài so với phiên chơi thật 30-45 phút nên khó gặp trong thực tế, và cảnh báo
+đã có trước khi đi. Nếu muốn xử lý chặt hơn sau này (exempt chiều về khỏi Route Closure, chặn
+hẳn thay vì chỉ cảnh báo) thì mở lại thành item riêng, không phải BL-P2-11.
 
-## Cần user verify Content P2 (BL-P2-12)
+## Fix kèm theo phát sinh khi user playtest P2 (không thuộc phạm vi gốc của item liên quan)
 
-1. Từ Shelter, giờ có **2** điểm Travel (đi cửa hàng, đi gara sửa xe) — đi gara, tới nơi thấy
-   2 search point mới (workbench/shelf), nhặt được pump_part/toolbox/scrap/filter.
-2. Quay lại Shelter từ gara — nhân vật phải xuất hiện gần cổng gara (khác vị trí cổng cửa
-   hàng) — đây là fix kèm theo: mỗi cổng giờ có spawn riêng, chọn theo route vừa đi qua
-   (`TravelStarted` event), không còn 1 spawn cố định cho cả 2 cổng.
-3. Quay lại Shelter từ cửa hàng (route cũ) — spawn vẫn đúng gần cổng cửa hàng như trước,
-   không bị đổi do thêm route mới.
-4. F2: `+8h` nhiều lần tới khi Disaster Phase = RouteClosure (mốc 900 phút = 15 tiếng, xem
-   `DrawHazardControls`) — route đi cửa hàng phải hoá Impassable (bị chặn), route đi gara vẫn
-   đi được bình thường — đúng ý "đổi route vì flood/phase", không phải ép kịch bản.
+Content P2 (BL-P2-12): mỗi cổng ra vào ở Shelter giờ có `PlayerSpawnPoint` riêng, chọn theo
+route vừa đi qua (`TravelStarted` event) — trước chỉ có 1 spawn cố định cho cả 2 cổng.
 
-## Cần user verify Flood State (BL-P2-04/06, không chặn tiếp tục code)
+Equipment (BL-P2-10), 2026-07-27:
 
-F2 Debug Panel có mục Hazard mới — đổi flood state của `route_shelter_store` (route duy
-nhất hiện có) rồi thử Travel:
-
-1. Đặt Shallow/Medium/Deep — Stamina/Wet/Exposure có đổi ngay sau khi tới nơi không, thời
-   gian di chuyển có tăng theo tier không (Deep phải lâu gấp đôi Dry).
-2. Mang nặng (Overload Heavy) + đặt Deep cùng lúc — thời gian phải nhân dồn cả hai (loadFactor
-   × floodTimeFactor), không phải chỉ tính cái lớn hơn.
-3. Đặt Impassable rồi thử tương tác Travel Point — phải bị từ chối hoàn toàn, không đi được.
-
-## Cần user verify Disaster Phase / Current Strength / Electrified (BL-P2-05/07/08/09)
-
-**Toàn bộ số ở đây là tự đề xuất, chưa qua playtest** — cần ý kiến bạn nhiều hơn phần trên:
-
-1. F2: `+8h` vài lần liên tiếp, xem Disaster Phase đổi Dry→FirstRain (mốc 240 phút = 4 tiếng)
-   →BlackRain (600 phút = 10 tiếng)→RouteClosure (900 phút = 15 tiếng) — mốc thời gian này có
-   hợp lý với nhịp chơi 30-45 phút/phiên (theo Exit Criteria P2) không, hay quá nhanh/chậm?
-2. Cheat Current "Extreme", Travel qua lại nhiều lần — tỉ lệ "cuốn" (sweep, giảm Health) 50%
-   có cảm thấy hợp lý không? Damage mỗi lần trúng là 10 — quá nhẹ/nặng?
-3. Bật Electrified, Travel qua — Health giảm 15 nhưng dừng lại gần ngưỡng Collapse (không
-   chết ngay) — độ nguy hiểm này ổn không?
-4. Route Closure hiện **không áp dụng cho route nào cả** (route duy nhất `route_shelter_store`
-   cố tình không set `ClosesAtPhase` để tránh softlock) — cơ chế chỉ thật sự test được khi có
-   route thứ hai (BL-P2-12, P2-C).
-
-## Cần user verify Equipment Protection (BL-P2-10)
-
-**Sửa lại hướng dẫn cũ:** jacket/boots/rope/dry_bag **chưa nhặt được trong game** — chưa có
-search point/loot table nào chứa 4 item này (Content P2 — BL-P2-12 — vẫn Backlog). Cách lấy
-item để test: mở **F2 Debug Panel**, gõ đúng id (`item_jacket`, `item_boots`, `item_rope`,
-`item_dry_bag`) vào ô nhập rồi bấm "Thêm".
-
-Inventory Panel:
-
-1. Sau khi thêm item bằng F2 — mỗi item equipment có nút "Mặc" riêng bên cạnh nút "Bỏ".
-   Bấm Mặc — item chuyển lên khu "Đang mặc" phía trên, biến mất khỏi danh sách túi.
-2. Mặc dry_bag — capacity (kg/L) hiển thị ở đầu panel có tăng ngay không. Bấm "Tháo" — capacity
-   có trả về đúng không.
-3. Nhồi túi gần đầy rồi mặc dry_bag, sau đó cố tháo ra — nếu tháo ra sẽ tràn túi (vượt hard cap),
-   phải bị từ chối (item vẫn nằm ở "Đang mặc", không tháo).
-4. Mặc jacket, cheat mưa (Disaster Phase FirstRain qua F2 `+8h`) — Wet tăng chậm hơn rõ rệt so
-   với không mặc (tỉ lệ 0.3×).
-5. Mặc boots, Travel qua route Shallow — Black Water Exposure không tăng (block level 1). Đặt
-   Deep — Exposure vẫn tăng nhưng giảm một nửa so với không mặc boots.
-6. Mặc rope, cheat Current Strength "Extreme", Travel — chi phí Stamina dùng đúng mức của
-   Current thấp hơn một bậc (Strong thay vì Extreme), không phải mức gốc.
-
-**Fix kèm theo (2026-07-27), phát sinh khi user playtest Equipment — không thuộc phạm vi
-BL-P2-10 gốc:**
-
-1. `PlayerSpawnPoint` ở cả 2 scene (`20_MainShelter`, `41_Location_ConvenienceStore`) trước
-   đặt cách xa `TravelPoint` (shelter: 5 ô, giữa phòng) → đã sửa `SceneSetup.cs` đặt spawn sát
-   `TravelPoint`. **Nhưng đây không phải nguyên nhân chính** — bug thật nằm ở
-   `SceneFlowController.RepositionPlayer()`: gọi `FindFirstObjectByType<PlayerSpawnPoint>()`
-   ngay sau khi scene mới load xong nhưng **trước khi scene cũ unload xong** (unload chạy bất
-   đồng bộ, sau đó) — nên có lúc 2 scene cùng tồn tại `PlayerSpawnPoint`, và hàm này luôn trúng
-   phải cái của scene **vừa rời đi**, không phải scene vừa tới. Đã sửa: tìm đúng trong scene
-   theo tên (`SceneManager.GetSceneByName` + duyệt root objects), không dùng tìm toàn cục nữa.
-2. F2 Debug Panel cuộn chuột để xem mục "Túi đồ" (nơi gõ item id) đồng thời làm camera
+1. F2 Debug Panel cuộn chuột để xem mục "Túi đồ" (nơi gõ item id) đồng thời làm camera
    zoom theo — IMGUI (`OnGUI`) và Input System đọc scroll wheel là hai đường tách biệt,
    `Event.current` không chặn được Input System. Thêm `Core/UI/PointerOverUI.cs` (cờ dùng
    chung: panel OnGUI báo con trỏ có đang ở trong rect của nó không, `CameraRig` đọc để bỏ
    qua input zoom khi đang thao tác panel) — áp cho cả 4 panel OnGUI (Debug/Inventory/
    Search/Storage).
-3. F2 Debug Panel cao cố định 760px — Game view nhỏ (Play trong Editor) bị cắt, không cuộn
+2. F2 Debug Panel cao cố định 760px — Game view nhỏ (Play trong Editor) bị cắt, không cuộn
    tới được mục "Túi đồ". Đã đổi thành co theo `Screen.height`.
-4. F2 Debug Panel: thêm ô tìm kiếm + danh sách toàn bộ item (lọc theo tên, bấm "Thêm" trực
+3. F2 Debug Panel: thêm ô tìm kiếm + danh sách toàn bộ item (lọc theo tên, bấm "Thêm" trực
    tiếp) thay vì phải gõ tay đúng id — theo yêu cầu user.
-5. `InventoryPanel`: thêm thanh progress hiển thị tải trọng (đầy tới **hard cap** 1.5×, không
+4. `InventoryPanel`: thêm thanh progress hiển thị tải trọng (đầy tới **hard cap** 1.5×, không
    phải sức chứa gốc — thấy được còn bao nhiêu khoảng overload trước khi bị `Blocked`), màu
    theo `LoadTier`.
-6. `UnequipItemCommand.Validate` trước chỉ kiểm tra slot có đồ, không kiểm tra tháo ra có tràn
-   túi không — phần kiểm tra sức chứa nằm trong `Execute` (`EquipmentSystem.TryUnequip`) và khi
-   fail thì **âm thầm no-op**, không báo gì cho UI (item vẫn ở "Đang mặc" nhưng không rõ vì
-   sao). User báo "vẫn tháo được dù sức chứa thiếu" — có thể do không thấy phản hồi nên tưởng
-   nhầm, hoặc do đang test qua nút "Tháo" thật (không phải F2 cheat) nhưng số liệu vẫn nằm
-   trong dung sai hard cap 1.5× (xem giải thích dưới, chưa xác nhận là bug thật). Đã sửa để
-   quan sát rõ ràng: thêm `EquipmentSystem.CanUnequip` (kiểm tra thuần, không mutate) —
-   `Validate` gọi hàm này để từ chối đúng lúc (`NotEnoughCapacity`) thay vì để `Execute` no-op,
-   `InventoryPanel` hiện thông báo khi bị từ chối.
-
-## Cần user verify Return Window UI (BL-P2-11)
-
-1. Nhấn E ở TravelPoint (shelter → store hoặc shelter → gara) — thay vì đi luôn, phải hiện
-   panel "Xác nhận di chuyển" (Travel Time một chiều, Estimated Return Time khứ hồi, Flood/
-   Current/Điện hiện tại của route). Nhấn E lại đúng travel point đó — panel đóng (toggle),
-   không mở lại. ESC cũng đóng được, giống các panel khác.
-2. Bấm "Hủy" — không di chuyển, world time không tăng (đứng nguyên tại chỗ).
-3. Bấm "Xác nhận đi" — di chuyển diễn ra như trước (đổi scene, tốn thời gian, áp hazard
-   crossing) — hành vi cũ không đổi, chỉ thêm bước xác nhận phía trước.
-4. F2 `+8h` vài lần cho world time gần mốc chuyển Phase (240/600/900 phút), rồi mở panel xác
-   nhận ở route sắp đi — nếu đi-về (khứ hồi) sẽ vượt qua mốc đổi Phase, phải thấy dòng cảnh
-   báo màu vàng "Tuyến có thể không còn sử dụng được khi quay lại". Panel không chặn — vẫn bấm
-   "Xác nhận đi" được nếu muốn (đúng ý không tự động chọn route thay người chơi).
+5. `UnequipItemCommand.Validate` trước chỉ kiểm tra slot có đồ, không kiểm tra tháo ra có tràn
+   túi không — đã thêm `EquipmentSystem.CanUnequip` (kiểm tra thuần, không mutate) để từ chối
+   đúng lúc (`NotEnoughCapacity`) thay vì để `Execute` âm thầm no-op, `InventoryPanel` hiện
+   thông báo khi bị từ chối.
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút
@@ -306,5 +215,5 @@ game sang 0.4/phút game (quy đổi từ "mỗi 30 giây thực" ở timescale 
 
 ---
 
-Milestone tiếp theo: **P1-C** (BL-P1-14..22) — Interaction, Item, Inventory, Search, Storage,
-Travel, Location blockout, Telemetry → Gate P1.
+Milestone tiếp theo: **P3 — Shelter Loop** (S10–S13) — Shelter State, Water Intrusion, Build
+& Placement, Task System, Power/Water/Sleep Simulation, Event Framework lõi → Gate P3.

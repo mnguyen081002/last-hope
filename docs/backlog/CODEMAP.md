@@ -8,13 +8,11 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 
 ## Hiện trạng
 
-**Gate P1 PASS**. **P2-A + P2-B xong toàn bộ**, BL-P2-10 Equipment Protection xong (166
-EditMode test). P2-B phần Current Strength/Electrified/Route Closure/Disaster Phase dùng
-**số tự đề xuất, chưa qua playtest** (khác các phần khác luôn bám số có sẵn `balance.json`)
-— user cần xem qua trước khi tin tưởng hoàn toàn. BL-P2-12 Content P2 xong (route+location
-thứ hai — gara). BL-P2-11 Return Window UI xong (phạm vi rút gọn — panel xác nhận tại
-TravelPoint, không phải World Map đầy đủ). Toàn bộ P2-C đã có code, chờ user playtest. Chưa
-có: P3/P4.
+**Gate P1 PASS. Gate P2 PASS** (2026-07-28) — toàn bộ P2-A/B/C Done, user đã playtest hết
+(Flood, Current Strength, Black Water Exposure, Electrified, Route Closure, Disaster Phase,
+Equipment Protection, Return Window UI, Content P2, Scenario A–D). 166 EditMode test xanh.
+Rủi ro softlock route đóng vĩnh viễn (Scenario D) — user chấp nhận có kiểm soát, xem
+`BACKLOG.md`. Chưa có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -108,8 +106,8 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Commands | `Systems/Commands/{TransferItemCommand,OpenSearchPointCommand,TakeAllFromSearchPointCommand,BeginTravelCommand,EquipItemCommand,UnequipItemCommand}.cs` | implement `IGameCommand` | ✅ | `TransferItemCommand` dùng chung cho Take/Store/Withdraw/Drop/PickUp qua `InventoryOwner` |
 | Telemetry | `Systems/Telemetry/TelemetryLogger.cs` | `LogSearchClosed`, `LogInventoryOpenDuration` (+ tự subscribe Travel/Location/Search event) | ⬜ | JSONL `persistentDataPath/Telemetry/session_*.jsonl`. Sự kiện có EventBus sẵn thì tự nghe; sự kiện chỉ UI biết (đóng panel, thời gian mở) UI gọi thẳng |
 | Condition | `Systems/Condition/{ConditionSystem,ConditionDriver}.cs` | `ApplyShortTick/ApplyLongTick/IsCollapsed` | ✅ | `ConditionDriver` subscribe `TickScheduler` trong `GameServices.BindWorld`, dựng lại mỗi lần (kể cả sau Load). Wet gain do mưa ambient nhân thêm `EquipmentSystem.ComputeWetMultiplier` (jacket); Black Water Exposure gain qua Hazard crossing |
-| Hazard | `Systems/Hazard/HazardSystem.cs` | `IsPassable`, `EffectiveFlood`, `TimeFactor`, `ApplyCrossingCost`, `ApplyCurrentCrossing`, `ApplyElectrifiedCrossing` | ✅ | Flood: `balance.json.hazard.crossing_*` (số thật). Current/Electrified: **số tự đề xuất 2026-07-27, chưa qua playtest**. `ApplyCrossingCost`/`ApplyCurrentCrossing` nhận tham số protection (default = không đổi hành vi cũ) từ boots/jacket/rope. Structural Collapse **chưa làm** |
-| Disaster Phase | `Systems/Hazard/DisasterPhaseSystem.cs` | `CurrentPhase`, `IsRaining` | ✅ | Suy thuần từ `WorldTimeMinutes`, không lưu state. **Số tự đề xuất, chưa qua playtest**. `IsRaining` nối vào `ConditionSystem.UpdateWet` (field `WetGainPerMinuteInRain` bỏ trống từ P2-A) |
+| Hazard | `Systems/Hazard/HazardSystem.cs` | `IsPassable`, `EffectiveFlood`, `TimeFactor`, `ApplyCrossingCost`, `ApplyCurrentCrossing`, `ApplyElectrifiedCrossing` | ✅ | Flood: `balance.json.hazard.crossing_*` (số thật). Current/Electrified: số tự đề xuất, **user đã verify 2026-07-28**. `ApplyCrossingCost`/`ApplyCurrentCrossing` nhận tham số protection (default = không đổi hành vi cũ) từ boots/jacket/rope. Structural Collapse **chưa làm** |
+| Disaster Phase | `Systems/Hazard/DisasterPhaseSystem.cs` | `CurrentPhase`, `IsRaining` | ✅ | Suy thuần từ `WorldTimeMinutes`, không lưu state. Số tự đề xuất, **user đã verify 2026-07-28**. `IsRaining` nối vào `ConditionSystem.UpdateWet` (field `WetGainPerMinuteInRain` bỏ trống từ P2-A) |
 | Equipment | `Systems/Equipment/EquipmentSystem.cs` | `TryEquip/TryUnequip/CanUnequip`, `ComputeWetMultiplier`, `ComputeBootsProtection`, `ComputeCurrentReduction` | ✅ | Đồ mặc không nằm trong `InventoryState.Slots` (không tính Carry Load); dry_bag cộng/trừ thẳng `CapacityKg/Liters` lúc equip/unequip, tháo bị từ chối nếu tràn túi. `CanUnequip` (2026-07-27) kiểm tra thuần không mutate — `UnequipItemCommand.Validate` gọi hàm này để từ chối đúng lúc thay vì để `Execute` âm thầm no-op. Gloves (`handles_contaminated`) **còn treo** — chưa có action "xử lý đồ nhiễm bẩn" |
 
 ## LastHope.Presentation
