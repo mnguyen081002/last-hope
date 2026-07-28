@@ -2,49 +2,49 @@
   {
     "id": "shelter_entrance",
     "floor": "Ground",
-    "build_slot_ids": ["slot_shelter_entrance_1", "slot_shelter_entrance_2"],
-    "water_risk": "High"
+    "water_risk": "High",
+    "bounds_min_x": -10, "bounds_min_y": -8, "bounds_max_x": -6, "bounds_max_y": -1
   },
   {
     "id": "central_hall",
     "floor": "Ground",
-    "build_slot_ids": [],
-    "water_risk": "Medium"
+    "water_risk": "Medium",
+    "bounds_min_x": 0, "bounds_min_y": 0, "bounds_max_x": 0, "bounds_max_y": 0
   },
   {
     "id": "ground_storage",
     "floor": "Ground",
-    "build_slot_ids": ["slot_ground_storage_1", "slot_ground_storage_2"],
-    "water_risk": "High"
+    "water_risk": "High",
+    "bounds_min_x": -10, "bounds_min_y": 0, "bounds_max_x": -1, "bounds_max_y": 8
   },
   {
     "id": "utility_area",
     "floor": "Ground",
-    "build_slot_ids": ["slot_utility_area_1", "slot_utility_area_2"],
-    "water_risk": "Critical"
+    "water_risk": "Critical",
+    "bounds_min_x": 0, "bounds_min_y": 0, "bounds_max_x": 10, "bounds_max_y": 8
   },
   {
     "id": "water_processing",
     "floor": "Ground",
-    "build_slot_ids": ["slot_water_processing_1", "slot_water_processing_2"],
-    "water_risk": "High"
+    "water_risk": "High",
+    "bounds_min_x": 0, "bounds_min_y": -8, "bounds_max_x": 10, "bounds_max_y": -1
   },
   {
     "id": "workshop",
     "floor": "Ground",
-    "build_slot_ids": ["slot_workshop_1"],
-    "water_risk": "Medium"
+    "water_risk": "Medium",
+    "bounds_min_x": -10, "bounds_min_y": -8, "bounds_max_x": -1, "bounds_max_y": -1
   },
   {
     "id": "upper_living",
     "floor": "Upper",
-    "build_slot_ids": ["slot_upper_living_1", "slot_upper_living_2", "slot_upper_living_3"],
-    "water_risk": "Low"
+    "water_risk": "Low",
+    "bounds_min_x": -10, "bounds_min_y": -8, "bounds_max_x": 10, "bounds_max_y": 8
   },
   {
     "id": "roof",
     "floor": "Roof",
-    "build_slot_ids": ["slot_roof_1"],
-    "water_risk": "None"
+    "water_risk": "None",
+    "bounds_min_x": 0, "bounds_min_y": 0, "bounds_max_x": 0, "bounds_max_y": 0
   }
 ]

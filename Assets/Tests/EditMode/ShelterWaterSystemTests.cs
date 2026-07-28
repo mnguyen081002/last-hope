@@ -41,21 +41,21 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void ApplyLongTick_Barrier_ReducesInflow_AndDecaysDurability()
         {
-            shelter.BuildSlots["slot_shelter_entrance_1"] =
+            shelter.PlacedModules["slot_shelter_entrance_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Barrier, Durability = 100f };
 
             ShelterWaterSystem.ApplyLongTick(shelter, definitions, DisasterPhase.BlackRain);
 
             // inflow 4 * (1 - 0.7) = 1.2; gain = 1.2 - 2 = -0.8 -> clamp 0.
             Assert.AreEqual(0f, shelter.WaterIntrusion, 0.001f);
-            Assert.AreEqual(98f, shelter.BuildSlots["slot_shelter_entrance_1"].Durability, 0.001f);
+            Assert.AreEqual(98f, shelter.PlacedModules["slot_shelter_entrance_1"].Durability, 0.001f);
         }
 
         [Test]
         public void ApplyLongTick_Pump_PoweredAndNotJammed_ReducesWater()
         {
             shelter.WaterIntrusion = 20f;
-            shelter.BuildSlots["slot_utility_area_1"] =
+            shelter.PlacedModules["slot_utility_area_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Powered = true };
 
             ShelterWaterSystem.ApplyLongTick(shelter, definitions, DisasterPhase.Dry); // inflow=0
@@ -68,7 +68,7 @@ namespace LastHope.Tests.EditMode
         public void ApplyLongTick_Pump_NotPowered_NoEffect()
         {
             shelter.WaterIntrusion = 20f;
-            shelter.BuildSlots["slot_utility_area_1"] =
+            shelter.PlacedModules["slot_utility_area_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Powered = false };
 
             ShelterWaterSystem.ApplyLongTick(shelter, definitions, DisasterPhase.Dry);
@@ -80,7 +80,7 @@ namespace LastHope.Tests.EditMode
         public void ApplyLongTick_GroundFlooded_DisablesPumpOutput()
         {
             shelter.WaterIntrusion = 70f; // >= deep_threshold(60)
-            shelter.BuildSlots["slot_utility_area_1"] =
+            shelter.PlacedModules["slot_utility_area_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Powered = true };
 
             ShelterWaterSystem.ApplyLongTick(shelter, definitions, DisasterPhase.Dry);
@@ -102,7 +102,7 @@ namespace LastHope.Tests.EditMode
         public void Purifier_CompletesBatch_AfterEnoughLongTicks()
         {
             shelter.UntreatedWater = 10f;
-            shelter.BuildSlots["slot_water_processing_1"] =
+            shelter.PlacedModules["slot_water_processing_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Purifier, Powered = true };
 
             for (int i = 0; i < 6; i++) // 6 × 10 phút = 60 phút = purify_batch_minutes
@@ -118,7 +118,7 @@ namespace LastHope.Tests.EditMode
         public void Purifier_NotEnoughUntreatedWater_DoesNotProgress()
         {
             shelter.UntreatedWater = 1f; // < purify_batch_size (3)
-            shelter.BuildSlots["slot_water_processing_1"] =
+            shelter.PlacedModules["slot_water_processing_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Purifier, Powered = true };
 
             ShelterWaterSystem.ApplyLongTick(shelter, definitions, DisasterPhase.Dry);

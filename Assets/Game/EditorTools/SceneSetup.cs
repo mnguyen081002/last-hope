@@ -131,6 +131,13 @@ namespace LastHope.EditorTools
             var sleepPanel = new GameObject("SleepPanel").AddComponent<SleepPanel>();
             SetSerialized(sleepPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
 
+            var placementMode = new GameObject("PlacementModeController").AddComponent<PlacementModeController>();
+            SetSerialized(placementMode, so =>
+            {
+                so.FindProperty("controls").objectReferenceValue = controls;
+                so.FindProperty("playerFloorState").objectReferenceValue = player.GetComponent<PlayerFloorState>();
+            });
+
             SaveScene(scene, $"{ScenesRoot}/10_GamePersistent.unity");
         }
 

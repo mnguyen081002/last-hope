@@ -313,13 +313,17 @@ namespace LastHope.Tests.EditMode
                 InventoryOps.AddItem(storage, definitions, pair.Key, pair.Value);
         }
 
+        const string UtilityZone = "utility_area";
+        const float ZoneX = 5f, ZoneY = 5f; // trong bounds utility_area (0,0)-(10,8).
+
         [Test]
         public void StartConstruction_NotAtShelter_IsRejected()
         {
             world.Player.CurrentLocationId = "location_convenience_store";
             GiveShelterMaterials(ShelterModuleIds.Pump);
 
-            var result = processor.Submit(new StartConstructionCommand("slot_utility_area_1", ShelterModuleIds.Pump));
+            var result = processor.Submit(
+                new StartConstructionCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
 
             Assert.AreEqual(CommandErrorCode.WrongLocation, result.Error);
         }
@@ -329,10 +333,11 @@ namespace LastHope.Tests.EditMode
         {
             GiveShelterMaterials(ShelterModuleIds.Pump);
 
-            var result = processor.Submit(new StartConstructionCommand("slot_utility_area_1", ShelterModuleIds.Pump));
+            var result = processor.Submit(
+                new StartConstructionCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
 
             Assert.IsTrue(result.Success);
-            Assert.AreEqual("slot_utility_area_1", world.Shelter.Construction.SlotId);
+            Assert.AreEqual(UtilityZone, world.Shelter.Construction.ZoneId);
             var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
             Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_pump_part"));
         }
@@ -341,9 +346,9 @@ namespace LastHope.Tests.EditMode
         public void CancelConstruction_Valid_ClearsConstruction()
         {
             GiveShelterMaterials(ShelterModuleIds.Pump);
-            processor.Submit(new StartConstructionCommand("slot_utility_area_1", ShelterModuleIds.Pump));
+            processor.Submit(new StartConstructionCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
 
-            var result = processor.Submit(new CancelConstructionCommand("slot_utility_area_1"));
+            var result = processor.Submit(new CancelConstructionCommand());
 
             Assert.IsTrue(result.Success);
             Assert.IsNull(world.Shelter.Construction);
@@ -352,13 +357,13 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void DismantleModule_Valid_RemovesModule()
         {
-            world.Shelter.BuildSlots["slot_utility_area_1"] =
-                new BuiltModuleState { ModuleId = ShelterModuleIds.Pump };
+            world.Shelter.PlacedModules["placed_1"] =
+                new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, ZoneId = UtilityZone };
 
-            var result = processor.Submit(new DismantleModuleCommand("slot_utility_area_1"));
+            var result = processor.Submit(new DismantleModuleCommand("placed_1"));
 
             Assert.IsTrue(result.Success);
-            Assert.IsFalse(world.Shelter.BuildSlots.ContainsKey("slot_utility_area_1"));
+            Assert.IsFalse(world.Shelter.PlacedModules.ContainsKey("placed_1"));
         }
 
         // ---------- SetPowerPriorityCommand ----------
@@ -366,13 +371,13 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void SetPowerPriority_Valid_UpdatesPriority()
         {
-            world.Shelter.BuildSlots["slot_utility_area_1"] =
+            world.Shelter.PlacedModules["placed_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Priority = PowerPriority.Normal };
 
-            var result = processor.Submit(new SetPowerPriorityCommand("slot_utility_area_1", PowerPriority.Critical));
+            var result = processor.Submit(new SetPowerPriorityCommand("placed_1", PowerPriority.Critical));
 
             Assert.IsTrue(result.Success);
-            Assert.AreEqual(PowerPriority.Critical, world.Shelter.BuildSlots["slot_utility_area_1"].Priority);
+            Assert.AreEqual(PowerPriority.Critical, world.Shelter.PlacedModules["placed_1"].Priority);
         }
 
         // ---------- ResolveDrainBackflowCommand ----------
@@ -402,7 +407,7 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void RepairPumpJam_NotJammed_IsRejected()
         {
-            world.Shelter.BuildSlots["slot_utility_area_1"] =
+            world.Shelter.PlacedModules["slot_utility_area_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, IsJammed = false };
 
             var result = processor.Submit(new RepairPumpJamCommand());
@@ -413,13 +418,13 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void RepairPumpJam_Jammed_RepairsAndAdvancesTime()
         {
-            world.Shelter.BuildSlots["slot_utility_area_1"] =
+            world.Shelter.PlacedModules["slot_utility_area_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, IsJammed = true };
 
             var result = processor.Submit(new RepairPumpJamCommand());
 
             Assert.IsTrue(result.Success);
-            Assert.IsFalse(world.Shelter.BuildSlots["slot_utility_area_1"].IsJammed);
+            Assert.IsFalse(world.Shelter.PlacedModules["slot_utility_area_1"].IsJammed);
             Assert.AreEqual((long)definitions.Balance.Shelter.PumpJamResolveMinutes, world.WorldTimeMinutes);
         }
 

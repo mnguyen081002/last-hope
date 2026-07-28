@@ -51,21 +51,6 @@ namespace LastHope.Data
         public bool TryGetShelterZone(string id, out ShelterZoneDefinition definition) =>
             shelterZones.TryGetValue(id ?? string.Empty, out definition);
 
-        /// <summary>Tìm Zone chứa một Build Slot cụ thể — Slot ID chỉ xuất hiện trong đúng 1 Zone.</summary>
-        public bool TryGetZoneForSlot(string slotId, out ShelterZoneDefinition zone)
-        {
-            foreach (var z in shelterZones.Values)
-            {
-                if (z.BuildSlotIds.Contains(slotId))
-                {
-                    zone = z;
-                    return true;
-                }
-            }
-            zone = null;
-            return false;
-        }
-
         /// <summary>Trả về false nếu ID trùng — loader gom lỗi thay vì ném ngoại lệ.</summary>
         internal bool TryAdd<T>(T definition) where T : DefinitionBase
         {

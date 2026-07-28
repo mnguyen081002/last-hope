@@ -39,16 +39,19 @@ Hệ thống phải hoạt động trong World Clock cố định.
 
 ## 2.1. Tình trạng triển khai (2026-07-28)
 
-`BuildSystem`/`ShelterPanel` (P3, `docs/plans/2026-07-28-p3-shelter-loop.md`) hiện đọc
-`ShelterZoneDefinition.BuildSlotIds` như danh sách ID cố định (chọn từ menu, không có world
-position) — **chưa khớp mục 2 ở trên**, cần làm lại theo hướng world position tự do +
-Placement Validation (mục 6) trước khi coi BL-P3-03 hoàn thành đúng thiết kế. Xem
-`docs/backlog/BACKLOG.md` mục P3-A.
+`BuildSystem`/`ShelterPanel` (P3, `docs/plans/2026-07-28-free-placement.md`) đã khớp mục 2 —
+`ShelterZoneDefinition` có world bounds (`BoundsMinX/MinY/MaxX/MaxY`), `BuildSystem.CanPlaceAt`
+validate world position tự do trong Zone + không chồng lấn Module khác
+(`ModuleDefinition.FootprintRadius`) + đủ vật liệu. UI: chọn Module + Zone trong `ShelterPanel`
+→ `PlacementModeController` (Presentation) hiện ghost theo chuột + khung mờ biên Zone, click
+xác nhận vị trí thật trong thế giới.
 
-Outdoor placement (Module ngoài Shelter, mục 4/18) **chưa có khái niệm Zone/vùng cho phép nào
-ở Data layer cho Location** — `LocationDefinition` hiện chỉ có Search Point/Route/Scene, không
-có vùng buildable. Cần thêm field mới (vd `PlaceableZoneDefinition` theo Location) trước khi
-Outdoor Module có chỗ để đặt.
+Outdoor placement (Module ngoài Shelter, mục 4/18) **vẫn chưa làm** — không phải do thiếu khái
+niệm Zone (dễ thêm `PlaceableZoneDefinition` tương tự `ShelterZoneDefinition`), mà vì
+**không có Module Outdoor/Hybrid nào tồn tại trong content** (`modules_p3.json` chỉ có 5 Module,
+cả 5 đều target Shelter Zone). Dựng hệ Zone cho Location mà không có gì để đặt vào là code
+chết. Cần quyết định nội dung Module Outdoor trước (vd Barricade, External Pump — ví dụ đã có
+sẵn ở mục 4) rồi mới làm phần này.
 
 ---
 

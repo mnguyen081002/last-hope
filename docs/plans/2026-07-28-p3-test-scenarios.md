@@ -93,15 +93,33 @@ thật, không phải giả lập riêng.
 5. **Giới hạn đã biết**: Save/Load không nhớ đang ở tầng nào — F2 Save rồi Load trong lúc ở
    Upper Floor sẽ về lại Ground Floor (giống scope cut "Save/Load không đổi scene" ở P1).
 
+## Scenario H — Free Placement: đặt Module tự do trong Zone (BL-P3-03, viết lại 2026-07-28)
+
+1. Nhặt đủ vật liệu cho Portable Pump (`item_pump_part`, `item_scrap` — F2 thêm nhanh nếu cần),
+   chuyển vào Kho Shelter. Mở Shelter Console → mục `utility_area` → bấm "Chọn vị trí" cạnh
+   `module_pump`. Panel đóng lại, thấy khung mờ trắng (biên Zone) + ô vuông theo con trỏ chuột.
+2. Di chuột ra ngoài khung mờ — ô vuông phải chuyển **đỏ** (không đặt được). Di chuột vào trong
+   khung — chuyển **xanh**. Click trái khi đang xanh — Module bắt đầu xây tại đúng vị trí vừa
+   click (mở lại Shelter Console, thấy "Đang xây module_pump tại utility_area").
+3. Thử lại từ đầu (chọn vị trí Module khác, hoặc Pump nếu đã tháo) — lần này bấm ESC giữa
+   chừng thay vì click — không có gì được xây, **vật liệu không bị mất** (kiểm tra lại Kho
+   Shelter còn đủ số lượng cũ).
+4. Xây 1 Module xong (đợi F2 `+1h`), mở lại Chọn vị trí cho Module thứ hai cùng Zone, thử click
+   ngay sát vị trí Module thứ nhất (trong bán kính ~1 đơn vị) — ô vuông phải đỏ (Overlapping),
+   không đặt chồng được. Lùi chuột ra xa hơn — chuyển xanh, đặt được bình thường.
+5. Chọn vị trí cho Module ở Zone `upper_living` (Elevated Storage, nếu đủ vật liệu) trong khi
+   đang đứng ở Ground Floor — game phải tự chuyển camera/view lên Upper Floor (không cần tự đi
+   cầu thang trước) để thấy đúng khung Zone đang chọn.
+
 ## Verification
 
-Compile → 219 EditMode test (166 P1/P2 + 53 P3) → sinh 6 scene → build Windows → smoke test
-headless (boot only) — đã chạy, tất cả pass. 6 Scenario trên cần chơi tay, không có gì thêm
+Compile → 220 EditMode test → sinh 6 scene → build Windows → smoke test headless (boot only)
+— đã chạy, tất cả pass. 8 Scenario trên cần chơi tay, không có gì thêm
 để tự động hoá.
 
 ## User cần tự test bằng mắt
 
-Toàn bộ 6 Scenario trên. Đối chiếu Exit Criteria Gate P3 (`docs/backlog/BACKLOG.md` mục P3):
+Toàn bộ 8 Scenario trên. Đối chiếu Exit Criteria Gate P3 (`docs/backlog/BACKLOG.md` mục P3):
 ít nhất ba chiến lược Shelter hợp lệ (Scenario A); không Module nào luôn bắt buộc (Scenario
 A); hiểu nguyên nhân Water Intrusion (Scenario C); Passive Task chạy khi rời Shelter/Sleep
 (ngầm định qua kiến trúc tick, không có bước riêng để "thấy" — nếu muốn xác nhận, bắt đầu xây

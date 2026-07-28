@@ -8,18 +8,18 @@ namespace LastHope.Systems.Commands
     {
         public long WorldTime { get; set; }
 
-        public string SlotId;
+        public string PlacementId;
 
-        public DismantleModuleCommand(string slotId) => SlotId = slotId;
+        public DismantleModuleCommand(string placementId) => PlacementId = placementId;
 
         public CommandResult Validate(GameContext context)
         {
-            if (!context.World.Shelter.BuildSlots.ContainsKey(SlotId))
-                return CommandResult.Fail(CommandErrorCode.InvalidTarget, "Slot chưa có Module.");
+            if (!context.World.Shelter.PlacedModules.ContainsKey(PlacementId))
+                return CommandResult.Fail(CommandErrorCode.InvalidTarget, "Không tìm thấy Module này.");
 
             return CommandResult.Ok();
         }
 
-        public void Execute(GameContext context) => BuildSystem.DismantleModule(context.World, SlotId);
+        public void Execute(GameContext context) => BuildSystem.DismantleModule(context.World, PlacementId);
     }
 }

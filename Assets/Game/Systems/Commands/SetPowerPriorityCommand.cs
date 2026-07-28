@@ -7,24 +7,24 @@ namespace LastHope.Systems.Commands
     {
         public long WorldTime { get; set; }
 
-        public string SlotId;
+        public string PlacementId;
         public PowerPriority Priority;
 
-        public SetPowerPriorityCommand(string slotId, PowerPriority priority)
+        public SetPowerPriorityCommand(string placementId, PowerPriority priority)
         {
-            SlotId = slotId;
+            PlacementId = placementId;
             Priority = priority;
         }
 
         public CommandResult Validate(GameContext context)
         {
-            if (!context.World.Shelter.BuildSlots.ContainsKey(SlotId))
-                return CommandResult.Fail(CommandErrorCode.InvalidTarget, "Slot chưa có Module.");
+            if (!context.World.Shelter.PlacedModules.ContainsKey(PlacementId))
+                return CommandResult.Fail(CommandErrorCode.InvalidTarget, "Không tìm thấy Module này.");
 
             return CommandResult.Ok();
         }
 
         public void Execute(GameContext context) =>
-            context.World.Shelter.BuildSlots[SlotId].Priority = Priority;
+            context.World.Shelter.PlacedModules[PlacementId].Priority = Priority;
     }
 }

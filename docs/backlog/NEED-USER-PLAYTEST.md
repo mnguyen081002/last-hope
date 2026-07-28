@@ -4,16 +4,14 @@ Danh sách gộp mọi hạng mục đã có code (trạng thái `Verify` trong 
 được user tự chơi xác nhận bằng mắt**. Khi user playtest xong một mục: xoá dòng khỏi bảng này
 + đổi trạng thái tương ứng trong `BACKLOG.md` từ `Verify` sang `Done` trong cùng lúc.
 
-Không liệt kê `BL-P3-03` (Build và Placement) — đang làm lại sang free placement, chưa tới
-lúc playtest.
-
 ## P3 — Shelter Loop
 
-Script chi tiết, từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` (Scenario A–G).
+Script chi tiết, từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` (Scenario A–H).
 
 | BL-ID | Hạng mục | Xác nhận gì | Scenario |
 | --- | --- | --- | --- |
 | BL-P3-01 | Main Shelter blockout / Z-level tầng | Đi bộ qua vùng cầu thang tự đổi tầng (không bấm phím); tầng dưới hiện mờ không va chạm được, tầng trên ẩn hẳn; không nhấp nháy khi đi qua lại ranh giới | G |
+| BL-P3-03 | Build và Placement (Free Placement) | Chọn Module+Zone trong `ShelterPanel` → ghost theo chuột (xanh/đỏ), click đặt trong biên Zone; đặt ngoài biên/chồng Module khác bị từ chối; ESC huỷ không mất vật liệu | H |
 | BL-P3-02 | Shelter State | Overview đúng trong `ShelterPanel` (Structural/Water/Clean-Untreated Water/Battery) | A–F |
 | BL-P3-04 | Task System (Construction) | Xây dở rồi rời Shelter/Sleep — tiến độ vẫn chạy khi quay lại | B |
 | BL-P3-05 | Water Intrusion | Ground Floor khoá chức năng khi Water Intrusion ≥ Deep, không kết thúc game | C |
@@ -30,6 +28,6 @@ Script chi tiết, từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` 
 | BL-P3-16 | Event: Pump Jam | Kích hoạt khi Pump có điện, giải quyết qua nút "Sửa" | E |
 | BL-P3-17 | Kịch bản 2-trong-3 | Khan hiếm vật liệu tự nhiên chỉ cho xây 2/3 Module chính | A |
 
-Sau khi playtest xong toàn bộ bảng trên (trừ BL-P3-03), quay lại `BACKLOG.md` để chạy Gate P3
-— vẫn còn BL-P3-03 (làm lại) và BL-P3-18 (Telemetry, chưa quyết định phạm vi) cần xử lý trước
-khi đóng Gate hẳn.
+Sau khi playtest xong toàn bộ bảng trên, quay lại `BACKLOG.md` để chạy Gate P3 — vẫn còn
+BL-P3-18 (Telemetry, chưa quyết định phạm vi) và Outdoor placement (phần chưa làm của BL-P3-03,
+chờ nội dung Module Outdoor) cần xử lý trước khi đóng Gate hẳn.

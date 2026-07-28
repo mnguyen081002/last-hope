@@ -1,11 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using LastHope.Core.Events;
 using LastHope.Core.State;
 using LastHope.Core.UI;
 using LastHope.Data.Definitions;
 using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
-using LastHope.Systems.Inventory;
 using LastHope.Systems.Registry;
 using LastHope.Systems.Shelter;
 using UnityEngine;
@@ -14,9 +14,11 @@ using UnityEngine.InputSystem;
 namespace LastHope.UI.Panels
 {
     /// <summary>
-    /// Toàn bộ giao diện quản lý Shelter (BL-P3-02/03/04/11) — mọi Zone/Slot trong một panel
+    /// Toàn bộ giao diện quản lý Shelter (BL-P3-02/03/04/11) — mọi Zone trong một panel
     /// (không đi bộ tới từng Zone vật lý, xem docs/plans/2026-07-28-p3-shelter-loop.md).
-    /// Tự mở khi nghe <see cref="ShelterConsoleOpened"/>.
+    /// Free Placement (BL-P3-03): chọn Module + Zone ở đây rồi đóng panel, đặt vị trí thật
+    /// trong thế giới qua <see cref="PlacementModeController"/> (Presentation) — xem
+    /// docs/plans/2026-07-28-free-placement.md. Tự mở khi nghe <see cref="ShelterConsoleOpened"/>.
     /// </summary>
     public class ShelterPanel : MonoBehaviour
     {
@@ -78,8 +80,9 @@ namespace LastHope.UI.Panels
 
             DrawOverview(shelter, definitions, balance);
             DrawEvents(services, shelter);
+            DrawConstruction(services, shelter);
 
-            scroll = GUILayout.BeginScrollView(scroll, GUILayout.Height(height - 230f));
+            scroll = GUILayout.BeginScrollView(scroll, GUILayout.Height(height - 260f));
             foreach (var zone in definitions.ShelterZones.Values)
             {
                 DrawZone(services, zone);
@@ -134,79 +137,75 @@ namespace LastHope.UI.Panels
             }
         }
 
-        void DrawZone(GameServices services, Data.Definitions.ShelterZoneDefinition zone)
+        void DrawConstruction(GameServices services, ShelterState shelter)
         {
-            GUILayout.Label($"— {zone.Id} ({zone.Floor}, nguy cơ ngập: {zone.WaterRisk}) —");
-            foreach (string slotId in zone.BuildSlotIds)
+            var c = shelter.Construction;
+            if (c == null) return;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Đang xây {c.ModuleId} tại {c.ZoneId} — còn {c.MinutesRemaining:F0} phút"
+                + (c.Paused ? " (tạm dừng)" : ""), GUILayout.Width(340f));
+            if (GUILayout.Button(c.Paused ? "Tiếp tục" : "Tạm dừng", GUILayout.Width(90f)))
             {
-                DrawSlot(services, slotId, zone);
+                BuildSystem.SetPaused(services.World, !c.Paused);
             }
+            if (GUILayout.Button("Huỷ", GUILayout.Width(60f)))
+            {
+                services.Commands.Submit(new CancelConstructionCommand());
+            }
+            GUILayout.EndHorizontal();
         }
 
-        void DrawSlot(GameServices services, string slotId, Data.Definitions.ShelterZoneDefinition zone)
+        void DrawZone(GameServices services, ShelterZoneDefinition zone)
         {
-            var shelter = services.World.Shelter;
             var definitions = services.Definitions;
+            var shelter = services.World.Shelter;
 
-            if (shelter.BuildSlots.TryGetValue(slotId, out var built))
+            var buildable = definitions.Modules.Values.Where(m => m.AllowedZoneIds.Contains(zone.Id)).ToList();
+            var placed = shelter.PlacedModules.Where(p => p.Value.ZoneId == zone.Id).ToList();
+            if (buildable.Count == 0 && placed.Count == 0) return; // Zone không có Module nào target tới (vd central_hall, roof).
+
+            GUILayout.Label($"— {zone.Id} ({zone.Floor}, nguy cơ ngập: {zone.WaterRisk}) —");
+
+            foreach (var pair in placed)
             {
-                DrawBuiltModule(services, slotId, built);
-                return;
+                DrawPlacedModule(services, pair.Key, pair.Value);
             }
 
-            if (shelter.Construction != null && shelter.Construction.SlotId == slotId)
+            bool constructionBusy = shelter.Construction != null;
+            foreach (var module in buildable)
             {
-                var c = shelter.Construction;
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"[{slotId}] Đang xây {c.ModuleId} — còn {c.MinutesRemaining:F0} phút"
-                    + (c.Paused ? " (tạm dừng)" : ""), GUILayout.Width(340f));
-                if (GUILayout.Button(c.Paused ? "Tiếp tục" : "Tạm dừng", GUILayout.Width(90f)))
-                {
-                    BuildSystem.SetPaused(services.World, slotId, !c.Paused);
-                }
-                if (GUILayout.Button("Huỷ", GUILayout.Width(60f)))
-                {
-                    services.Commands.Submit(new CancelConstructionCommand(slotId));
-                }
-                GUILayout.EndHorizontal();
-                return;
-            }
-
-            GUILayout.Label($"[{slotId}] Trống");
-            foreach (var pair in definitions.Modules)
-            {
-                var module = pair.Value;
-                if (!module.AllowedZoneIds.Contains(zone.Id)) continue;
-
                 string cost = string.Join(", ", ListMaterials(module));
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"  {module.Id} ({cost}, {module.BuildMinutes} phút)", GUILayout.Width(400f));
-                if (GUILayout.Button("Xây", GUILayout.Width(60f)))
+                GUILayout.Label($"  {module.Id} ({cost}, {module.BuildMinutes} phút)", GUILayout.Width(360f));
+                GUI.enabled = !constructionBusy;
+                if (GUILayout.Button("Chọn vị trí", GUILayout.Width(100f)))
                 {
-                    var result = services.Commands.Submit(new StartConstructionCommand(slotId, module.Id));
-                    statusMessage = result.Success ? "" : $"Không xây được ({result.Error}).";
+                    services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id));
+                    visible = false;
                 }
+                GUI.enabled = true;
                 GUILayout.EndHorizontal();
             }
         }
 
-        void DrawBuiltModule(GameServices services, string slotId, BuiltModuleState built)
+        void DrawPlacedModule(GameServices services, string placementId, BuiltModuleState built)
         {
             GUILayout.BeginHorizontal();
             string jam = built.IsJammed ? " [KẸT]" : "";
             GUILayout.Label(
-                $"[{slotId}] {built.ModuleId} — bền {built.Durability:F0}%, "
+                $"[{placementId}] {built.ModuleId} ({built.PositionX:F1}, {built.PositionY:F1}) — bền {built.Durability:F0}%, "
                 + $"{(built.Powered ? "có điện" : "mất điện")}{jam}",
                 GUILayout.Width(300f));
 
             if (GUILayout.Button(built.Priority.ToString(), GUILayout.Width(80f)))
             {
                 var next = (PowerPriority)(((int)built.Priority + 1) % 4);
-                services.Commands.Submit(new SetPowerPriorityCommand(slotId, next));
+                services.Commands.Submit(new SetPowerPriorityCommand(placementId, next));
             }
             if (GUILayout.Button("Tháo", GUILayout.Width(60f)))
             {
-                services.Commands.Submit(new DismantleModuleCommand(slotId));
+                services.Commands.Submit(new DismantleModuleCommand(placementId));
             }
             GUILayout.EndHorizontal();
         }

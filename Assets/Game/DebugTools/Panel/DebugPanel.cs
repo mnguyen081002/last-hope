@@ -201,7 +201,7 @@ namespace LastHope.DebugTools.Panel
                             $"Filter {shelter.PurifierFilterDurability:F0}%");
             GUILayout.Label($"DrainBackflow:{shelter.DrainBackflowActive}  " +
                             $"StorageFloodRisk:{shelter.StorageFloodRiskActive}  " +
-                            $"Slots xây: {shelter.BuildSlots.Count}");
+                            $"Module đã xây: {shelter.PlacedModules.Count}");
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("+20 Water")) shelter.WaterIntrusion = Mathf.Min(100f, shelter.WaterIntrusion + 20f);

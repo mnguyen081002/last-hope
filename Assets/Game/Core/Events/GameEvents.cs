@@ -85,12 +85,12 @@ namespace LastHope.Core.Events
     /// <summary>Bắn khi Construction hoàn thành (BuildSystem.ApplyShortTick).</summary>
     public readonly struct ConstructionCompleted
     {
-        public readonly string SlotId;
+        public readonly string PlacementId;
         public readonly string ModuleId;
 
-        public ConstructionCompleted(string slotId, string moduleId)
+        public ConstructionCompleted(string placementId, string moduleId)
         {
-            SlotId = slotId;
+            PlacementId = placementId;
             ModuleId = moduleId;
         }
     }
@@ -103,5 +103,22 @@ namespace LastHope.Core.Events
     /// <summary>Publish trực tiếp từ Presentation (BedView).</summary>
     public readonly struct BedOpened
     {
+    }
+
+    /// <summary>
+    /// Publish từ UI (ShelterPanel) khi chọn xong Module + Zone — Presentation
+    /// (PlacementModeController) nghe để bật chế độ đặt tự do trong thế giới (Free Placement,
+    /// BL-P3-03).
+    /// </summary>
+    public readonly struct BeginPlacementMode
+    {
+        public readonly string ZoneId;
+        public readonly string ModuleId;
+
+        public BeginPlacementMode(string zoneId, string moduleId)
+        {
+            ZoneId = zoneId;
+            ModuleId = moduleId;
+        }
     }
 }

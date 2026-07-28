@@ -9,8 +9,9 @@ namespace LastHope.Tests.EditMode
 {
     public class BuildSystemTests
     {
-        const string PumpSlot = "slot_utility_area_1";
-        const string StorageSlot = "slot_upper_living_1";
+        const string UtilityZone = "utility_area";
+        const string UpperLivingZone = "upper_living";
+        const float X = 5f, Y = 5f; // trong bounds utility_area (0,0)-(10,8).
 
         DefinitionRegistry definitions;
         WorldState world;
@@ -32,24 +33,33 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
-        public void CanStartConstruction_WrongZone_IsRejected()
+        public void CanPlaceAt_WrongZone_IsRejected()
         {
-            var reason = BuildSystem.CanStartConstruction(world, definitions, StorageSlot, ShelterModuleIds.Pump);
+            // Pump chỉ cho phép ở utility_area, không phải upper_living.
+            var reason = BuildSystem.CanPlaceAt(world, definitions, UpperLivingZone, 0f, 0f, ShelterModuleIds.Pump);
             Assert.AreEqual(BuildRejectReason.WrongZone, reason);
         }
 
         [Test]
-        public void CanStartConstruction_NotEnoughMaterials_IsRejected()
+        public void CanPlaceAt_OutOfBounds_IsRejected()
         {
-            var reason = BuildSystem.CanStartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
+            // utility_area bounds (0,0)-(10,8) — (-5,-5) nằm ngoài.
+            var reason = BuildSystem.CanPlaceAt(world, definitions, UtilityZone, -5f, -5f, ShelterModuleIds.Pump);
+            Assert.AreEqual(BuildRejectReason.OutOfBounds, reason);
+        }
+
+        [Test]
+        public void CanPlaceAt_NotEnoughMaterials_IsRejected()
+        {
+            var reason = BuildSystem.CanPlaceAt(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
             Assert.AreEqual(BuildRejectReason.NotEnoughMaterials, reason);
         }
 
         [Test]
-        public void CanStartConstruction_Valid_ReturnsNone()
+        public void CanPlaceAt_Valid_ReturnsNone()
         {
             GiveMaterials(ShelterModuleIds.Pump);
-            var reason = BuildSystem.CanStartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
+            var reason = BuildSystem.CanPlaceAt(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
             Assert.AreEqual(BuildRejectReason.None, reason);
         }
 
@@ -57,31 +67,37 @@ namespace LastHope.Tests.EditMode
         public void StartConstruction_DeductsMaterials_SetsConstructionState()
         {
             GiveMaterials(ShelterModuleIds.Pump);
-            BuildSystem.StartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
+            BuildSystem.StartConstruction(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
 
             var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
             Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_pump_part"));
-            Assert.AreEqual(PumpSlot, world.Shelter.Construction.SlotId);
+            Assert.AreEqual(UtilityZone, world.Shelter.Construction.ZoneId);
+            Assert.AreEqual(X, world.Shelter.Construction.PositionX, 0.001f);
+            Assert.AreEqual(Y, world.Shelter.Construction.PositionY, 0.001f);
             Assert.AreEqual(definitions.GetModule(ShelterModuleIds.Pump).BuildMinutes,
                 world.Shelter.Construction.MinutesRemaining, 0.001f);
         }
 
         [Test]
-        public void CanStartConstruction_SlotOccupied_IsRejected()
+        public void CanPlaceAt_Overlapping_IsRejected()
         {
-            world.Shelter.BuildSlots[PumpSlot] = new BuiltModuleState { ModuleId = ShelterModuleIds.Pump };
-            var reason = BuildSystem.CanStartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
-            Assert.AreEqual(BuildRejectReason.SlotOccupied, reason);
+            world.Shelter.PlacedModules["placed_1"] = new BuiltModuleState
+            {
+                ModuleId = ShelterModuleIds.ElevatedStorage, ZoneId = UtilityZone, PositionX = X, PositionY = Y,
+            };
+
+            var reason = BuildSystem.CanPlaceAt(world, definitions, UtilityZone, X + 0.1f, Y, ShelterModuleIds.Pump);
+            Assert.AreEqual(BuildRejectReason.Overlapping, reason);
         }
 
         [Test]
-        public void CanStartConstruction_AnotherConstructionInProgress_IsRejected()
+        public void CanPlaceAt_AnotherConstructionInProgress_IsRejected()
         {
             GiveMaterials(ShelterModuleIds.Pump);
-            BuildSystem.StartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
+            BuildSystem.StartConstruction(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
 
-            var reason = BuildSystem.CanStartConstruction(
-                world, definitions, "slot_water_processing_1", ShelterModuleIds.Purifier);
+            var reason = BuildSystem.CanPlaceAt(
+                world, definitions, "water_processing", 5f, -5f, ShelterModuleIds.Purifier);
             Assert.AreEqual(BuildRejectReason.ConstructionInProgress, reason);
         }
 
@@ -89,10 +105,10 @@ namespace LastHope.Tests.EditMode
         public void ApplyShortTick_DecrementsMinutes_CompletesAtZero()
         {
             GiveMaterials(ShelterModuleIds.Pump);
-            BuildSystem.StartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
+            BuildSystem.StartConstruction(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
             int minutes = definitions.GetModule(ShelterModuleIds.Pump).BuildMinutes;
 
-            (string SlotId, string ModuleId)? completed = null;
+            (string PlacementId, string ModuleId)? completed = null;
             for (int i = 0; i < minutes - 1; i++)
             {
                 completed = BuildSystem.ApplyShortTick(world);
@@ -101,18 +117,22 @@ namespace LastHope.Tests.EditMode
 
             completed = BuildSystem.ApplyShortTick(world);
             Assert.IsTrue(completed.HasValue);
-            Assert.AreEqual(PumpSlot, completed.Value.SlotId);
             Assert.AreEqual(ShelterModuleIds.Pump, completed.Value.ModuleId);
             Assert.IsNull(world.Shelter.Construction);
-            Assert.AreEqual(ShelterModuleIds.Pump, world.Shelter.BuildSlots[PumpSlot].ModuleId);
+
+            var placed = world.Shelter.PlacedModules[completed.Value.PlacementId];
+            Assert.AreEqual(ShelterModuleIds.Pump, placed.ModuleId);
+            Assert.AreEqual(UtilityZone, placed.ZoneId);
+            Assert.AreEqual(X, placed.PositionX, 0.001f);
+            Assert.AreEqual(Y, placed.PositionY, 0.001f);
         }
 
         [Test]
         public void ApplyShortTick_Paused_DoesNotProgress()
         {
             GiveMaterials(ShelterModuleIds.Pump);
-            BuildSystem.StartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
-            BuildSystem.SetPaused(world, PumpSlot, true);
+            BuildSystem.StartConstruction(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
+            BuildSystem.SetPaused(world, true);
             float before = world.Shelter.Construction.MinutesRemaining;
 
             BuildSystem.ApplyShortTick(world);
@@ -124,9 +144,9 @@ namespace LastHope.Tests.EditMode
         public void CancelConstruction_ClearsWithoutRefund()
         {
             GiveMaterials(ShelterModuleIds.Pump);
-            BuildSystem.StartConstruction(world, definitions, PumpSlot, ShelterModuleIds.Pump);
+            BuildSystem.StartConstruction(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
 
-            bool cancelled = BuildSystem.CancelConstruction(world, PumpSlot);
+            bool cancelled = BuildSystem.CancelConstruction(world);
 
             Assert.IsTrue(cancelled);
             Assert.IsNull(world.Shelter.Construction);
@@ -135,14 +155,17 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
-        public void DismantleModule_RemovesFromBuildSlots()
+        public void DismantleModule_RemovesFromPlacedModules()
         {
-            world.Shelter.BuildSlots[PumpSlot] = new BuiltModuleState { ModuleId = ShelterModuleIds.Pump };
+            world.Shelter.PlacedModules["placed_1"] = new BuiltModuleState
+            {
+                ModuleId = ShelterModuleIds.Pump, ZoneId = UtilityZone, PositionX = X, PositionY = Y,
+            };
 
-            bool dismantled = BuildSystem.DismantleModule(world, PumpSlot);
+            bool dismantled = BuildSystem.DismantleModule(world, "placed_1");
 
             Assert.IsTrue(dismantled);
-            Assert.IsFalse(world.Shelter.BuildSlots.ContainsKey(PumpSlot));
+            Assert.IsFalse(world.Shelter.PlacedModules.ContainsKey("placed_1"));
         }
     }
 }

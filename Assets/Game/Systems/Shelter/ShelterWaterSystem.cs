@@ -72,7 +72,7 @@ namespace LastHope.Systems.Shelter
         }
 
         public static BuiltModuleState FindModule(ShelterState shelter, string moduleId) =>
-            shelter.BuildSlots.Values.FirstOrDefault(m => m.ModuleId == moduleId);
+            shelter.PlacedModules.Values.FirstOrDefault(m => m.ModuleId == moduleId);
 
         public static string WaterIntrusionLevel(float value, ShelterBalance balance)
         {

@@ -32,7 +32,7 @@ namespace LastHope.Systems.Shelter
             var balance = definitions.Balance.Power;
             float supply = GridSupply(phase, balance);
 
-            var ordered = new List<BuiltModuleState>(shelter.BuildSlots.Values);
+            var ordered = new List<BuiltModuleState>(shelter.PlacedModules.Values);
             ordered.Sort((a, b) => a.Priority.CompareTo(b.Priority)); // Critical(0)..Disabled(3)
 
             float gridRemaining = supply;

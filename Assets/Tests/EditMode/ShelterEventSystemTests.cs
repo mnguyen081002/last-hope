@@ -72,7 +72,7 @@ namespace LastHope.Tests.EditMode
             world.Shelter.WaterIntrusion = definitions.Balance.Shelter.CriticalThreshold;
             var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
             InventoryOps.AddItem(storage, definitions, "item_battery", 1);
-            world.Shelter.BuildSlots["slot_upper_living_1"] =
+            world.Shelter.PlacedModules["slot_upper_living_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.ElevatedStorage };
 
             ApplyAt(DisasterPhase.Dry);
@@ -109,7 +109,7 @@ namespace LastHope.Tests.EditMode
         {
             definitions.Balance.Shelter.PumpJamChancePercent = 100f;
             var pump = new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Powered = true };
-            world.Shelter.BuildSlots["slot_utility_area_1"] = pump;
+            world.Shelter.PlacedModules["slot_utility_area_1"] = pump;
 
             ApplyAt(DisasterPhase.Dry);
 
@@ -121,7 +121,7 @@ namespace LastHope.Tests.EditMode
         {
             definitions.Balance.Shelter.PumpJamChancePercent = 100f;
             var pump = new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Powered = false };
-            world.Shelter.BuildSlots["slot_utility_area_1"] = pump;
+            world.Shelter.PlacedModules["slot_utility_area_1"] = pump;
 
             ApplyAt(DisasterPhase.Dry);
 

@@ -34,7 +34,7 @@ namespace LastHope.Systems.Shelter
             var completed = BuildSystem.ApplyShortTick(world);
             if (completed.HasValue)
             {
-                events?.Publish(new ConstructionCompleted(completed.Value.SlotId, completed.Value.ModuleId));
+                events?.Publish(new ConstructionCompleted(completed.Value.PlacementId, completed.Value.ModuleId));
             }
         }
 

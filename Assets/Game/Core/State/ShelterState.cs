@@ -4,10 +4,17 @@ namespace LastHope.Core.State
 {
     public enum PowerPriority { Critical, High, Normal, Disabled }
 
-    /// <summary>Trạng thái một Module đã xây xong, gắn vào một Build Slot cụ thể.</summary>
+    /// <summary>
+    /// Trạng thái một Module đã xây xong, đặt tự do tại một world position trong Zone (Free
+    /// Placement — xem docs/plans/2026-07-28-free-placement.md). Key trong
+    /// <see cref="ShelterState.PlacedModules"/> là placementId tự sinh, không phải slot cố định.
+    /// </summary>
     public class BuiltModuleState
     {
         public string ModuleId;
+        public string ZoneId;
+        public float PositionX;
+        public float PositionY;
         public float Durability = 100f;
         public PowerPriority Priority = PowerPriority.Normal;
         public bool IsJammed;
@@ -16,11 +23,13 @@ namespace LastHope.Core.State
         public bool Powered;
     }
 
-    /// <summary>Công trình đang xây dở tại một Build Slot — chỉ một cái chạy cùng lúc (MVP).</summary>
+    /// <summary>Công trình đang xây dở tại một vị trí world cụ thể — chỉ một cái chạy cùng lúc (MVP).</summary>
     public class ConstructionState
     {
-        public string SlotId;
+        public string ZoneId;
         public string ModuleId;
+        public float PositionX;
+        public float PositionY;
         public float MinutesRemaining;
         public bool Paused;
     }
@@ -29,7 +38,7 @@ namespace LastHope.Core.State
     /// Trạng thái Main Shelter (chỉ một shelter trong MVP — không key theo LocationId).
     /// Vật liệu xây dựng và Storage vẫn dùng <see cref="LocationState.StorageContainer"/> sẵn
     /// có (P1) — ShelterState chỉ giữ phần P3 mới: Water Intrusion, Power, Water Processing,
-    /// Build Slot, Event flag.
+    /// Placed Module, Event flag.
     /// </summary>
     public class ShelterState
     {
@@ -46,7 +55,10 @@ namespace LastHope.Core.State
         public bool DrainBackflowActive;
         public bool StorageFloodRiskActive;
 
-        public Dictionary<string, BuiltModuleState> BuildSlots = new();
+        public Dictionary<string, BuiltModuleState> PlacedModules = new();
         public ConstructionState Construction;
+
+        /// <summary>Bộ đếm sinh placementId ổn định qua save/load — không dùng Guid (không tái lập được từ seed).</summary>
+        public int NextPlacementId;
     }
 }
