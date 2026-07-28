@@ -234,9 +234,8 @@ BL-P3-18 (Telemetry riêng cho P3) **chưa làm** — cần quyết định ph�
 
 ## Cần user playtest Shelter Loop (P3)
 
-Script chi tiết ở `docs/plans/2026-07-28-p3-test-scenarios.md` (sinh cùng lúc chốt P3).
-
-**Gate P3:** chưa chạy.
+Danh sách gộp toàn bộ hạng mục chưa playtest: `docs/backlog/NEED-USER-PLAYTEST.md`. Script
+chi tiết từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` (Scenario A–G).
 
 ---
 
