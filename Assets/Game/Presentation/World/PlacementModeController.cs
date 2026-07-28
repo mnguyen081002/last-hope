@@ -66,7 +66,7 @@ namespace LastHope.Presentation.World
             {
                 // Đứng đúng tầng của Zone đang đặt — Placement Mode coi như bước "lên kế hoạch",
                 // không bắt phải tự đi bộ lên trước.
-                playerFloorState?.SetFloor(zone.Floor == ShelterFloor.Upper ? 1 : 0);
+                playerFloorState?.TeleportToFloor(zone.Floor == ShelterFloor.Upper ? 1 : 0);
                 CreateZoneBoundsBox(zone);
             }
 

@@ -77,20 +77,25 @@ thật, không phải giả lập riêng.
    `shelter_treat_exposure_minutes` = 60 phút) — nếu Exposure tụt dưới 70, `Sick` phải tự
    chuyển về `False` (trước P3 cờ này không tự tắt).
 
-## Scenario G — Z-level đổi tầng kiểu Project Zomboid (BL-P3-01, dựng lại lần 2 sau review 2026-07-28)
+## Scenario G — Cầu thang leo dần kiểu Project Zomboid (BL-P3-01, dựng lại lần 3 sau review 2026-07-28→29)
 
-1. Từ Ground Floor (điểm spawn mặc định), đi bộ về góc có vùng cầu thang (khu vực gần vị trí
-   Bed cũ trước đây) — **không cần bấm phím**, đi qua là tự đổi tầng. Storage/Console/
-   TravelPoint (đồ Ground Floor) phải hiện **mờ đi** (không biến mất hẳn — thấy lờ mờ bố cục
-   tầng dưới qua sàn), Bed + vùng cầu thang xuống (đồ Upper Floor) hiện rõ nét.
-2. Thử đi lại gần vị trí Storage khi đang ở Upper Floor — không tương tác được (E không có tác
-   dụng, đúng "tầng dưới không va chạm/tương tác được khi đang đứng Dimmed").
-3. Đi bộ ngược lại qua vùng cầu thang xuống — quay lại đúng Ground Floor rõ nét, Upper Floor
-   giờ mờ đi (không biến mất hẳn).
-4. Đi qua lại nhanh nhiều lần gần ranh giới hai vùng trigger — không được xảy ra hiện tượng
-   "nhấp nháy" đổi tầng liên tục (oscillation) — hai vùng trigger đã thiết kế lệch nhau để
-   tránh việc này, nếu vẫn thấy nhấp nháy là bug cần báo lại.
-5. **Giới hạn đã biết**: Save/Load không nhớ đang ở tầng nào — F2 Save rồi Load trong lúc ở
+1. Từ Ground Floor (điểm spawn mặc định), đi bộ chậm vào vùng cầu thang màu hổ phách (khu vực
+   gần vị trí Bed cũ trước đây, cao ~2.5 đơn vị) — **không cần bấm phím**. Vừa bước vào mép
+   dưới, Ground Floor phải còn gần như rõ nét (mờ rất ít); đi tiếp vào giữa vùng, Ground mờ
+   dần trong khi Upper Floor rõ dần theo — **đây là điểm khác biệt chính so với bản trước**:
+   phải thấy quá trình chuyển tiếp mượt, không phải bật/tắt đột ngột ở một điểm.
+2. Đi được nửa đường (khoảng giữa vùng cầu thang) rồi **quay đầu đi lùi lại** trước khi ra khỏi
+   vùng — Ground Floor phải rõ dần trở lại, Upper Floor mờ dần đi, đúng "đi lùi thì tụt tiến
+   độ", không phải đã cam kết đổi tầng.
+3. Đi tiếp lên hết vùng (ra khỏi mép trên) — chính thức đứng hẳn trên Upper Floor (rõ nét hoàn
+   toàn), Ground Floor giờ chỉ còn hiện mờ (không biến mất hẳn — thấy lờ mờ bố cục tầng dưới
+   qua sàn). Thử tương tác Storage (ở Ground) — không tương tác được (Collider2D đã tắt).
+4. Đi bộ ngược lại qua đúng vùng cầu thang xuống — quá trình mờ/rõ diễn ra ngược lại tương tự,
+   về hẳn Ground Floor.
+5. Ra vào vùng cầu thang nhanh nhiều lần ngay sát mép — không được có hiện tượng nhấp nháy dữ
+   dội hay kẹt nửa vời (đứng yên ở trạng thái mờ 50% mãi không đổi hẳn) — nếu thấy vậy là bug
+   cần báo lại.
+6. **Giới hạn đã biết**: Save/Load không nhớ đang ở tầng nào — F2 Save rồi Load trong lúc ở
    Upper Floor sẽ về lại Ground Floor (giống scope cut "Save/Load không đổi scene" ở P1).
 
 ## Scenario H — Free Placement: đặt Module tự do trong Zone (BL-P3-03, viết lại 2026-07-28)

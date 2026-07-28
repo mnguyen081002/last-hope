@@ -192,11 +192,11 @@ namespace LastHope.EditorTools
             upperInteractables.transform.SetParent(upperFloor.transform, false);
             BuildBed(upperInteractables, new Vector2(0f, 2f));
 
-            // Cầu thang: đi bộ qua là đổi tầng (không bấm phím — xem FloorTransitionTrigger).
-            // Hai vùng trigger lệch 0.5 đơn vị (y=[3,4] và y=[1.5,2.5]) để không chồng lấn —
-            // tránh vừa đổi tầng xong lập tức bị trigger tầng kia bắt lại (oscillation).
-            BuildFloorTransitionTrigger(groundInteractables, new Vector2(4f, 3.5f), new Vector2(1.5f, 1f), targetFloor: 1);
-            BuildFloorTransitionTrigger(upperInteractables, new Vector2(4f, 2f), new Vector2(1.5f, 1f), targetFloor: 0);
+            // Cầu thang leo dần (không bấm phím — xem StaircaseZone): 1 vùng trigger duy nhất
+            // y=[1.5,4.0], KHÔNG nằm trong GroundFloor/UpperFloor (Interactables của 2 tầng đó
+            // bị tắt Collider2D khi tầng tương ứng Dimmed/Hidden — cầu thang phải luôn bắt được
+            // player từ cả hai phía nên đặt ở root riêng, không phụ thuộc tầng nào).
+            BuildStaircaseZone(new Vector2(4f, 2.75f), new Vector2(1.5f, 2.5f), lowerFloor: 0, upperFloor: 1, bottomY: 1.5f, topY: 4f);
 
             new GameObject("FloorRenderController").AddComponent<FloorRenderController>();
 
@@ -394,13 +394,17 @@ namespace LastHope.EditorTools
         }
 
         /// <summary>Vùng đi-qua-là-đổi-tầng (không phải prop chặn đường — Collider2D isTrigger).</summary>
-        /// <summary>Sprite phủ đúng bằng kích thước vùng trigger (không phải icon nhỏ như prop
-        /// thường) + màu hổ phách đậm riêng biệt — để nhận ra ngay đây là khu vực cầu thang,
-        /// khác hẳn các prop khác (đã bị bug báo "không thấy cầu thang" trước đó).</summary>
-        static void BuildFloorTransitionTrigger(GameObject parent, Vector2 position, Vector2 size, int targetFloor)
+        /// <summary>
+        /// Cầu thang leo dần — root riêng ở gốc scene (không phải con của GroundFloor/UpperFloor,
+        /// vì Collider2D của 2 root đó bị tắt khi tầng tương ứng Dimmed/Hidden — cầu thang phải
+        /// luôn bắt được player từ cả hai phía). Sprite phủ đúng kích thước vùng trigger (không
+        /// phải icon nhỏ như prop thường) + màu hổ phách đậm riêng biệt để nhận ra ngay đây là
+        /// khu vực cầu thang.
+        /// </summary>
+        static void BuildStaircaseZone(
+            Vector2 position, Vector2 size, int lowerFloor, int upperFloor, float bottomY, float topY)
         {
             var go = new GameObject("Staircase");
-            go.transform.SetParent(parent.transform, false);
             go.transform.position = position;
 
             var spriteGo = new GameObject("Sprite");
@@ -416,8 +420,14 @@ namespace LastHope.EditorTools
             collider.isTrigger = true;
             collider.size = size;
 
-            var trigger = go.AddComponent<FloorTransitionTrigger>();
-            SetSerialized(trigger, so => so.FindProperty("targetFloor").intValue = targetFloor);
+            var zone = go.AddComponent<StaircaseZone>();
+            SetSerialized(zone, so =>
+            {
+                so.FindProperty("lowerFloor").intValue = lowerFloor;
+                so.FindProperty("upperFloor").intValue = upperFloor;
+                so.FindProperty("bottomY").floatValue = bottomY;
+                so.FindProperty("topY").floatValue = topY;
+            });
         }
 
         static void BuildTravelPoint(GameObject parent, string routeId, string destinationLabel, Vector2 position)

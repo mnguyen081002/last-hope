@@ -124,31 +124,36 @@ Cửa quan trọng **SHOULD** có ít nhất hai tín hiệu:
 
 ## 5. Cầu thang và chuyển tầng
 
-2D isometric không có độ dốc vật lý — nhưng đổi tầng **là di chuyển liên tục qua vùng cầu
-thang, không phải điểm bấm phím**, kiểu Z-level Project Zomboid (game tham chiếu chính của
-doc này): đi bộ ngang qua vùng cầu thang là tự động đổi tầng, không cần xác nhận. **Không**
-dùng `IInteractable`/`InteractionDetector` cho cầu thang — đây là ngoại lệ có chủ đích duy
-nhất dùng va chạm (`Collider2D.isTrigger` + `OnTriggerEnter2D`) thay vì phím tương tác, vì đổi
-tầng là di chuyển thuần tuý (không mở UI, không tốn thời gian game, không có gì cần xác nhận)
-— khác về bản chất với Search/Storage/Travel/ShelterConsole (đều có hệ quả thật, xứng đáng
-cần bấm phím để tránh nhầm).
+2D isometric không có độ dốc vật lý — nhưng đổi tầng **là leo dần liên tục qua một vùng cầu
+thang duy nhất, không phải một điểm bấm phím hay một đường kẻ đổi tức thời**, kiểu Z-level
+Project Zomboid (game tham chiếu chính của doc này): tiến độ leo nhích theo đúng vị trí Y thật
+của player trong vùng (đi lùi thì tiến độ tụt lại), chỉ đổi tầng thật (đổi Collider2D/tương
+tác) khi tiến độ chạm đỉnh. **Không** dùng `IInteractable`/`InteractionDetector` cho cầu
+thang — đây là ngoại lệ có chủ đích duy nhất dùng va chạm (`Collider2D.isTrigger` +
+`OnTriggerEnter2D`/`OnTriggerStay2D`/`OnTriggerExit2D`) thay vì phím tương tác, vì đổi tầng là
+di chuyển thuần tuý (không mở UI, không tốn thời gian game, không có gì cần xác nhận) — khác
+về bản chất với Search/Storage/Travel/ShelterConsole (đều có hệ quả thật, xứng đáng cần bấm
+phím để tránh nhầm).
 
 Cầu thang **MUST** có:
 
 ```text
-2 vùng trigger (Collider2D isTrigger) — 1 ở đầu tầng dưới, 1 ở đầu tầng trên, LỆCH NHAU (không
-  chồng lấn, cách nhau tối thiểu nửa đơn vị) để tránh vừa đổi tầng xong lập tức bị trigger đầu
-  kia bắt lại (oscillation)
-Component đổi tầng (FloorTransitionTrigger) trên mỗi vùng, set floor hiện tại của player khi
-  Enter — không cần di chuyển vị trí player (2 tầng cùng world position, xem mục 6)
+1 vùng trigger duy nhất (Collider2D isTrigger) trải dài từ bottomY (tầng dưới) tới topY (tầng
+  trên) — KHÔNG đặt trong GameObject root của Ground/Upper Floor (Collider2D của 2 root đó bị
+  tắt khi tầng tương ứng Dimmed/Hidden — cầu thang phải luôn bắt được player từ cả hai phía)
+Component (StaircaseZone) tính tiến độ = InverseLerp(bottomY, topY, vị trí Y player) mỗi
+  OnTriggerStay2D, publish qua PlayerFloorState.SetClimbProgress — không đổi tầng thật (không
+  đổi Collider2D) cho tới khi tiến độ chạm 1; rời vùng giữa chừng (OnTriggerExit2D trước khi
+  chạm đỉnh) phải huỷ, giữ nguyên tầng cũ
 ```
 
 Cầu thang chỉ hợp lệ khi:
 
-- Cả hai vùng trigger nằm trong vùng Ground của tầng tương ứng.
+- Vùng trigger nằm trong vùng Ground của cả hai tầng liên quan (bottomY/topY hợp lý).
 - Không dẫn ra ngoài level bounds.
-- Hai vùng trigger không chồng lấn (buffer rõ ràng — xem trên).
-- Có visual rõ ràng đây là khu vực cầu thang (không cần prompt tương tác vì không bấm phím).
+- Đi ngược giữa chừng (chưa chạm đỉnh) phải huỷ leo, không kẹt nửa vời.
+- Có visual rõ ràng đây là khu vực cầu thang, phủ đúng kích thước cả vùng trigger (không phải
+  icon nhỏ như prop thường) — không cần prompt tương tác vì không bấm phím.
 
 ---
 
@@ -180,6 +185,12 @@ diff == -1 (tầng ngay dưới): Dimmed   — alpha thấp (~0.35), Collider2D 
 diff > 0 hoặc diff < -1    : Hidden   — SetActive(false) hoàn toàn (không thấy tầng trên đầu,
                                         không thấy tầng xa hơn 1 tầng dưới)
 ```
+
+**Trong lúc đang leo cầu thang** (`PlayerFloorState.TransitioningToFloor` khác null): hai tầng
+liên quan (tầng đang rời và tầng đang tới) KHÔNG áp công thức nhị phân trên — alpha nội suy
+liên tục theo `ClimbProgress` (0→1): tầng đang rời mờ dần từ 1 xuống Dimmed, tầng đang tới rõ
+dần từ Dimmed lên 1. Va chạm (Collider2D) đổi tại đúng mốc `ClimbProgress == 0.5`. Đây là cách
+tạo cảm giác "đang leo dần" thay vì đổi tầng tức thời ở một điểm.
 
 Đây **là** dạng "wall fade" có chủ đích (khác quy tắc "KHÔNG dùng wall fade" ở các mục khác
 — ngoại lệ riêng cho floor-below, vì đây chính là cách Project Zomboid tạo cảm giác đứng trên

@@ -6,8 +6,11 @@ namespace LastHope.Presentation.World
 {
     /// <summary>
     /// Hiện/ẩn từng tầng theo vị trí player, kiểu Project Zomboid: tầng hiện tại vẽ đầy đủ,
-    /// tầng ngay dưới vẽ mờ (thấy bố cục nhưng không va chạm được), tầng khác ẩn hẳn. Không
-    /// dùng raycast occlusion — chỉ đổi alpha + sortingOrder + bật/tắt Collider2D (xem
+    /// tầng ngay dưới vẽ mờ (thấy bố cục nhưng không va chạm được), tầng khác ẩn hẳn. Trong
+    /// lúc leo cầu thang (<see cref="PlayerFloorState.TransitioningToFloor"/> khác null), hai
+    /// tầng liên quan mờ/rõ dần theo <see cref="PlayerFloorState.ClimbProgress"/> thay vì đổi
+    /// nhị phân — đúng cảm giác đang leo, không phải dịch chuyển tức thời. Không dùng raycast
+    /// occlusion — chỉ đổi alpha + sortingOrder + bật/tắt Collider2D (xem
     /// isometric-game-placement-rules.md mục 6).
     /// </summary>
     public class FloorRenderController : MonoBehaviour
@@ -23,46 +26,61 @@ namespace LastHope.Presentation.World
 
         void Awake()
         {
-            Refresh(0); // scene luôn bắt đầu ở tầng 0 — PlayerFloorState.ResetFloor() sẽ khớp lại ngay sau.
+            Refresh(); // scene luôn bắt đầu ở tầng 0 — PlayerFloorState.ResetFloor() sẽ khớp lại ngay sau.
         }
 
         void OnEnable()
         {
             playerFloorState = FindFirstObjectByType<PlayerFloorState>();
-            if (playerFloorState != null) playerFloorState.FloorChanged += Refresh;
+            if (playerFloorState != null) playerFloorState.Changed += Refresh;
         }
 
         void OnDisable()
         {
-            if (playerFloorState != null) playerFloorState.FloorChanged -= Refresh;
+            if (playerFloorState != null) playerFloorState.Changed -= Refresh;
         }
 
-        void Refresh(int currentFloor)
+        void Refresh()
         {
+            int fromFloor = playerFloorState != null ? playerFloorState.CurrentFloor : 0;
+            int? toFloor = playerFloorState?.TransitioningToFloor;
+            float progress = playerFloorState?.ClimbProgress ?? 0f;
+
             // FindObjectsByType(sortMode) — overload 1 tham số — mặc định LOẠI TRỪ GameObject
-            // inactive (FindObjectsInactive.Exclude). Tầng chưa từng active (vd Upper lúc mới
-            // vào scene) sẽ không bao giờ được tìm thấy lại nếu dùng overload đó, nên Refresh
-            // chỉ toàn thấy tầng đang active — tầng kia không bao giờ được bật lên được. Phải
-            // truyền rõ Include để quét cả GameObject đang inactive.
+            // inactive. Tầng chưa từng active (vd Upper lúc mới vào scene) sẽ không bao giờ
+            // được tìm thấy lại nếu dùng overload đó, nên Refresh chỉ toàn thấy tầng đang
+            // active — tầng kia không bao giờ được bật lên được. Phải truyền rõ Include.
             foreach (var level in FindObjectsByType<FloorLevel>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                int diff = level.Floor - currentFloor;
+                if (toFloor.HasValue && level.Floor == toFloor.Value)
+                {
+                    SetFloorVisual(level.gameObject, Mathf.Lerp(dimmedAlpha, 1f, progress), collidable: progress >= 0.5f);
+                    continue;
+                }
 
+                if (toFloor.HasValue && level.Floor == fromFloor)
+                {
+                    SetFloorVisual(level.gameObject, Mathf.Lerp(1f, dimmedAlpha, progress), collidable: progress < 0.5f);
+                    continue;
+                }
+
+                int diff = level.Floor - fromFloor;
                 if (diff > 0 || diff < -1)
                 {
                     level.gameObject.SetActive(false);
                     continue;
                 }
 
-                level.gameObject.SetActive(true);
                 bool dimmed = diff == -1;
-                ApplyRenderers(level.gameObject, dimmed);
-                ApplyColliders(level.gameObject, enabled: !dimmed);
+                SetFloorVisual(level.gameObject, dimmed ? dimmedAlpha : 1f, collidable: !dimmed);
             }
         }
 
-        void ApplyRenderers(GameObject root, bool dimmed)
+        void SetFloorVisual(GameObject root, float alpha, bool collidable)
         {
+            root.SetActive(true);
+            bool dimmed = alpha < 1f;
+
             foreach (var sr in root.GetComponentsInChildren<SpriteRenderer>(true))
             {
                 if (!baseOrder.TryGetValue(sr, out int order))
@@ -73,16 +91,13 @@ namespace LastHope.Presentation.World
                 sr.sortingOrder = dimmed ? order + DimmedOrderOffset : order;
 
                 var color = sr.color;
-                color.a = dimmed ? dimmedAlpha : 1f;
+                color.a = alpha;
                 sr.color = color;
             }
-        }
 
-        static void ApplyColliders(GameObject root, bool enabled)
-        {
             foreach (var collider in root.GetComponentsInChildren<Collider2D>(true))
             {
-                collider.enabled = enabled;
+                collider.enabled = collidable;
             }
         }
     }
