@@ -18,18 +18,37 @@ Hệ thống phải hoạt động trong World Clock cố định.
 
 ## 2. Nguyên tắc thiết kế
 
-- Shelter không phải là không gian tự do hoàn toàn.
-- Shelter được thiết kế sẵn bởi hệ thống với cấu trúc và Zone cố định.
+- **Vị trí đặt là world position tự do bên trong Zone/vùng hợp lệ** — không phải chọn từ danh
+  sách Slot cố định đếm sẵn (vd "slot_utility_area_1"). "Zone cố định" nghĩa là **biên vùng**
+  được thiết kế sẵn (Shelter có Zone cố định, Location ngoài trời có vùng cho phép riêng),
+  không phải toàn bản đồ đều xây được — nhưng **trong biên đó, người chơi đặt tự do**, giống
+  khái niệm `position`/`rotation` đã có sẵn ở mục 20 (Dữ liệu hệ thống) và pipeline
+  Placement Mode ở mục 5-6.
 - Một số thành phần quan trọng là **Fixed Core Component** và không thể di chuyển hoặc tháo dỡ.
 - Các thành phần này phục vụ cho Event, Hazard và Narrative.
-- Người chơi chỉ có thể xây dựng trong các Zone hợp lệ được cho phép.
-- Module được phân loại theo môi trường đặt: trong Shelter, ngoài Shelter, hoặc cả hai.
+- Người chơi chỉ có thể xây dựng trong các Zone/vùng hợp lệ được cho phép — nhưng **tự do chọn
+  điểm đặt cụ thể** trong vùng đó, miễn qua được Placement Validation (mục 6).
+- Module được phân loại theo môi trường đặt: trong Shelter, ngoài Shelter, hoặc cả hai (mục 4
+  — Outdoor Module đã có sẵn khái niệm, áp dụng cho mọi Location, không chỉ Shelter).
 - Xây dựng diễn ra trực tiếp trong thế giới.
 - Không nhảy thời gian để hoàn thành.
 - Tiến độ được lưu.
 - Module phải phù hợp vị trí.
 - Lối đi và khả năng tương tác phải được bảo toàn.
 - Việc bố trí phải tạo quyết định nhưng không trở thành game xây nhà phức tạp.
+
+## 2.1. Tình trạng triển khai (2026-07-28)
+
+`BuildSystem`/`ShelterPanel` (P3, `docs/plans/2026-07-28-p3-shelter-loop.md`) hiện đọc
+`ShelterZoneDefinition.BuildSlotIds` như danh sách ID cố định (chọn từ menu, không có world
+position) — **chưa khớp mục 2 ở trên**, cần làm lại theo hướng world position tự do +
+Placement Validation (mục 6) trước khi coi BL-P3-03 hoàn thành đúng thiết kế. Xem
+`docs/backlog/BACKLOG.md` mục P3-A.
+
+Outdoor placement (Module ngoài Shelter, mục 4/18) **chưa có khái niệm Zone/vùng cho phép nào
+ở Data layer cho Location** — `LocationDefinition` hiện chỉ có Search Point/Route/Scene, không
+có vùng buildable. Cần thêm field mới (vd `PlaceableZoneDefinition` theo Location) trước khi
+Outdoor Module có chỗ để đặt.
 
 ---
 
@@ -427,14 +446,15 @@ required_tools
 
 Triển khai:
 
-- Placement Preview.
-- Zone Validation.
+- Placement Preview — world position tự do, kéo/đặt bằng chuột trong vùng hợp lệ.
+- Zone Validation — vị trí đặt phải nằm trong biên Zone (Shelter) hoặc Placeable Zone
+  (Location ngoài trời), không phải bất kỳ đâu trên map.
 - Environment Validation.
 - Access Validation.
 - Construction Progress.
 - Material Delivery.
 - Multiple Builders data.
-- Shelter Module, Outdoor Module và Hybrid Module.
+- Shelter Module, Outdoor Module và Hybrid Module — cả trong Shelter lẫn Location ngoài trời.
 - Core Component System.
 - Dismantle (không áp dụng cho Core).
 - Logical Connection.
@@ -442,7 +462,7 @@ Triển khai:
 
 Chưa triển khai:
 
-- Xây tự do ngoài lưới.
+- Xây ngoài mọi Zone/vùng cho phép (đặt ở bất kỳ đâu trên bản đồ, kể cả ngoài biên thiết kế).
 - Kết cấu vật lý chi tiết.
 - Dây điện thủ công.
 - Hệ thống ống nước trực quan phức tạp.
@@ -453,10 +473,12 @@ Chưa triển khai:
 
 ## 22. Quyết định chốt
 
-- Shelter được thiết kế sẵn với cấu trúc và Zone cố định.
+- Shelter được thiết kế sẵn với cấu trúc và Zone cố định — **nhưng vị trí đặt Module trong
+  Zone là world position tự do**, không phải Slot cố định đếm sẵn.
 - Có Core Component không thể thay đổi để phục vụ Event và Hazard.
 - Module được phân loại theo môi trường đặt (Shelter, Outdoor, Hybrid).
-- Người chơi có thể xây dựng cả trong và ngoài Shelter theo quy tắc riêng.
+- Người chơi có thể xây dựng cả trong và ngoài Shelter theo quy tắc riêng — Outdoor Module đặt
+  trong Placeable Zone của từng Location, cùng nguyên tắc tự do-trong-vùng như Shelter.
 - Xây dựng diễn ra trong World Clock.
 - Công trình có tiến độ và có thể bị gián đoạn.
 - Module phải đáp ứng Zone, môi trường, không gian và đường tiếp cận.

@@ -189,9 +189,11 @@ Buildable Slots / Areas
 
 Người chơi:
 
-- Không xây dựng hoàn toàn tự do.
+- Không xây dựng hoàn toàn tự do trên toàn bản đồ (không tự tạo Zone mới, không đổi cấu trúc
+  Shelter) — nhưng **trong một Zone hợp lệ, vị trí đặt Module là tự do** (world position, không
+  phải chọn từ danh sách Slot cố định — xem `docs/02-core-systems/building-and-placement-system-design.md`).
 - Không di chuyển hoặc tháo dỡ Core Component.
-- Chỉ đặt Module trong Zone hợp lệ.
+- Chỉ đặt Module trong Zone hợp lệ, nhưng tự do chọn điểm đặt cụ thể trong Zone đó.
 - Phải bảo trì, vận hành và bảo vệ hệ thống.
 
 Mọi Module đều có:

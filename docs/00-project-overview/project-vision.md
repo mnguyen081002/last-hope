@@ -90,7 +90,8 @@ Predefined Zones
 Buildable Slots / Areas
 ```
 
-Người chơi không xây dựng tự do từ đất trống.
+Người chơi không xây dựng tự do từ đất trống (không tạo Zone mới) — nhưng đặt Module ở vị trí
+tự do bên trong Zone hợp lệ, không phải chọn từ danh sách Slot cố định.
 
 ### Thế giới thay đổi theo thời gian
 

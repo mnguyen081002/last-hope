@@ -200,7 +200,7 @@ Storage không phải kho riêng, và mọi tương tác đi qua 1 prop "Shelter
 | --- | --- | --- | --- |
 | BL-P3-01 | Main Shelter blockout | Verify | 8 Zone (`shelterzones_p3.json`) hiển thị trong `ShelterPanel` (không dựng phòng riêng từng Zone). **Có Ground/Upper Floor vật lý thật** (2 GameObject root cùng footprint, toggle bằng `SetActive`) nối bằng `StaircaseView` — 2026-07-28, sau khi user review lại quyết định ban đầu "không dựng multi-floor". Roof vẫn chỉ là logic (không module nào target zone `roof`) |
 | BL-P3-02 | Shelter State | Verify | `ShelterState` — Structural Integrity, Water Intrusion, Clean/Untreated Water, Battery, Build Slots. Living Capacity/Occupants/Cleanliness/Security **chưa làm** (không có nội dung nào cần tới — không NPC, không multi-occupant trong P3) |
-| BL-P3-03 | Build và Placement | Verify | `BuildSystem` — Build Slot theo Zone (`ShelterZoneDefinition.BuildSlotIds`), validate zone/material, construction tick theo phút, Pause/Resume/Cancel, Dismantle (không hoàn vật liệu). Không có placement vật lý (tile/grid) — chọn Slot qua UI |
+| BL-P3-03 | Build và Placement | **Cần làm lại** | `BuildSystem` hiện chọn Slot cố định từ danh sách (`ShelterZoneDefinition.BuildSlotIds` như ID đếm sẵn) — **không khớp** `docs/02-core-systems/building-and-placement-system-design.md` (world position tự do trong Zone, có `position`/`rotation`, Placement Validation đầy đủ). User xác nhận 2026-07-28: muốn free placement thật trong vùng cho phép, áp dụng cả Shelter lẫn Location ngoài trời — không chỉ Shelter. Việc còn thiếu: (1) viết lại `BuildSystem`/`ShelterZoneDefinition` sang world position + collision check thay Slot ID, (2) UI kéo/đặt bằng chuột thay dropdown, (3) thêm `PlaceableZoneDefinition` cho Location ngoài trời (hiện chưa có khái niệm này ở Data layer) |
 | BL-P3-04 | Task System | Verify | Gộp vào Construction (không dựng abstraction Active/Passive Task riêng) — chạy qua `TickScheduler.ShortTick` sẵn có nên tự "Passive" (tiếp tục dù rời Shelter/Sleep) |
 | BL-P3-05 | Water Intrusion | Verify | `ShelterWaterSystem` — inflow theo Disaster Phase, Barrier giảm inflow + tự decay, Pump giảm, Ground Floor khóa (Pump/Purifier ngừng) khi `WaterIntrusion >= DeepThreshold`. Chưa test qua playtest |
 
@@ -227,9 +227,10 @@ Storage không phải kho riêng, và mọi tương tác đi qua 1 prop "Shelter
 | BL-P3-17 | Kịch bản 2-trong-3 | Verify | **Không cần content mới** — khan hiếm `item_wood`/`item_purifier_unit`/`item_filter` trong loot table sẵn có (P1/P2-C) đã tự nhiên tạo giới hạn "chỉ 2/3 Module chính", xác nhận lại khi user playtest |
 | BL-P3-18 | Telemetry + Playtest P3 | Backlog | **Chưa nối Telemetry** cho Build/Power/Event (TelemetryLogger P1 chưa mở rộng) — cần quyết định có làm trong P3 hay để P4 trước khi Gate |
 
-**Gate P3:** chưa chạy — toàn bộ BL-P3-01..17 đã có code (219 EditMode test), chờ user
-playtest theo script bên dưới. BL-P3-18 (Telemetry riêng cho P3) **chưa làm** — cần quyết định
-phạm vi trước khi đóng Gate.
+**Gate P3:** chưa chạy — BL-P3-03 (Build và Placement) **cần làm lại** sang free placement
+(2026-07-28, xem ghi chú trên) trước khi coi P3-A xong đúng thiết kế; các mục khác đã có code
+(219 EditMode test), chờ user playtest theo script bên dưới với hiểu biết BL-P3-03 sẽ còn đổi.
+BL-P3-18 (Telemetry riêng cho P3) **chưa làm** — cần quyết định phạm vi trước khi đóng Gate.
 
 ## Cần user playtest Shelter Loop (P3)
 

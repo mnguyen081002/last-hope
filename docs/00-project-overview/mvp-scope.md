@@ -157,7 +157,9 @@ Main Shelter được thiết kế sẵn với:
 - Predefined Zones.
 - Buildable Slots hoặc Areas.
 
-Người chơi không xây Shelter tự do từ đất trống.
+Người chơi không xây Shelter tự do từ đất trống (không tạo Zone mới/đổi cấu trúc nhà) — nhưng
+đặt Module ở vị trí tự do bên trong Zone hợp lệ, không phải chọn từ danh sách Slot cố định
+(xem `docs/02-core-systems/building-and-placement-system-design.md`).
 
 ### Location
 
