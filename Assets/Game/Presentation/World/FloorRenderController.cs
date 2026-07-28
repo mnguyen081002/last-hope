@@ -39,7 +39,12 @@ namespace LastHope.Presentation.World
 
         void Refresh(int currentFloor)
         {
-            foreach (var level in FindObjectsByType<FloorLevel>(FindObjectsSortMode.None))
+            // FindObjectsByType(sortMode) — overload 1 tham số — mặc định LOẠI TRỪ GameObject
+            // inactive (FindObjectsInactive.Exclude). Tầng chưa từng active (vd Upper lúc mới
+            // vào scene) sẽ không bao giờ được tìm thấy lại nếu dùng overload đó, nên Refresh
+            // chỉ toàn thấy tầng đang active — tầng kia không bao giờ được bật lên được. Phải
+            // truyền rõ Include để quét cả GameObject đang inactive.
+            foreach (var level in FindObjectsByType<FloorLevel>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 int diff = level.Floor - currentFloor;
 

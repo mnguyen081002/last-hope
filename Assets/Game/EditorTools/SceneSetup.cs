@@ -394,6 +394,9 @@ namespace LastHope.EditorTools
         }
 
         /// <summary>Vùng đi-qua-là-đổi-tầng (không phải prop chặn đường — Collider2D isTrigger).</summary>
+        /// <summary>Sprite phủ đúng bằng kích thước vùng trigger (không phải icon nhỏ như prop
+        /// thường) + màu hổ phách đậm riêng biệt — để nhận ra ngay đây là khu vực cầu thang,
+        /// khác hẳn các prop khác (đã bị bug báo "không thấy cầu thang" trước đó).</summary>
         static void BuildFloorTransitionTrigger(GameObject parent, Vector2 position, Vector2 size, int targetFloor)
         {
             var go = new GameObject("Staircase");
@@ -403,12 +406,11 @@ namespace LastHope.EditorTools
             var spriteGo = new GameObject("Sprite");
             spriteGo.transform.SetParent(go.transform, false);
             var renderer = spriteGo.AddComponent<SpriteRenderer>();
-            renderer.sprite = LoadPlaceholder("placeholder-prop.png");
-            renderer.color = new Color(0.5f, 0.4f, 0.3f);
-            if (renderer.sprite != null)
-            {
-                spriteGo.transform.localPosition = new Vector3(0f, renderer.sprite.bounds.extents.y, 0f);
-            }
+            renderer.sprite = LoadPlaceholder("placeholder-ground.png");
+            renderer.drawMode = SpriteDrawMode.Tiled;
+            renderer.size = size;
+            renderer.color = new Color(0.85f, 0.55f, 0.15f, 0.85f);
+            renderer.sortingOrder = GroundOrder + 1; // trên Ground nền nhưng vẫn dưới player/prop đứng.
 
             var collider = go.AddComponent<BoxCollider2D>();
             collider.isTrigger = true;
