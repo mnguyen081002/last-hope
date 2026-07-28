@@ -121,6 +121,9 @@ namespace LastHope.EditorTools
             var storagePanel = new GameObject("StoragePanel").AddComponent<StoragePanel>();
             SetSerialized(storagePanel, so => so.FindProperty("controls").objectReferenceValue = controls);
 
+            var travelConfirmPanel = new GameObject("TravelConfirmPanel").AddComponent<TravelConfirmPanel>();
+            SetSerialized(travelConfirmPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
+
             SaveScene(scene, $"{ScenesRoot}/10_GamePersistent.unity");
         }
 

@@ -12,7 +12,9 @@ Quy ước cột "Test": ⬜ chưa có test · 🟡 có test một phần · ✅
 EditMode test). P2-B phần Current Strength/Electrified/Route Closure/Disaster Phase dùng
 **số tự đề xuất, chưa qua playtest** (khác các phần khác luôn bám số có sẵn `balance.json`)
 — user cần xem qua trước khi tin tưởng hoàn toàn. BL-P2-12 Content P2 xong (route+location
-thứ hai — gara). P2-C còn lại: Return Window UI/Scenario A-D. Chưa có: P3/P4.
+thứ hai — gara). BL-P2-11 Return Window UI xong (phạm vi rút gọn — panel xác nhận tại
+TravelPoint, không phải World Map đầy đủ). Toàn bộ P2-C đã có code, chờ user playtest. Chưa
+có: P3/P4.
 
 Verify pipeline: batchmode compile → EditMode test → sinh 5 scene (`SceneSetup.BuildAllScenes`)
 → build Windows → smoke test headless (boot → persistent → GameBootstrapper → SceneFlowController
@@ -75,7 +77,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Route state | `Core/State/RouteState.cs` | `FloodState`, `CurrentStrength` enum, `IsElectrified` | ✅ | Route chưa từng đổi = mặc định Dry/None/false (không có entry) |
 | Inventory state | `Core/State/InventoryState.cs`, `ItemInstanceState.cs`, `InventoryOps.cs` | `AddItem/RemoveItem/CountOf/TotalWeightKg/Move` | ✅ | Nhận `List<ItemInstanceState>` (dùng chung player/storage/searchpoint) + overload giữ API `InventoryState` cũ |
 | Time | `Core/Time/SimulationClock.cs`, `TickScheduler.cs`, `GameTimeUtil.cs` | `AccumulateRealSeconds`, `Advance/FastForward`, `ShortTick/LongTick` | ✅ | `AdvanceOneMinute` là **nơi duy nhất** tăng `WorldTimeMinutes`; long tick mỗi 10 phút; anchor Day 0 17:00 |
-| Events | `Core/Events/EventBus.cs`, `GameEvents.cs` | `Subscribe/Unsubscribe/Publish<T>` | 🟡 | struct event, handler copy-on-write. Có: `WorldTimeChanged`, `InventoryChanged`, `LocationChanged`, `SearchPointOpened`, `StorageOpened`, `TravelStarted`, `WorldStateReloaded` |
+| Events | `Core/Events/EventBus.cs`, `GameEvents.cs` | `Subscribe/Unsubscribe/Publish<T>` | 🟡 | struct event, handler copy-on-write. Có: `WorldTimeChanged`, `InventoryChanged`, `LocationChanged`, `SearchPointOpened`, `StorageOpened`, `TravelPointOpened` (2026-07-28, BL-P2-11), `TravelStarted`, `WorldStateReloaded` |
 | Commands | `Core/Commands/IGameCommand.cs`, `CommandProcessor.cs`, `UseItemCommand.cs` | `Submit(command)` → `CommandResult`, `GameContext{World,Definitions,Events,Rng,Ticks}` | ✅ | Validate fail = không mutate. Command gameplay khác (Transfer/Search/Travel) ở `Systems/Commands` |
 | Save | `Core/Save/WorldStateSerializer.cs`, `SaveFile.cs`, `SaveService.cs` | `Save/Load/SaveAutosave`, `PathForSlot` | ✅ | SHA256 checksum, atomic tmp→verify→.bak→rename, autosave 3 slot xoay vòng |
 | Pointer over UI | `Core/UI/PointerOverUI.cs` | `MarkHover(bool)`, `ConsumeIsHovering()` | ⬜ | Cờ dùng chung giữa panel OnGUI (DebugTools/UI) và gameplay (Presentation) — không tạo phụ thuộc chéo giữa 2 nhánh đó, cả hai chỉ phụ thuộc Core. Đọc-rồi-xoá mỗi frame (OnGUI chạy sau LateUpdate cùng frame nên luôn trễ đúng 1 frame) |
@@ -121,7 +123,7 @@ scene** (scope cut P1 — xem `docs/plans/2026-07-27-p1c-exploration-gameplay.md
 | Boot | `Presentation/Boot/BootLoader.cs` | — | ⬜ | `00_Boot` → additive persistent (không hard-code scene gameplay) |
 | Scene flow | `Presentation/Boot/SceneFlowController.cs` | — | ⬜ | Load scene theo `LocationDefinition.SceneName` lúc boot + mỗi lần `LocationChanged`, đặt player tại `PlayerSpawnPoint`. `RepositionPlayer` tìm spawn theo tên scene cụ thể (2026-07-27 — trước dùng `FindFirstObjectByType` toàn cục, trúng nhầm scene cũ chưa unload xong khi Travel). Nghe thêm `TravelStarted` (đã có `RouteId`) để chọn đúng `PlayerSpawnPoint` khi scene có nhiều cổng ra vào (BL-P2-12, 2026-07-27) |
 | Interaction | `Presentation/Interaction/{IInteractable,InteractionDetector,InteractionPromptOverlay}.cs` | `CurrentTarget`, `HoldProgress01` | ⬜ | Nhấn tức thì (`HoldDurationSeconds` ≤0) hoặc giữ phím thật (progress bar, thả sớm = hủy). `SearchPointView` chỉ đòi hold ở lần mở **đầu tiên** — đã `Rolled` thì mở lại tức thì |
-| World views | `Presentation/World/{SearchPointView,StorageView,TravelPointView,PlayerSpawnPoint}.cs` | implement `IInteractable` | ⬜ | Chỉ submit Command/publish event, không biết UI nào phản hồi (tránh phụ thuộc `UI`). `PlayerSpawnPoint.RouteId` (2026-07-27) — scene nhiều `TravelPoint` thì nhiều spawn, mỗi cái gắn đúng route dẫn tới nó |
+| World views | `Presentation/World/{SearchPointView,StorageView,TravelPointView,PlayerSpawnPoint}.cs` | implement `IInteractable` | ⬜ | Chỉ submit Command/publish event, không biết UI nào phản hồi (tránh phụ thuộc `UI`). `PlayerSpawnPoint.RouteId` (2026-07-27) — scene nhiều `TravelPoint` thì nhiều spawn, mỗi cái gắn đúng route dẫn tới nó. `TravelPointView.Interact()` (2026-07-28, BL-P2-11) đổi từ submit thẳng `BeginTravelCommand` sang publish `TravelPointOpened` — `TravelConfirmPanel` (UI) mới thật sự submit sau khi user bấm "Xác nhận" |
 
 Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi P1-C, xem plan doc.
 
@@ -132,6 +134,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | Inventory | `UI/Panels/InventoryPanel.cs` | toggle qua action `ToggleInventory` | ⬜ | OnGUI (không phải uGUI — quyết định P1-C, xem plan doc). Hiện túi + Carried Object + đồ dưới đất tại location + khu "Đang mặc" (nút Tháo, hiện thông báo nếu bị từ chối) và nút "Mặc" cạnh item equipment trong túi + thanh progress tải trọng (đầy tới hard cap, 2026-07-27). Đóng: nhấn lại `ToggleInventory` hoặc ESC (`Close`) |
 | Search | `UI/Panels/SearchPanel.cs` | `Open(searchPointId)` | ⬜ | Tự mở khi nghe `SearchPointOpened`. Take lẻ / Take All, báo triage nếu còn sót. Đóng: tương tác lại đúng search point (toggle) hoặc ESC |
 | Storage | `UI/Panels/StoragePanel.cs` | — | ⬜ | Tự mở khi nghe `StorageOpened`. Chuyển 2 chiều player ↔ kho. Đóng: tương tác lại đúng kho (toggle) hoặc ESC |
+| Travel confirm | `UI/Panels/TravelConfirmPanel.cs` | — | ⬜ | BL-P2-11 (2026-07-28), phạm vi rút gọn thay cho World Map đầy đủ (P4). Tự mở khi nghe `TravelPointOpened`. Hiện Travel Time một chiều (`TravelSystem.ComputeTravelMinutes`), Estimated Return Time = khứ hồi ×2, Known Hazard (Flood/Current/Electrified route hiện tại), cảnh báo nếu `DisasterPhaseSystem.CurrentPhase` tại thời điểm dự kiến quay lại khác hiện tại (không chặn, chỉ cảnh báo). Nút "Xác nhận đi" mới submit `BeginTravelCommand`; "Hủy" không tốn thời gian. Đóng: tương tác lại đúng travel point (toggle) hoặc ESC |
 
 ## LastHope.DebugTools
 
@@ -152,7 +155,7 @@ Chưa có: animation theo hướng (8-direction sprite swap) — cắt phạm vi
 | Scene | Nội dung |
 | --- | --- |
 | `00_Boot` | `BootCamera`, `BootLoader` |
-| `10_GamePersistent` | `GameServices` (Bootstrapper+Driver+DebugPanel), `Player` (Controller+AvatarSync+OverloadSync+InteractionDetector), `Main Camera`+`CameraRig`, `DebugOverlay`, `InteractionPrompt`, `SceneFlowController`, `InventoryPanel`, `SearchPanel`, `StoragePanel` |
+| `10_GamePersistent` | `GameServices` (Bootstrapper+Driver+DebugPanel), `Player` (Controller+AvatarSync+OverloadSync+InteractionDetector), `Main Camera`+`CameraRig`, `DebugOverlay`, `InteractionPrompt`, `SceneFlowController`, `InventoryPanel`, `SearchPanel`, `StoragePanel`, `TravelConfirmPanel` (BL-P2-11, 2026-07-28) |
 | `90_TestSystems` | Ground tiled 32×20, 4 tường biên, 4 prop test Y-sort — không còn nằm trong luồng boot chính, chỉ để test thủ công |
 | `Shelters/20_MainShelter` | `location_shelter` — `StorageView`, 2 `TravelPointView` (→ store, → gara — BL-P2-12), mỗi cái 1 `PlayerSpawnPoint` riêng sát cạnh, gắn đúng `RouteId` |
 | `Locations/41_Location_ConvenienceStore` | `location_convenience_store` — 6 `SearchPointView` khớp `searchpoints_p1.json`, `TravelPointView` (→ shelter), `PlayerSpawnPoint` đặt sát `TravelPoint` (2026-07-27) |

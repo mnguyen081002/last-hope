@@ -131,14 +131,16 @@ Sau playtest, 2 chỉnh sửa UX theo góp ý user:
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
 | BL-P2-10 | Equipment Protection | Verify | `EquipmentSystem` + `EquipItemCommand`/`UnequipItemCommand` — jacket giảm Wet, boots chặn/giảm Exposure, rope giảm Current index, dry_bag đổi capacity. Gloves (`handles_contaminated`) **vẫn treo** — chưa có action xử lý đồ nhiễm bẩn (như đã ghi ở P2-B) |
-| BL-P2-11 | Return Window UI | Backlog | World Map: travel time, ETA, phase risk. `TravelPointView` (nhấn E cạnh prop) hiện tại là blockout tạm của P1-C (`docs/plans/2026-07-27-p1c-exploration-gameplay.md`) — chưa xác định World Map (`docs/03-mvp-black-rain/03-black-rain-world-map.md`) có thay thế hoàn toàn cách tương tác này hay chỉ bổ sung ETA/risk phía trên, cần quyết định khi lập plan BL-P2-11 |
+| BL-P2-11 | Return Window UI | Verify | Phạm vi rút gọn cho P2 (quyết định cùng user 2026-07-28): **không** dựng World Map đầy đủ (`docs/03-mvp-black-rain/03-black-rain-world-map.md` là phạm vi P4 — 7 location/4 district/Observation Point). Thay vào đó: nhấn E ở `TravelPointView` giờ mở `TravelConfirmPanel` (thay vì đi thẳng) — hiện Travel Time một chiều, Estimated Return Time (khứ hồi), Known Hazard (Flood/Current/Electrified hiện tại), và cảnh báo nếu Disaster Phase dự kiến đổi trước khi quay lại (đúng câu trong world-map.md mục 16). Xác nhận mới thật sự submit `BeginTravelCommand`; Hủy không tốn thời gian |
 | BL-P2-12 | Content P2 | Verify | `location_garage` + `route_shelter_garage` — data đã có sẵn từ trước (locations_p4.json/routes_p4.json/searchpoints_p4.json, `DefinitionLoader` nạp mọi file khớp tiền tố bất kể hậu tố p1/p4), chỉ thiếu scene + travel point. Đã thêm scene `42_Location_UtilityGarage` + `TravelPointView` thứ hai ở Shelter. `route_shelter_store` (thấp/ngắn) nay `closes_at_phase: route_closure`; `route_shelter_garage` (cao/dài, 35 phút) không set — tạo lựa chọn cao/thấp đúng yêu cầu |
 | BL-P2-13 | Test Scenario A–D | Verify | Kịch bản playtest tay (không phải tính năng mới), script đầy đủ ở `docs/plans/2026-07-28-p2-test-scenarios.md`. Scenario C điều chỉnh phạm vi (chưa có Event Framework — P3/P4). Sửa kèm: F2 Debug Panel Hazard trước hard-code chỉ chỉnh `route_shelter_store`, giờ chọn được route bất kỳ (cần thiết để test Scenario A/D với route gara mới) |
 | BL-P2-14 | Save Hazard State | Verify | `WorldState.Routes` dùng chung `WorldStateSerializer` sẵn có (giống Locations) — tự động sống qua save/load, chưa có test round-trip riêng cho Routes (test round-trip chung đã phủ Locations, cùng cơ chế) |
 
 **Gate P2:** chưa chạy — **P2-A + P2-B xong toàn bộ**, BL-P2-10 (Equipment) + BL-P2-12
-(Content P2) + BL-P2-13 (Test Scenario, script sẵn sàng) xong (166 EditMode test). Còn Return
-Window UI (BL-P2-11).
+(Content P2) + BL-P2-13 (Test Scenario, script sẵn sàng) + BL-P2-11 (Return Window UI, phạm
+vi rút gọn) xong (166 EditMode test — panel UI mới không có test tự động, cùng quy ước với
+Inventory/Search/Storage panel, verify bằng mắt). Toàn bộ hạng mục P2 đã có code, chỉ còn chờ
+user playtest xác nhận rồi mới chạy Gate.
 Exit Criteria: đổi Route vì Flood (không phải ép script); Equipment thay đổi Loadout;
 không Failure tức thời thiếu cảnh báo; Return Window dễ hiểu (**chưa làm**); Route Closure
 không softlock (**⚠ rủi ro chưa xử lý — xem Scenario D bên dưới**).
@@ -152,11 +154,14 @@ này có `closes_at_phase: route_closure` (thêm ở BL-P2-12). Nếu player đa
 Trigger" đã ghi sẵn trong `docs/03-mvp-black-rain/10-mvp-prototype-plan.md` mục 6.8: "Route
 đóng khiến người chơi mắc kẹt không có phương án".
 
-**Chưa sửa preemptive** — buffer 15 tiếng game rất dài so với phiên chơi thật 30-45 phút nên
-có thể không bao giờ gặp trong thực tế; cơ chế giảm rủi ro đúng đắn là BL-P2-11 (Return Window
-UI, cảnh báo ETA/risk *trước khi* đi). Cần user tự chạy Scenario D (script ở
-`docs/plans/2026-07-28-p2-test-scenarios.md`) rồi quyết định: chấp nhận rủi ro tạm thời tới
-khi làm BL-P2-11, hay cần xử lý sớm hơn (vd. exempt chiều về, cảnh báo sớm).
+**Đã giảm nhẹ, chưa loại bỏ hoàn toàn** — BL-P2-11 (Return Window UI) giờ cảnh báo *trước khi*
+đi nếu Disaster Phase dự kiến đổi trước lúc quay lại, nhưng chỉ là cảnh báo, không chặn hành
+động (người chơi vẫn có thể bấm "Xác nhận đi" bất chấp cảnh báo — đúng ý "không tự động chọn
+Route" trong world-map.md). Route vẫn có thể đóng vĩnh viễn nếu người chơi phớt lờ cảnh báo
+hoặc route đóng trong lúc đang đứng tại location (không đi qua panel). Cần user tự chạy
+Scenario D (script ở `docs/plans/2026-07-28-p2-test-scenarios.md`) và thử panel xác nhận mới,
+rồi quyết định: chấp nhận rủi ro còn lại, hay cần xử lý sớm hơn (vd. exempt chiều về, chặn hẳn
+thay vì chỉ cảnh báo).
 
 ## Cần user verify Content P2 (BL-P2-12)
 
@@ -252,6 +257,20 @@ BL-P2-10 gốc:**
    quan sát rõ ràng: thêm `EquipmentSystem.CanUnequip` (kiểm tra thuần, không mutate) —
    `Validate` gọi hàm này để từ chối đúng lúc (`NotEnoughCapacity`) thay vì để `Execute` no-op,
    `InventoryPanel` hiện thông báo khi bị từ chối.
+
+## Cần user verify Return Window UI (BL-P2-11)
+
+1. Nhấn E ở TravelPoint (shelter → store hoặc shelter → gara) — thay vì đi luôn, phải hiện
+   panel "Xác nhận di chuyển" (Travel Time một chiều, Estimated Return Time khứ hồi, Flood/
+   Current/Điện hiện tại của route). Nhấn E lại đúng travel point đó — panel đóng (toggle),
+   không mở lại. ESC cũng đóng được, giống các panel khác.
+2. Bấm "Hủy" — không di chuyển, world time không tăng (đứng nguyên tại chỗ).
+3. Bấm "Xác nhận đi" — di chuyển diễn ra như trước (đổi scene, tốn thời gian, áp hazard
+   crossing) — hành vi cũ không đổi, chỉ thêm bước xác nhận phía trước.
+4. F2 `+8h` vài lần cho world time gần mốc chuyển Phase (240/600/900 phút), rồi mở panel xác
+   nhận ở route sắp đi — nếu đi-về (khứ hồi) sẽ vượt qua mốc đổi Phase, phải thấy dòng cảnh
+   báo màu vàng "Tuyến có thể không còn sử dụng được khi quay lại". Panel không chặn — vẫn bấm
+   "Xác nhận đi" được nếu muốn (đúng ý không tự động chọn route thay người chơi).
 
 **P2-A đã user verify** (2026-07-27). Một chỉnh sửa sau verify: tốc độ Sick
 (`sick_decay_per_minute`, trước là `sick_health_decay_per_long_tick`) đổi từ 0.5/10 phút

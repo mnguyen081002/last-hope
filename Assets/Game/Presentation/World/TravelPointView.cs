@@ -1,6 +1,6 @@
+using LastHope.Core.Events;
 using LastHope.Presentation.Interaction;
 using LastHope.Systems.Boot;
-using LastHope.Systems.Commands;
 using UnityEngine;
 
 namespace LastHope.Presentation.World
@@ -15,7 +15,8 @@ namespace LastHope.Presentation.World
             ? "Nhấn E để di chuyển"
             : $"Nhấn E để đi tới {destinationLabel}";
 
+        /// <summary>Mở panel xác nhận (BL-P2-11) — panel mới thật sự submit <c>BeginTravelCommand</c>.</summary>
         public void Interact() =>
-            GameBootstrapper.Services.Commands.Submit(new BeginTravelCommand(routeId));
+            GameBootstrapper.Services.Events.Publish(new TravelPointOpened(routeId));
     }
 }
