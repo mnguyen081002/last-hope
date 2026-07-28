@@ -30,7 +30,13 @@ namespace LastHope.Core.State
         /// <summary>Hysteresis theo BodyTemperature — bật ở ColdBodyTempThreshold, tắt ở ColdClearBodyTempThreshold.</summary>
         public bool IsCold;
 
-        /// <summary>Bật khi BlackWaterExposure vượt ngưỡng; không tự tắt (cần Shelter treat — P3).</summary>
+        /// <summary>Bật khi BlackWaterExposure vượt ngưỡng; tự tắt khi Exposure tụt lại dưới ngưỡng (Shelter treat — P3).</summary>
         public bool IsSick;
+
+        /// <summary>
+        /// Phút liên tục đang ở Shelter (reset về 0 khi rời đi) — dùng để tính Treat Exposure
+        /// (<c>ShelterTreatExposureMinutes</c>, P3).
+        /// </summary>
+        public float MinutesAtShelterContinuous;
     }
 }

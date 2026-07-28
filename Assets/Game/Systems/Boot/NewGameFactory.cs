@@ -24,6 +24,12 @@ namespace LastHope.Systems.Boot
                         CapacityLiters = balance.Inventory.BackpackCapacityLiters,
                     },
                 },
+                Shelter = new ShelterState
+                {
+                    StructuralIntegrity = balance.Shelter.InitialStructuralIntegrity,
+                    CleanWater = balance.Shelter.InitialCleanWater,
+                    UntreatedWater = balance.Shelter.InitialUntreatedWater,
+                },
             };
 
             // Ghi seed khởi điểm của từng stream để save đầu tiên đã có state đầy đủ.

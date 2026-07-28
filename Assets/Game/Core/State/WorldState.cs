@@ -26,6 +26,9 @@ namespace LastHope.Core.State
         /// <summary>Route chưa từng đổi flood state thì không có entry (mặc định Dry).</summary>
         public Dictionary<string, RouteState> Routes = new();
 
+        /// <summary>Chỉ một Main Shelter trong MVP (P3).</summary>
+        public ShelterState Shelter = new();
+
         public LocationState GetOrCreateLocation(string locationId)
         {
             if (!Locations.TryGetValue(locationId, out var state))

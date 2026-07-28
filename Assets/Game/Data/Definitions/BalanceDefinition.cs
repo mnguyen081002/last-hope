@@ -13,6 +13,9 @@ namespace LastHope.Data.Definitions
         public ConditionBalance Condition = new();
         public HazardBalance Hazard = new();
         public DisasterPhaseBalance DisasterPhase = new();
+        public ShelterBalance Shelter = new();
+        public PowerBalance Power = new();
+        public WaterBalance Water = new();
     }
 
     public class InventoryBalance
@@ -109,5 +112,56 @@ namespace LastHope.Data.Definitions
         public float FirstRainAtMinute = 240f;
         public float BlackRainAtMinute = 600f;
         public float RouteClosureAtMinute = 900f;
+    }
+
+    /// <summary>
+    /// Khớp `balance.json.shelter`. Mảng <see cref="InflowByRainIntensity"/> 5 phần tử nhưng
+    /// hệ thống chỉ dùng index 0-3 (theo <c>DisasterPhase</c> Dry/FirstRain/BlackRain/
+    /// RouteClosure) — timeline rút gọn không có phase thứ 5. Field có tiền tố "P3" là tự đề
+    /// xuất 2026-07-28, chưa qua playtest — xem docs/plans/2026-07-28-p3-shelter-loop.md.
+    /// </summary>
+    public class ShelterBalance
+    {
+        public float DampThreshold = 10f;
+        public float ShallowThreshold = 30f;
+        public float DeepThreshold = 60f;
+        public float CriticalThreshold = 85f;
+        public float[] InflowByRainIntensity = { 0f, 2f, 4f, 6f, 9f };
+        public float BackflowInflow = 6f;
+        public float PassiveDrainPerLongTick = 2f;
+        public float PumpOutputPerLongTick = 6f;
+        public float BarrierBlockFraction = 0.7f;
+        public float BarrierDurabilityDecayPerLongTick = 2f;
+        public float InitialStructuralIntegrity = 85f;
+        public int InitialLivingCapacity = 2;
+        public float InitialCleanWater = 3f;
+        public float InitialUntreatedWater = 0f;
+
+        public float StorageFloodLossChancePercent = 15f;
+        public float DrainBackflowTriggerChancePercent = 10f;
+        public float DrainBackflowResolveMinutes = 20f;
+        public float PumpJamChancePercent = 8f;
+        public float PumpJamResolveMinutes = 15f;
+        public float SleepFatigueRecoveryPerHour = 12f;
+        public float SleepMinHours = 1f;
+        public float SleepMaxHours = 10f;
+    }
+
+    /// <summary>Khớp `balance.json.power`. Grid Supply theo Disaster Phase — xem <c>PowerSystem.GridSupply</c>.</summary>
+    public class PowerBalance
+    {
+        public float GridSupply = 6f;
+        public float BatteryMaxCharge = 360f;
+        public float BatteryMaxDischargePerLongTick = 30f;
+        public float BatteryChargeRatePerLongTick = 20f;
+    }
+
+    /// <summary>Khớp `balance.json.water` (Water Purifier).</summary>
+    public class WaterBalance
+    {
+        public float PurifyBatchSize = 3f;
+        public float PurifyBatchMinutes = 60f;
+        public float FilterWearPerBatch = 33.34f;
+        public float IntakeUntreatedPerHour = 1f;
     }
 }

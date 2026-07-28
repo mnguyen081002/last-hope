@@ -74,7 +74,16 @@
     "initial_structural_integrity": 85,
     "initial_living_capacity": 2,
     "initial_clean_water": 3,
-    "initial_untreated_water": 0
+    "initial_untreated_water": 0,
+    "_note_p3": "Cac field duoi day (storage_flood_*, drain_backflow_*, pump_jam_*, sleep_*) la baseline TU DE XUAT 2026-07-28, chua qua playtest - xem docs/plans/2026-07-28-p3-shelter-loop.md",
+    "storage_flood_loss_chance_percent": 15,
+    "drain_backflow_trigger_chance_percent": 10,
+    "drain_backflow_resolve_minutes": 20,
+    "pump_jam_chance_percent": 8,
+    "pump_jam_resolve_minutes": 15,
+    "sleep_fatigue_recovery_per_hour": 12,
+    "sleep_min_hours": 1,
+    "sleep_max_hours": 10
   },
   "power": {
     "grid_supply": 6,

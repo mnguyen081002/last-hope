@@ -73,4 +73,35 @@ namespace LastHope.Core.Events
     public readonly struct WorldStateReloaded
     {
     }
+
+    /// <summary>Shelter Event kích hoạt (P3): "drain_backflow" | "storage_flood_risk" | "pump_jam".</summary>
+    public readonly struct ShelterEventTriggered
+    {
+        public readonly string EventId;
+
+        public ShelterEventTriggered(string eventId) => EventId = eventId;
+    }
+
+    /// <summary>Bắn khi Construction hoàn thành (BuildSystem.ApplyShortTick).</summary>
+    public readonly struct ConstructionCompleted
+    {
+        public readonly string SlotId;
+        public readonly string ModuleId;
+
+        public ConstructionCompleted(string slotId, string moduleId)
+        {
+            SlotId = slotId;
+            ModuleId = moduleId;
+        }
+    }
+
+    /// <summary>Publish trực tiếp từ Presentation (ShelterConsoleView) — chỉ một Shelter trong MVP, không cần payload.</summary>
+    public readonly struct ShelterConsoleOpened
+    {
+    }
+
+    /// <summary>Publish trực tiếp từ Presentation (BedView).</summary>
+    public readonly struct BedOpened
+    {
+    }
 }

@@ -190,12 +190,50 @@ game sang 0.4/phút game (quy đổi từ "mỗi 30 giây thực" ở timescale 
 
 ## P3 — Shelter Loop (S10–S13 → Gate P3)
 
+Kế hoạch code: `docs/plans/2026-07-28-p3-shelter-loop.md` — **đọc mục "Phạm vi rút gọn có chủ
+đích"** trước khi playtest, giải thích rõ vì sao không có cầu thang/multi-floor vật lý, Elevated
+Storage không phải kho riêng, và mọi tương tác đi qua 1 prop "Shelter Console".
+
+### P3-A — Shelter State và Build (M4)
+
 | ID | Hạng mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
-| S10 | Shelter State + Water Intrusion + blockout | Backlog | |
-| S11 | Build & Placement + Task System | Backlog | |
-| S12 | Power + Water + Sleep Simulation | Backlog | |
-| S13 | Event Framework lõi + 3 Shelter Event + 2-trong-3 | Backlog | |
+| BL-P3-01 | Main Shelter blockout | Verify | 8 Zone (`shelterzones_p3.json`) hiển thị trong `ShelterPanel`, không dựng vật lý riêng từng Zone — xem phạm vi rút gọn |
+| BL-P3-02 | Shelter State | Verify | `ShelterState` — Structural Integrity, Water Intrusion, Clean/Untreated Water, Battery, Build Slots. Living Capacity/Occupants/Cleanliness/Security **chưa làm** (không có nội dung nào cần tới — không NPC, không multi-occupant trong P3) |
+| BL-P3-03 | Build và Placement | Verify | `BuildSystem` — Build Slot theo Zone (`ShelterZoneDefinition.BuildSlotIds`), validate zone/material, construction tick theo phút, Pause/Resume/Cancel, Dismantle (không hoàn vật liệu). Không có placement vật lý (tile/grid) — chọn Slot qua UI |
+| BL-P3-04 | Task System | Verify | Gộp vào Construction (không dựng abstraction Active/Passive Task riêng) — chạy qua `TickScheduler.ShortTick` sẵn có nên tự "Passive" (tiếp tục dù rời Shelter/Sleep) |
+| BL-P3-05 | Water Intrusion | Verify | `ShelterWaterSystem` — inflow theo Disaster Phase, Barrier giảm inflow + tự decay, Pump giảm, Ground Floor khóa (Pump/Purifier ngừng) khi `WaterIntrusion >= DeepThreshold`. Chưa test qua playtest |
+
+### P3-B — Module và Power (M4)
+
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| BL-P3-06 | Module: Flood Barrier | Verify | `module_barrier` — giảm inflow theo `barrier_block_fraction`, Durability tự decay mỗi Long Tick |
+| BL-P3-07 | Module: Portable Pump | Verify | `module_pump` — cần Power, giảm Water Intrusion; Pump Jam (BL-P3-16) làm ngừng hoạt động tới khi sửa |
+| BL-P3-08 | Module: Elevated Storage | Verify | **Đơn giản hoá có chủ đích** — không phải kho vật lý riêng, chỉ là modifier miễn nhiễm Storage Flood Risk Event cho `StorageContainer` hiện có |
+| BL-P3-09 | Module: Water Purifier | Verify | `module_purifier` — batch Untreated→Clean theo `purify_batch_minutes`/`purify_batch_size`, Filter Durability giảm dần, ngừng ở 0% (chưa có action thay Filter mới — module coi như hỏng, phải Tháo/Xây lại) |
+| BL-P3-10 | Module: Battery Bank | Verify | `module_battery_bank` — không có logic riêng, chỉ tồn tại để tốn Build Slot/vật liệu; Battery Charge là field chung `ShelterState.BatteryCharge` không phụ thuộc module này có được xây hay không (đơn giản hoá — chưa gate theo "phải có Battery Bank mới có chỗ chứa điện") |
+| BL-P3-11 | Power System | Verify | `PowerSystem.Allocate` — Priority Critical→High→Normal→Disabled, Grid Supply theo Disaster Phase (Stable/Stable/Nửa/0), Battery xả/sạc phần dư-thiếu |
+| BL-P3-12 | Water System | Verify | Gộp vào `ShelterWaterSystem`/`WaterBalance` — Water Intake thụ động, Purifier batch. Contamination **chưa làm** (không có action "xử lý đồ nhiễm bẩn" liên quan, tương tự ghi chú P2-B) |
+| BL-P3-13 | Sleep Simulation | Verify | `SleepCommand` — FastForward qua `TickScheduler` (mọi hệ thống khác tick bình thường), cộng thêm hồi Fatigue theo `sleep_fatigue_recovery_per_hour`. Cũng nối `MinutesAtShelterContinuous` → Treat Black Water Exposure tại Shelter (field balance có sẵn từ P2-A, giờ mới dùng tới) |
+
+### P3-C — Shelter Event và kiểm chứng (M4)
+
+| ID | Hạng mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| BL-P3-14 | Event: Drain Backflow | Verify | Roll mỗi Long Tick ở Disaster Phase RouteClosure (~Peak/Escalation gộp). Giải quyết qua `ResolveDrainBackflowCommand` (tốn `drain_backflow_resolve_minutes`) |
+| BL-P3-15 | Event: Storage Flood Risk | Verify | Kích hoạt khi Water Intrusion ≥ Critical + kho có đồ + chưa có Elevated Storage. Mỗi Long Tick có tỉ lệ mất 1 stack ngẫu nhiên |
+| BL-P3-16 | Event: Pump Jam | Verify | Chỉ roll khi Pump đã xây + có điện + chưa kẹt. Giải quyết qua `RepairPumpJamCommand` (tốn `pump_jam_resolve_minutes`) |
+| BL-P3-17 | Kịch bản 2-trong-3 | Verify | **Không cần content mới** — khan hiếm `item_wood`/`item_purifier_unit`/`item_filter` trong loot table sẵn có (P1/P2-C) đã tự nhiên tạo giới hạn "chỉ 2/3 Module chính", xác nhận lại khi user playtest |
+| BL-P3-18 | Telemetry + Playtest P3 | Backlog | **Chưa nối Telemetry** cho Build/Power/Event (TelemetryLogger P1 chưa mở rộng) — cần quyết định có làm trong P3 hay để P4 trước khi Gate |
+
+**Gate P3:** chưa chạy — toàn bộ BL-P3-01..17 đã có code (219 EditMode test), chờ user
+playtest theo script bên dưới. BL-P3-18 (Telemetry riêng cho P3) **chưa làm** — cần quyết định
+phạm vi trước khi đóng Gate.
+
+## Cần user playtest Shelter Loop (P3)
+
+Script chi tiết ở `docs/plans/2026-07-28-p3-test-scenarios.md` (sinh cùng lúc chốt P3).
 
 **Gate P3:** chưa chạy.
 
@@ -215,5 +253,6 @@ game sang 0.4/phút game (quy đổi từ "mỗi 30 giây thực" ở timescale 
 
 ---
 
-Milestone tiếp theo: **P3 — Shelter Loop** (S10–S13) — Shelter State, Water Intrusion, Build
-& Placement, Task System, Power/Water/Sleep Simulation, Event Framework lõi → Gate P3.
+Milestone tiếp theo: **chạy Gate P3** — toàn bộ P3 đã có code (BL-P3-01..17), chờ user
+playtest theo `docs/plans/2026-07-28-p3-test-scenarios.md` rồi quyết định BL-P3-18
+(Telemetry P3, còn Backlog). Sau đó mới sang **P4 — Vertical Slice**.

@@ -124,6 +124,12 @@ namespace LastHope.EditorTools
             var travelConfirmPanel = new GameObject("TravelConfirmPanel").AddComponent<TravelConfirmPanel>();
             SetSerialized(travelConfirmPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
 
+            var shelterPanel = new GameObject("ShelterPanel").AddComponent<ShelterPanel>();
+            SetSerialized(shelterPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
+
+            var sleepPanel = new GameObject("SleepPanel").AddComponent<SleepPanel>();
+            SetSerialized(sleepPanel, so => so.FindProperty("controls").objectReferenceValue = controls);
+
             SaveScene(scene, $"{ScenesRoot}/10_GamePersistent.unity");
         }
 
@@ -151,6 +157,8 @@ namespace LastHope.EditorTools
 
             var root = new GameObject("Interactables");
             BuildStorage(root, "location_shelter", new Vector2(-4f, 3f));
+            BuildShelterConsole(root, new Vector2(0f, 3f));
+            BuildBed(root, new Vector2(4f, 3f));
             BuildTravelPoint(root, "route_shelter_store", "cửa hàng tiện lợi", new Vector2(4f, -3f));
             BuildTravelPoint(root, "route_shelter_garage", "gara sửa xe", new Vector2(-8f, -6f));
             // Mỗi TravelPoint có spawn riêng sát cạnh, gắn đúng routeId — 2 cổng ra vào thì
@@ -334,6 +342,18 @@ namespace LastHope.EditorTools
             var go = BuildWorldProp(parent, "Storage", position, new Color(0.4f, 0.6f, 0.75f));
             var view = go.AddComponent<StorageView>();
             SetSerialized(view, so => so.FindProperty("locationId").stringValue = locationId);
+        }
+
+        static void BuildShelterConsole(GameObject parent, Vector2 position)
+        {
+            var go = BuildWorldProp(parent, "ShelterConsole", position, new Color(0.55f, 0.5f, 0.65f));
+            go.AddComponent<ShelterConsoleView>();
+        }
+
+        static void BuildBed(GameObject parent, Vector2 position)
+        {
+            var go = BuildWorldProp(parent, "Bed", position, new Color(0.6f, 0.45f, 0.5f));
+            go.AddComponent<BedView>();
         }
 
         static void BuildTravelPoint(GameObject parent, string routeId, string destinationLabel, Vector2 position)

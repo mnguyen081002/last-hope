@@ -9,6 +9,7 @@ using LastHope.Systems.Boot;
 using LastHope.Systems.Condition;
 using LastHope.Systems.Registry;
 using LastHope.Systems.Hazard;
+using LastHope.Systems.Shelter;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -60,6 +61,7 @@ namespace LastHope.DebugTools.Panel
             DrawTimeControls(services);
             DrawConditionControls(services);
             DrawHazardControls(services);
+            DrawShelterControls(services);
             DrawInventoryControls(services);
             DrawSaveControls(services);
 
@@ -181,6 +183,47 @@ namespace LastHope.DebugTools.Panel
 
             if (GUILayout.Button(routeState.IsElectrified ? "Tắt Electrified" : "Bật Electrified"))
                 routeState.IsElectrified = !routeState.IsElectrified;
+        }
+
+        void DrawShelterControls(GameServices services)
+        {
+            GUILayout.Space(8f);
+            GUILayout.Label("— Shelter (P3) —");
+
+            var shelter = services.World.Shelter;
+            var balance = services.Definitions.Balance.Shelter;
+            string waterLevel = ShelterWaterSystem.WaterIntrusionLevel(shelter.WaterIntrusion, balance);
+
+            GUILayout.Label($"Structural {shelter.StructuralIntegrity:F0}  " +
+                            $"Water Intrusion {shelter.WaterIntrusion:F0} ({waterLevel})");
+            GUILayout.Label($"Clean {shelter.CleanWater:F1}  Untreated {shelter.UntreatedWater:F1}  " +
+                            $"Battery {shelter.BatteryCharge:F0}/{services.Definitions.Balance.Power.BatteryMaxCharge:F0}  " +
+                            $"Filter {shelter.PurifierFilterDurability:F0}%");
+            GUILayout.Label($"DrainBackflow:{shelter.DrainBackflowActive}  " +
+                            $"StorageFloodRisk:{shelter.StorageFloodRiskActive}  " +
+                            $"Slots xây: {shelter.BuildSlots.Count}");
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("+20 Water")) shelter.WaterIntrusion = Mathf.Min(100f, shelter.WaterIntrusion + 20f);
+            if (GUILayout.Button("-20 Water")) shelter.WaterIntrusion = Mathf.Max(0f, shelter.WaterIntrusion - 20f);
+            if (GUILayout.Button("Reset Water")) shelter.WaterIntrusion = 0f;
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("+5 Clean Water")) shelter.CleanWater += 5f;
+            if (GUILayout.Button("+5 Untreated")) shelter.UntreatedWater += 5f;
+            if (GUILayout.Button("+100 Battery"))
+                shelter.BatteryCharge = Mathf.Min(services.Definitions.Balance.Power.BatteryMaxCharge, shelter.BatteryCharge + 100f);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(shelter.DrainBackflowActive ? "Tắt Drain Backflow" : "Bật Drain Backflow"))
+                shelter.DrainBackflowActive = !shelter.DrainBackflowActive;
+
+            var pump = ShelterWaterSystem.FindModule(shelter, ShelterModuleIds.Pump);
+            if (pump != null && GUILayout.Button(pump.IsJammed ? "Tắt Pump Jam" : "Bật Pump Jam"))
+                pump.IsJammed = !pump.IsJammed;
+            GUILayout.EndHorizontal();
         }
 
         void DrawInventoryControls(GameServices services)

@@ -7,6 +7,7 @@ using LastHope.Core.Time;
 using LastHope.Data;
 using LastHope.Systems.Commands;
 using LastHope.Systems.Inventory;
+using LastHope.Systems.Shelter;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -300,6 +301,158 @@ namespace LastHope.Tests.EditMode
 
             Assert.IsTrue(result.Success);
             Assert.AreEqual(1, InventoryOps.CountOf(world.Player.Inventory, "item_jacket"));
+        }
+
+        // ---------- StartConstructionCommand / CancelConstructionCommand / DismantleModuleCommand ----------
+
+        void GiveShelterMaterials(string moduleId)
+        {
+            var module = definitions.GetModule(moduleId);
+            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
+            foreach (var pair in module.Materials)
+                InventoryOps.AddItem(storage, definitions, pair.Key, pair.Value);
+        }
+
+        [Test]
+        public void StartConstruction_NotAtShelter_IsRejected()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store";
+            GiveShelterMaterials(ShelterModuleIds.Pump);
+
+            var result = processor.Submit(new StartConstructionCommand("slot_utility_area_1", ShelterModuleIds.Pump));
+
+            Assert.AreEqual(CommandErrorCode.WrongLocation, result.Error);
+        }
+
+        [Test]
+        public void StartConstruction_Valid_DeductsMaterials_CreatesConstruction()
+        {
+            GiveShelterMaterials(ShelterModuleIds.Pump);
+
+            var result = processor.Submit(new StartConstructionCommand("slot_utility_area_1", ShelterModuleIds.Pump));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("slot_utility_area_1", world.Shelter.Construction.SlotId);
+            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
+            Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_pump_part"));
+        }
+
+        [Test]
+        public void CancelConstruction_Valid_ClearsConstruction()
+        {
+            GiveShelterMaterials(ShelterModuleIds.Pump);
+            processor.Submit(new StartConstructionCommand("slot_utility_area_1", ShelterModuleIds.Pump));
+
+            var result = processor.Submit(new CancelConstructionCommand("slot_utility_area_1"));
+
+            Assert.IsTrue(result.Success);
+            Assert.IsNull(world.Shelter.Construction);
+        }
+
+        [Test]
+        public void DismantleModule_Valid_RemovesModule()
+        {
+            world.Shelter.BuildSlots["slot_utility_area_1"] =
+                new BuiltModuleState { ModuleId = ShelterModuleIds.Pump };
+
+            var result = processor.Submit(new DismantleModuleCommand("slot_utility_area_1"));
+
+            Assert.IsTrue(result.Success);
+            Assert.IsFalse(world.Shelter.BuildSlots.ContainsKey("slot_utility_area_1"));
+        }
+
+        // ---------- SetPowerPriorityCommand ----------
+
+        [Test]
+        public void SetPowerPriority_Valid_UpdatesPriority()
+        {
+            world.Shelter.BuildSlots["slot_utility_area_1"] =
+                new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, Priority = PowerPriority.Normal };
+
+            var result = processor.Submit(new SetPowerPriorityCommand("slot_utility_area_1", PowerPriority.Critical));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(PowerPriority.Critical, world.Shelter.BuildSlots["slot_utility_area_1"].Priority);
+        }
+
+        // ---------- ResolveDrainBackflowCommand ----------
+
+        [Test]
+        public void ResolveDrainBackflow_NotActive_IsRejected()
+        {
+            var result = processor.Submit(new ResolveDrainBackflowCommand());
+
+            Assert.AreEqual(CommandErrorCode.NotAllowedNow, result.Error);
+        }
+
+        [Test]
+        public void ResolveDrainBackflow_Active_ResolvesAndAdvancesTime()
+        {
+            world.Shelter.DrainBackflowActive = true;
+
+            var result = processor.Submit(new ResolveDrainBackflowCommand());
+
+            Assert.IsTrue(result.Success);
+            Assert.IsFalse(world.Shelter.DrainBackflowActive);
+            Assert.AreEqual((long)definitions.Balance.Shelter.DrainBackflowResolveMinutes, world.WorldTimeMinutes);
+        }
+
+        // ---------- RepairPumpJamCommand ----------
+
+        [Test]
+        public void RepairPumpJam_NotJammed_IsRejected()
+        {
+            world.Shelter.BuildSlots["slot_utility_area_1"] =
+                new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, IsJammed = false };
+
+            var result = processor.Submit(new RepairPumpJamCommand());
+
+            Assert.AreEqual(CommandErrorCode.NotAllowedNow, result.Error);
+        }
+
+        [Test]
+        public void RepairPumpJam_Jammed_RepairsAndAdvancesTime()
+        {
+            world.Shelter.BuildSlots["slot_utility_area_1"] =
+                new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, IsJammed = true };
+
+            var result = processor.Submit(new RepairPumpJamCommand());
+
+            Assert.IsTrue(result.Success);
+            Assert.IsFalse(world.Shelter.BuildSlots["slot_utility_area_1"].IsJammed);
+            Assert.AreEqual((long)definitions.Balance.Shelter.PumpJamResolveMinutes, world.WorldTimeMinutes);
+        }
+
+        // ---------- SleepCommand ----------
+
+        [Test]
+        public void Sleep_NotAtShelter_IsRejected()
+        {
+            world.Player.CurrentLocationId = "location_convenience_store";
+
+            var result = processor.Submit(new SleepCommand(6f));
+
+            Assert.AreEqual(CommandErrorCode.WrongLocation, result.Error);
+        }
+
+        [Test]
+        public void Sleep_OutOfRange_IsRejected()
+        {
+            var result = processor.Submit(new SleepCommand(999f));
+
+            Assert.AreEqual(CommandErrorCode.InvalidTarget, result.Error);
+        }
+
+        [Test]
+        public void Sleep_Valid_AdvancesTime_RecoversFatigue()
+        {
+            world.Player.Fatigue = 80f;
+
+            var result = processor.Submit(new SleepCommand(6f));
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(6 * 60, world.WorldTimeMinutes);
+            Assert.Less(world.Player.Fatigue, 80f);
         }
     }
 }

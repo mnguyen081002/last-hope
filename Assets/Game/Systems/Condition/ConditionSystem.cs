@@ -23,6 +23,8 @@ namespace LastHope.Systems.Condition
             UpdateColdFlag(player, balance);
             UpdateStamina(player, balance);
 
+            player.MinutesAtShelterContinuous = isAtShelter ? player.MinutesAtShelterContinuous + 1f : 0f;
+
             UpdateSickFlag(player, balance);
             if (player.IsSick)
             {
@@ -44,6 +46,15 @@ namespace LastHope.Systems.Condition
                 // khác (vd Sick không floor) — chỉ ngăn CHÍNH starvation kéo xuống dưới floor.
                 player.Health = Mathf.Min(player.Health, Mathf.Max(
                     balance.StarvationHealthFloor, player.Health - balance.StarvationHealthDecayPerLongTick));
+            }
+
+            // Treat Exposure tại Shelter (P3) — cần ở lại liên tục ShelterTreatExposureMinutes
+            // trước khi bắt đầu giảm, tránh ghé qua vài phút đã chữa hết.
+            if (player.MinutesAtShelterContinuous >= balance.ShelterTreatExposureMinutes)
+            {
+                player.BlackWaterExposure =
+                    Mathf.Max(0f, player.BlackWaterExposure - balance.ShelterTreatExposureDecayPerLongTick);
+                UpdateSickFlag(player, balance);
             }
         }
 
@@ -92,7 +103,9 @@ namespace LastHope.Systems.Condition
 
         static void UpdateSickFlag(PlayerState player, ConditionBalance balance)
         {
-            if (player.BlackWaterExposure >= balance.SickExposureThreshold) player.IsSick = true;
+            // Không có nguồn nào khác giảm Exposure ngoài Shelter treat (P3) nên gán thẳng
+            // là đủ — tự tắt đúng lúc Exposure tụt dưới ngưỡng, không cần hysteresis riêng.
+            player.IsSick = player.BlackWaterExposure >= balance.SickExposureThreshold;
         }
 
         static float Clamp100(float value) => Mathf.Clamp(value, 0f, 100f);

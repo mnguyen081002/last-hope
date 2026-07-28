@@ -34,7 +34,7 @@ namespace LastHope.Data
         /// <summary>Tiền tố file chưa có kiểu tương ứng (milestone sau) — bỏ qua, không báo lỗi.</summary>
         static readonly string[] DeferredPrefixes =
         {
-            "modules_", "shelterzones_", "events_", "npcs_", "phases_",
+            "events_", "npcs_", "phases_",
         };
 
         public static DefinitionRegistry LoadFromDirectory(string directory)
@@ -98,6 +98,14 @@ namespace LastHope.Data
                 else if (file.StartsWith("searchpoints_", StringComparison.Ordinal))
                 {
                     AddAll(DefinitionJson.Deserialize<List<SearchPointDefinition>>(json), file, registry, errors);
+                }
+                else if (file.StartsWith("modules_", StringComparison.Ordinal))
+                {
+                    AddAll(DefinitionJson.Deserialize<List<ModuleDefinition>>(json), file, registry, errors);
+                }
+                else if (file.StartsWith("shelterzones_", StringComparison.Ordinal))
+                {
+                    AddAll(DefinitionJson.Deserialize<List<ShelterZoneDefinition>>(json), file, registry, errors);
                 }
                 else if (!DeferredPrefixes.Any(p => file.StartsWith(p, StringComparison.Ordinal)))
                 {
@@ -179,6 +187,21 @@ namespace LastHope.Data
                 && !registry.Locations.ContainsKey(balance.StartLocationId))
             {
                 errors.Add($"balance.new_game: start_location_id không tồn tại '{balance.StartLocationId}'.");
+            }
+
+            foreach (var module in registry.Modules.Values)
+            {
+                foreach (string zoneId in module.AllowedZoneIds)
+                {
+                    if (!registry.ShelterZones.ContainsKey(zoneId))
+                        errors.Add($"module '{module.Id}': shelter zone không tồn tại '{zoneId}'.");
+                }
+
+                foreach (string itemId in module.Materials.Keys)
+                {
+                    if (!registry.Items.ContainsKey(itemId))
+                        errors.Add($"module '{module.Id}': material item không tồn tại '{itemId}'.");
+                }
             }
         }
     }
