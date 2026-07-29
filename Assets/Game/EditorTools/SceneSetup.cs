@@ -201,6 +201,10 @@ namespace LastHope.EditorTools
 
             new GameObject("FloorRenderController").AddComponent<FloorRenderController>();
 
+            var placedModuleRenderer = new GameObject("PlacedModuleRenderer").AddComponent<PlacedModuleRenderer>();
+            SetSerialized(placedModuleRenderer, so =>
+                so.FindProperty("propSprite").objectReferenceValue = LoadPlaceholder("placeholder-prop.png"));
+
             SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
         }
 

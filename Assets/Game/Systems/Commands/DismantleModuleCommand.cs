@@ -1,4 +1,5 @@
 using LastHope.Core.Commands;
+using LastHope.Core.Events;
 using LastHope.Systems.Shelter;
 
 namespace LastHope.Systems.Commands
@@ -20,6 +21,10 @@ namespace LastHope.Systems.Commands
             return CommandResult.Ok();
         }
 
-        public void Execute(GameContext context) => BuildSystem.DismantleModule(context.World, PlacementId);
+        public void Execute(GameContext context)
+        {
+            BuildSystem.DismantleModule(context.World, PlacementId);
+            context.Events?.Publish(new ModuleDismantled(PlacementId));
+        }
     }
 }

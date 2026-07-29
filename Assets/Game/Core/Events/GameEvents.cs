@@ -126,6 +126,15 @@ namespace LastHope.Core.Events
         }
     }
 
+    /// <summary>Bắn khi Tháo Module (DismantleModuleCommand) — Presentation (PlacedModuleRenderer)
+    /// nghe để xoá sprite trong thế giới tương ứng.</summary>
+    public readonly struct ModuleDismantled
+    {
+        public readonly string PlacementId;
+
+        public ModuleDismantled(string placementId) => PlacementId = placementId;
+    }
+
     /// <summary>Publish trực tiếp từ Presentation (ShelterConsoleView) — chỉ một Shelter trong MVP, không cần payload.</summary>
     public readonly struct ShelterConsoleOpened
     {
