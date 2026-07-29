@@ -136,6 +136,7 @@ namespace LastHope.EditorTools
             {
                 so.FindProperty("controls").objectReferenceValue = controls;
                 so.FindProperty("playerFloorState").objectReferenceValue = player.GetComponent<PlayerFloorState>();
+                so.FindProperty("worldCamera").objectReferenceValue = cameraGo.GetComponent<Camera>();
             });
 
             SaveScene(scene, $"{ScenesRoot}/10_GamePersistent.unity");

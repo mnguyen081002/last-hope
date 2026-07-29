@@ -42,13 +42,21 @@ namespace LastHope.Systems.Shelter
                 if (dx * dx + dy * dy < minDistance * minDistance) return BuildRejectReason.Overlapping;
             }
 
+            if (!HasEnoughMaterials(world, module)) return BuildRejectReason.NotEnoughMaterials;
+
+            return BuildRejectReason.None;
+        }
+
+        /// <summary>Không phụ thuộc vị trí đặt — dùng để chặn sớm ở UI (nút "Chọn vị trí")
+        /// trước khi vào Placement Mode, thay vì để người chơi rê ghost rồi mới biết.</summary>
+        public static bool HasEnoughMaterials(WorldState world, LastHope.Data.Definitions.ModuleDefinition module)
+        {
             var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
             foreach (var pair in module.Materials)
             {
-                if (InventoryOps.CountOf(storage, pair.Key) < pair.Value) return BuildRejectReason.NotEnoughMaterials;
+                if (InventoryOps.CountOf(storage, pair.Key) < pair.Value) return false;
             }
-
-            return BuildRejectReason.None;
+            return true;
         }
 
         /// <summary>Caller phải gọi <see cref="CanPlaceAt"/> == None trước — không tự validate lại.</summary>

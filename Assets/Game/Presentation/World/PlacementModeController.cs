@@ -19,6 +19,7 @@ namespace LastHope.Presentation.World
     {
         [SerializeField] InputActionAsset controls;
         [SerializeField] PlayerFloorState playerFloorState;
+        [SerializeField] Camera worldCamera;
 
         InputAction closeAction;
         bool active;
@@ -28,6 +29,8 @@ namespace LastHope.Presentation.World
         GameObject ghost;
         SpriteRenderer ghostRenderer;
         GameObject zoneBoundsBox;
+        BuildRejectReason lastReason;
+        GUIStyle hintStyle;
 
         void Awake()
         {
@@ -83,18 +86,18 @@ namespace LastHope.Presentation.World
                 return;
             }
 
-            var camera = Camera.main;
             var mouse = Mouse.current;
-            if (camera == null || mouse == null) return;
+            if (worldCamera == null || mouse == null) return;
 
             Vector3 screenPos = mouse.position.ReadValue();
-            screenPos.z = -camera.transform.position.z;
-            Vector3 world = camera.ScreenToWorldPoint(screenPos);
+            screenPos.z = -worldCamera.transform.position.z;
+            Vector3 world = worldCamera.ScreenToWorldPoint(screenPos);
             ghost.transform.position = new Vector3(world.x, world.y, 0f);
 
             var services = GameBootstrapper.Services;
             var reason = BuildSystem.CanPlaceAt(
                 services.World, services.Definitions, zoneId, world.x, world.y, moduleId);
+            lastReason = reason;
             ghostRenderer.color = reason == BuildRejectReason.None
                 ? new Color(0.3f, 0.9f, 0.3f, 0.6f)
                 : new Color(0.9f, 0.3f, 0.3f, 0.6f);
@@ -112,6 +115,36 @@ namespace LastHope.Presentation.World
             if (ghost != null) Destroy(ghost);
             if (zoneBoundsBox != null) Destroy(zoneBoundsBox);
         }
+
+        void OnGUI()
+        {
+            if (!active) return;
+
+            hintStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 14, alignment = TextAnchor.MiddleCenter };
+
+            string status = lastReason == BuildRejectReason.None
+                ? "Click trái để đặt"
+                : RejectReasonText(lastReason);
+
+            const float width = 360f;
+            const float height = 50f;
+            float x = (Screen.width - width) / 2f;
+            float y = Screen.height - 90f;
+
+            GUI.Box(new Rect(x, y, width, height), GUIContent.none);
+            GUI.Label(new Rect(x, y + 4f, width, 20f), $"Đặt {moduleId}", hintStyle);
+            GUI.Label(new Rect(x, y + 24f, width, 20f), $"{status} · ESC: Huỷ", hintStyle);
+        }
+
+        static string RejectReasonText(BuildRejectReason reason) => reason switch
+        {
+            BuildRejectReason.OutOfBounds => "Ngoài vùng Zone cho phép",
+            BuildRejectReason.Overlapping => "Chồng lên Module khác",
+            BuildRejectReason.NotEnoughMaterials => "Không đủ vật liệu",
+            BuildRejectReason.ConstructionInProgress => "Đang có công trình khác thi công",
+            BuildRejectReason.WrongZone => "Module không đặt được ở Zone này",
+            _ => "Không thể đặt ở đây",
+        };
 
         /// <summary>Sprite trắng 1x1 dựng bằng Texture2D.whiteTexture — an toàn ở runtime build
         /// (khác AssetDatabase/Resources.Load, không tồn tại ngoài Editor hoặc cần đặt sẵn

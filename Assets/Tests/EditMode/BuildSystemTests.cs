@@ -64,6 +64,16 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
+        public void HasEnoughMaterials_ChecksIndependentlyOfPosition()
+        {
+            var module = definitions.GetModule(ShelterModuleIds.Pump);
+            Assert.IsFalse(BuildSystem.HasEnoughMaterials(world, module));
+
+            GiveMaterials(ShelterModuleIds.Pump);
+            Assert.IsTrue(BuildSystem.HasEnoughMaterials(world, module));
+        }
+
+        [Test]
         public void StartConstruction_DeductsMaterials_SetsConstructionState()
         {
             GiveMaterials(ShelterModuleIds.Pump);

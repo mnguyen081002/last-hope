@@ -176,9 +176,11 @@ namespace LastHope.UI.Panels
             foreach (var module in buildable)
             {
                 string cost = string.Join(", ", ListMaterials(module));
+                bool hasMaterials = BuildSystem.HasEnoughMaterials(services.World, module);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"  {module.Id} ({cost}, {module.BuildMinutes} phút)", GUILayout.Width(360f));
-                GUI.enabled = !constructionBusy;
+                GUILayout.Label($"  {module.Id} ({cost}, {module.BuildMinutes} phút)"
+                    + (hasMaterials ? "" : " — thiếu vật liệu"), GUILayout.Width(360f));
+                GUI.enabled = !constructionBusy && hasMaterials;
                 if (GUILayout.Button("Chọn vị trí", GUILayout.Width(100f)))
                 {
                     services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id));

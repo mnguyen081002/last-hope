@@ -31,6 +31,11 @@ namespace LastHope.Presentation.Boot
                 var scene = SceneManager.GetSceneByName(persistentScene);
                 if (scene.IsValid()) SceneManager.SetActiveScene(scene);
                 GameLog.Info(LogCategory.Boot, $"{persistentScene} sẵn sàng.");
+
+                // Unload scene Boot — nếu không, BootCamera (tag MainCamera) tồn tại song song
+                // với Main Camera thật trong Persistent, khiến Camera.main ở nơi khác có thể
+                // trả về nhầm camera đứng yên ở gốc toạ độ.
+                SceneManager.UnloadSceneAsync(gameObject.scene);
             };
         }
     }
