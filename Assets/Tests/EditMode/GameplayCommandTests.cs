@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using LastHope.Core.Commands;
 using LastHope.Core.Events;
 using LastHope.Core.Random;
@@ -355,7 +356,7 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
-        public void DismantleModule_Valid_RemovesModule()
+        public void DismantleModule_Valid_RemovesModule_AddsPackedItemToStorage()
         {
             world.Shelter.PlacedModules["placed_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, ZoneId = UtilityZone };
@@ -364,6 +365,35 @@ namespace LastHope.Tests.EditMode
 
             Assert.IsTrue(result.Success);
             Assert.IsFalse(world.Shelter.PlacedModules.ContainsKey("placed_1"));
+            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
+            Assert.AreEqual(1, InventoryOps.CountOf(storage, "item_packed_pump"));
+        }
+
+        // ---------- RedeployModuleCommand ----------
+
+        [Test]
+        public void RedeployModule_NoPackedItem_IsRejected()
+        {
+            var result = processor.Submit(
+                new RedeployModuleCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(CommandErrorCode.ItemNotFound, result.Error);
+        }
+
+        [Test]
+        public void RedeployModule_Valid_CreatesModuleInstantly_NoConstruction()
+        {
+            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
+            InventoryOps.AddItem(storage, definitions, "item_packed_pump", 1);
+
+            var result = processor.Submit(
+                new RedeployModuleCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
+
+            Assert.IsTrue(result.Success);
+            Assert.IsNull(world.Shelter.Construction);
+            Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_packed_pump"));
+            Assert.IsTrue(world.Shelter.PlacedModules.Values.Any(m => m.ModuleId == ShelterModuleIds.Pump));
         }
 
         // ---------- SetPowerPriorityCommand ----------

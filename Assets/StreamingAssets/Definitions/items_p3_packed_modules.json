@@ -1,0 +1,47 @@
+[
+  {
+    "id": "item_packed_barrier",
+    "category": "module",
+    "base_weight_kg": 5.0,
+    "base_volume_liters": 6.0,
+    "max_stack_size": 1,
+    "two_hand_carry": true,
+    "tags": ["packed_module"]
+  },
+  {
+    "id": "item_packed_pump",
+    "category": "module",
+    "base_weight_kg": 6.0,
+    "base_volume_liters": 5.0,
+    "max_stack_size": 1,
+    "two_hand_carry": true,
+    "tags": ["packed_module"]
+  },
+  {
+    "id": "item_packed_elevated_storage",
+    "category": "module",
+    "base_weight_kg": 4.0,
+    "base_volume_liters": 6.0,
+    "max_stack_size": 1,
+    "two_hand_carry": true,
+    "tags": ["packed_module"]
+  },
+  {
+    "id": "item_packed_purifier",
+    "category": "module",
+    "base_weight_kg": 7.0,
+    "base_volume_liters": 6.0,
+    "max_stack_size": 1,
+    "two_hand_carry": true,
+    "tags": ["packed_module"]
+  },
+  {
+    "id": "item_packed_battery_bank",
+    "category": "module",
+    "base_weight_kg": 8.0,
+    "base_volume_liters": 5.0,
+    "max_stack_size": 1,
+    "two_hand_carry": true,
+    "tags": ["packed_module"]
+  }
+]

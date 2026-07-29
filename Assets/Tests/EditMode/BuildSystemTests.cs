@@ -165,17 +165,46 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
-        public void DismantleModule_RemovesFromPlacedModules()
+        public void DismantleModule_RemovesFromPlacedModules_AddsPackedItemToStorage()
         {
             world.Shelter.PlacedModules["placed_1"] = new BuiltModuleState
             {
                 ModuleId = ShelterModuleIds.Pump, ZoneId = UtilityZone, PositionX = X, PositionY = Y,
             };
 
-            bool dismantled = BuildSystem.DismantleModule(world, "placed_1");
+            bool dismantled = BuildSystem.DismantleModule(world, definitions, "placed_1");
 
             Assert.IsTrue(dismantled);
             Assert.IsFalse(world.Shelter.PlacedModules.ContainsKey("placed_1"));
+            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
+            Assert.AreEqual(1, InventoryOps.CountOf(storage, "item_packed_pump"));
+        }
+
+        [Test]
+        public void CanRedeployAt_NoPackedModule_IsRejected()
+        {
+            var reason = BuildSystem.CanRedeployAt(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
+            Assert.AreEqual(BuildRejectReason.NotEnoughPackedModules, reason);
+        }
+
+        [Test]
+        public void RedeployModule_Valid_CreatesInstantlyNoConstruction()
+        {
+            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
+            InventoryOps.AddItem(storage, definitions, "item_packed_pump", 1);
+
+            var reason = BuildSystem.CanRedeployAt(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
+            Assert.AreEqual(BuildRejectReason.None, reason);
+
+            string placementId = BuildSystem.RedeployModule(world, definitions, UtilityZone, X, Y, ShelterModuleIds.Pump);
+
+            Assert.IsNull(world.Shelter.Construction, "Redeploy không qua Construction/BuildMinutes.");
+            Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_packed_pump"));
+            var placed = world.Shelter.PlacedModules[placementId];
+            Assert.AreEqual(ShelterModuleIds.Pump, placed.ModuleId);
+            Assert.AreEqual(UtilityZone, placed.ZoneId);
+            Assert.AreEqual(X, placed.PositionX, 0.001f);
+            Assert.AreEqual(Y, placed.PositionY, 0.001f);
         }
     }
 }

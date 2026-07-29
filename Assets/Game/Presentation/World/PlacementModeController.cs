@@ -12,8 +12,10 @@ namespace LastHope.Presentation.World
     /// <summary>
     /// Free Placement (BL-P3-03) — tương tác chuột đầu tiên trong game (mọi thứ khác dùng
     /// phím + OnGUI). Bật khi nghe <see cref="BeginPlacementMode"/> từ ShelterPanel: ghost
-    /// theo con trỏ (xanh/đỏ theo <see cref="BuildSystem.CanPlaceAt"/>), khung mờ biên Zone,
-    /// click trái xác nhận, ESC (action <c>Close</c>) huỷ.
+    /// theo con trỏ (xanh/đỏ theo <see cref="BuildSystem.CanPlaceAt"/>/<see cref="BuildSystem.CanRedeployAt"/>
+    /// tuỳ <see cref="BeginPlacementMode.Redeploy"/>), khung mờ biên Zone, click trái xác nhận
+    /// (<c>StartConstructionCommand</c> xây mới hoặc <c>RedeployModuleCommand</c> đặt lại Module
+    /// đã gói — tức thì, không chờ), ESC (action <c>Close</c>) huỷ.
     /// </summary>
     public class PlacementModeController : MonoBehaviour
     {
@@ -23,8 +25,10 @@ namespace LastHope.Presentation.World
 
         InputAction closeAction;
         bool active;
+        public bool Active => active;
         string zoneId;
         string moduleId;
+        bool redeploy;
 
         GameObject ghost;
         SpriteRenderer ghostRenderer;
@@ -62,6 +66,7 @@ namespace LastHope.Presentation.World
         {
             zoneId = e.ZoneId;
             moduleId = e.ModuleId;
+            redeploy = e.Redeploy;
             active = true;
 
             var definitions = GameBootstrapper.Services.Definitions;
@@ -95,8 +100,9 @@ namespace LastHope.Presentation.World
             ghost.transform.position = new Vector3(world.x, world.y, 0f);
 
             var services = GameBootstrapper.Services;
-            var reason = BuildSystem.CanPlaceAt(
-                services.World, services.Definitions, zoneId, world.x, world.y, moduleId);
+            var reason = redeploy
+                ? BuildSystem.CanRedeployAt(services.World, services.Definitions, zoneId, world.x, world.y, moduleId)
+                : BuildSystem.CanPlaceAt(services.World, services.Definitions, zoneId, world.x, world.y, moduleId);
             lastReason = reason;
             ghostRenderer.color = reason == BuildRejectReason.None
                 ? new Color(0.3f, 0.9f, 0.3f, 0.6f)
@@ -104,7 +110,10 @@ namespace LastHope.Presentation.World
 
             if (reason == BuildRejectReason.None && mouse.leftButton.wasPressedThisFrame)
             {
-                services.Commands.Submit(new StartConstructionCommand(zoneId, world.x, world.y, moduleId));
+                if (redeploy)
+                    services.Commands.Submit(new RedeployModuleCommand(zoneId, world.x, world.y, moduleId));
+                else
+                    services.Commands.Submit(new StartConstructionCommand(zoneId, world.x, world.y, moduleId));
                 EndPlacement();
             }
         }
@@ -131,8 +140,9 @@ namespace LastHope.Presentation.World
             float x = (Screen.width - width) / 2f;
             float y = Screen.height - 90f;
 
+            string title = redeploy ? $"Đặt lại {moduleId}" : $"Đặt {moduleId}";
             GUI.Box(new Rect(x, y, width, height), GUIContent.none);
-            GUI.Label(new Rect(x, y + 4f, width, 20f), $"Đặt {moduleId}", hintStyle);
+            GUI.Label(new Rect(x, y + 4f, width, 20f), title, hintStyle);
             GUI.Label(new Rect(x, y + 24f, width, 20f), $"{status} · ESC: Huỷ", hintStyle);
         }
 
@@ -141,6 +151,7 @@ namespace LastHope.Presentation.World
             BuildRejectReason.OutOfBounds => "Ngoài vùng Zone cho phép",
             BuildRejectReason.Overlapping => "Chồng lên Module khác",
             BuildRejectReason.NotEnoughMaterials => "Không đủ vật liệu",
+            BuildRejectReason.NotEnoughPackedModules => "Không có Module đã gói sẵn trong kho",
             BuildRejectReason.ConstructionInProgress => "Đang có công trình khác thi công",
             BuildRejectReason.WrongZone => "Module không đặt được ở Zone này",
             _ => "Không thể đặt ở đây",

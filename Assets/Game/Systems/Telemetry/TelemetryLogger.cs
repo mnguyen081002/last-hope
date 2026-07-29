@@ -41,6 +41,7 @@ namespace LastHope.Systems.Telemetry
             services.Events.Subscribe<SearchPointOpened>(OnSearchPointOpened);
             services.Events.Subscribe<ConstructionStarted>(OnConstructionStarted);
             services.Events.Subscribe<ConstructionCompleted>(OnConstructionCompleted);
+            services.Events.Subscribe<ModuleRedeployed>(OnModuleRedeployed);
             services.Events.Subscribe<PowerPriorityChanged>(OnPowerPriorityChanged);
             services.Events.Subscribe<ShelterEventTriggered>(OnShelterEventTriggered);
         }
@@ -71,6 +72,10 @@ namespace LastHope.Systems.Telemetry
 
         void OnConstructionCompleted(ConstructionCompleted e) =>
             Write("construction_completed", new { placement_id = e.PlacementId, module_id = e.ModuleId });
+
+        /// <summary>Đặt lại Module đã gói — Build Choice khác (tức thì, không qua Task chờ).</summary>
+        void OnModuleRedeployed(ModuleRedeployed e) =>
+            Write("module_redeployed", new { placement_id = e.PlacementId, module_id = e.ModuleId });
 
         /// <summary>Power Allocation choice (BL-P3-18).</summary>
         void OnPowerPriorityChanged(PowerPriorityChanged e) =>

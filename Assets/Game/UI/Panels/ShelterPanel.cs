@@ -172,21 +172,35 @@ namespace LastHope.UI.Panels
                 DrawPlacedModule(services, pair.Key, pair.Value);
             }
 
+            var storage = services.World.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
             bool constructionBusy = shelter.Construction != null;
             foreach (var module in buildable)
             {
                 string cost = string.Join(", ", ListMaterials(module));
                 bool hasMaterials = BuildSystem.HasEnoughMaterials(services.World, module);
+                int packedCount = string.IsNullOrEmpty(module.PackedItemId)
+                    ? 0
+                    : InventoryOps.CountOf(storage, module.PackedItemId);
+
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"  {module.Id} ({cost}, {module.BuildMinutes} phút)"
                     + (hasMaterials ? "" : " — thiếu vật liệu"), GUILayout.Width(360f));
                 GUI.enabled = !constructionBusy && hasMaterials;
                 if (GUILayout.Button("Chọn vị trí", GUILayout.Width(100f)))
                 {
-                    services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id));
+                    services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id, redeploy: false));
                     visible = false;
                 }
                 GUI.enabled = true;
+
+                // Không gate theo constructionBusy — Redeploy không đụng ConstructionState
+                // (CanRedeployAt không check ConstructionInProgress), khác "Chọn vị trí" ở trên.
+                if (packedCount > 0 && GUILayout.Button($"Đặt lại (×{packedCount})", GUILayout.Width(110f)))
+                {
+                    services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id, redeploy: true));
+                    visible = false;
+                }
+
                 GUILayout.EndHorizontal();
             }
         }
@@ -204,10 +218,6 @@ namespace LastHope.UI.Panels
             {
                 var next = (PowerPriority)(((int)built.Priority + 1) % 4);
                 services.Commands.Submit(new SetPowerPriorityCommand(placementId, next));
-            }
-            if (GUILayout.Button("Tháo", GUILayout.Width(60f)))
-            {
-                services.Commands.Submit(new DismantleModuleCommand(placementId));
             }
             GUILayout.EndHorizontal();
         }

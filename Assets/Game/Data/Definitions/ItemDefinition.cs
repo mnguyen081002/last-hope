@@ -9,6 +9,7 @@ namespace LastHope.Data.Definitions
         Food,
         Equipment,
         Medical,
+        Module,
     }
 
     public enum EquipSlot

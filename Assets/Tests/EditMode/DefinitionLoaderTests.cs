@@ -37,7 +37,7 @@ namespace LastHope.Tests.EditMode
             var registry = DefinitionLoader.LoadFromDirectory(RealDefinitionsPath);
 
             Assert.AreEqual("0.14.0", registry.DefinitionVersion);
-            Assert.AreEqual(16, registry.Items.Count);
+            Assert.AreEqual(21, registry.Items.Count); // +5 item_packed_* (BL-P3-03, 2026-07-29).
             Assert.AreEqual(4, registry.Locations.Count);
             Assert.AreEqual(3, registry.Routes.Count);
             Assert.AreEqual(10, registry.SearchPoints.Count);

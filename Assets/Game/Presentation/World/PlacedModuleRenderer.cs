@@ -33,6 +33,7 @@ namespace LastHope.Presentation.World
             {
                 GameBootstrapper.Services.Events.Unsubscribe<ConstructionCompleted>(OnChanged);
                 GameBootstrapper.Services.Events.Unsubscribe<ModuleDismantled>(OnChanged);
+                GameBootstrapper.Services.Events.Unsubscribe<ModuleRedeployed>(OnChanged);
             }
         }
 
@@ -41,12 +42,15 @@ namespace LastHope.Presentation.World
             GameBootstrapper.Ready -= Subscribe;
             GameBootstrapper.Services.Events.Subscribe<ConstructionCompleted>(OnChanged);
             GameBootstrapper.Services.Events.Subscribe<ModuleDismantled>(OnChanged);
+            GameBootstrapper.Services.Events.Subscribe<ModuleRedeployed>(OnChanged);
             SyncAll();
         }
 
         void OnChanged(ConstructionCompleted e) => SyncAll();
 
         void OnChanged(ModuleDismantled e) => SyncAll();
+
+        void OnChanged(ModuleRedeployed e) => SyncAll();
 
         void SyncAll()
         {

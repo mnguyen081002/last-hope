@@ -16,5 +16,9 @@ namespace LastHope.Data.Definitions
 
         /// <summary>Bán kính va chạm dùng để chặn đặt chồng lên Module khác — chưa có kích thước sprite thật.</summary>
         public float FootprintRadius = 0.5f;
+
+        /// <summary>ItemId của bản "đã gói gọn" — Tháo Module tạo ra 1 cái, đặt lại tức thì
+        /// không tốn Materials/BuildMinutes (xem BuildSystem.RedeployModule).</summary>
+        public string PackedItemId;
     }
 }

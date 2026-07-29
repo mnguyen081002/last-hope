@@ -205,6 +205,8 @@ namespace LastHope.EditorTools
             SetSerialized(placedModuleRenderer, so =>
                 so.FindProperty("propSprite").objectReferenceValue = LoadPlaceholder("placeholder-prop.png"));
 
+            new GameObject("PlacedModuleHoverMenu").AddComponent<PlacedModuleHoverMenu>();
+
             SaveScene(scene, $"{ScenesRoot}/Shelters/20_MainShelter.unity");
         }
 

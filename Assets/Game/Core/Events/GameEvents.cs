@@ -135,6 +135,20 @@ namespace LastHope.Core.Events
         public ModuleDismantled(string placementId) => PlacementId = placementId;
     }
 
+    /// <summary>Bắn khi đặt lại Module đã gói (RedeployModuleCommand) — tức thì, không qua
+    /// Construction. Presentation (PlacedModuleRenderer) nghe để vẽ sprite ngay.</summary>
+    public readonly struct ModuleRedeployed
+    {
+        public readonly string PlacementId;
+        public readonly string ModuleId;
+
+        public ModuleRedeployed(string placementId, string moduleId)
+        {
+            PlacementId = placementId;
+            ModuleId = moduleId;
+        }
+    }
+
     /// <summary>Publish trực tiếp từ Presentation (ShelterConsoleView) — chỉ một Shelter trong MVP, không cần payload.</summary>
     public readonly struct ShelterConsoleOpened
     {
@@ -155,10 +169,15 @@ namespace LastHope.Core.Events
         public readonly string ZoneId;
         public readonly string ModuleId;
 
-        public BeginPlacementMode(string zoneId, string moduleId)
+        /// <summary>True = đặt lại Module đã gói (tức thì, <see cref="RedeployModuleCommand"/>);
+        /// false = xây mới bằng Materials (<see cref="StartConstructionCommand"/>).</summary>
+        public readonly bool Redeploy;
+
+        public BeginPlacementMode(string zoneId, string moduleId, bool redeploy)
         {
             ZoneId = zoneId;
             ModuleId = moduleId;
+            Redeploy = redeploy;
         }
     }
 }
