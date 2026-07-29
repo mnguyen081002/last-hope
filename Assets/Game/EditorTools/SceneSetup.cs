@@ -396,10 +396,10 @@ namespace LastHope.EditorTools
         /// <summary>Vùng đi-qua-là-đổi-tầng (không phải prop chặn đường — Collider2D isTrigger).</summary>
         /// <summary>
         /// Cầu thang leo dần — root riêng ở gốc scene (không phải con của GroundFloor/UpperFloor,
-        /// vì Collider2D của 2 root đó bị tắt khi tầng tương ứng Dimmed/Hidden — cầu thang phải
-        /// luôn bắt được player từ cả hai phía). Sprite phủ đúng kích thước vùng trigger (không
-        /// phải icon nhỏ như prop thường) + màu hổ phách đậm riêng biệt để nhận ra ngay đây là
-        /// khu vực cầu thang.
+        /// vì Collider2D của 2 root đó bị tắt khi tầng tương ứng Dimmed/Hidden). Dùng khoảng
+        /// cách thuần trong <c>StaircaseZone.Update()</c>, không dùng Collider2D/trigger — xem
+        /// ghi chú trong StaircaseZone.cs. Sprite phủ đúng kích thước vùng (không phải icon nhỏ
+        /// như prop thường) + màu hổ phách đậm riêng biệt để nhận ra ngay đây là khu vực cầu thang.
         /// </summary>
         static void BuildStaircaseZone(
             Vector2 position, Vector2 size, int lowerFloor, int upperFloor, float bottomY, float topY)
@@ -416,10 +416,6 @@ namespace LastHope.EditorTools
             renderer.color = new Color(0.85f, 0.55f, 0.15f, 0.85f);
             renderer.sortingOrder = GroundOrder + 1; // trên Ground nền nhưng vẫn dưới player/prop đứng.
 
-            var collider = go.AddComponent<BoxCollider2D>();
-            collider.isTrigger = true;
-            collider.size = size;
-
             var zone = go.AddComponent<StaircaseZone>();
             SetSerialized(zone, so =>
             {
@@ -427,6 +423,7 @@ namespace LastHope.EditorTools
                 so.FindProperty("upperFloor").intValue = upperFloor;
                 so.FindProperty("bottomY").floatValue = bottomY;
                 so.FindProperty("topY").floatValue = topY;
+                so.FindProperty("halfWidth").floatValue = size.x / 2f;
             });
         }
 

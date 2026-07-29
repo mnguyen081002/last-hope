@@ -129,31 +129,37 @@ thang duy nhất, không phải một điểm bấm phím hay một đường k�
 Project Zomboid (game tham chiếu chính của doc này): tiến độ leo nhích theo đúng vị trí Y thật
 của player trong vùng (đi lùi thì tiến độ tụt lại), chỉ đổi tầng thật (đổi Collider2D/tương
 tác) khi tiến độ chạm đỉnh. **Không** dùng `IInteractable`/`InteractionDetector` cho cầu
-thang — đây là ngoại lệ có chủ đích duy nhất dùng va chạm (`Collider2D.isTrigger` +
-`OnTriggerEnter2D`/`OnTriggerStay2D`/`OnTriggerExit2D`) thay vì phím tương tác, vì đổi tầng là
-di chuyển thuần tuý (không mở UI, không tốn thời gian game, không có gì cần xác nhận) — khác
-về bản chất với Search/Storage/Travel/ShelterConsole (đều có hệ quả thật, xứng đáng cần bấm
-phím để tránh nhầm).
+thang — đây là ngoại lệ có chủ đích duy nhất không dùng phím tương tác, vì đổi tầng là di
+chuyển thuần tuý (không mở UI, không tốn thời gian game, không có gì cần xác nhận) — khác về
+bản chất với Search/Storage/Travel/ShelterConsole (đều có hệ quả thật, xứng đáng cần bấm phím
+để tránh nhầm).
+
+**Không dùng `Collider2D`/`OnTrigger*2D` cho logic phát hiện player trong vùng** — dù đây là
+lựa chọn "chuẩn Unity" trực giác nhất, thực tế gặp lỗi khó chẩn đoán (không lên được cầu
+thang, không rõ Enter/Stay có bắn đủ hay không do phụ thuộc lịch physics step). Dùng khoảng
+cách thuần (so vị trí X/Y player với vùng) trong `MonoBehaviour.Update()` — chạy chắc chắn
+mỗi frame, không phụ thuộc physics engine, dễ suy luận và debug hơn cho một logic thuần vị trí
+không cần lực/va chạm thật.
 
 Cầu thang **MUST** có:
 
 ```text
-1 vùng trigger duy nhất (Collider2D isTrigger) trải dài từ bottomY (tầng dưới) tới topY (tầng
-  trên) — KHÔNG đặt trong GameObject root của Ground/Upper Floor (Collider2D của 2 root đó bị
-  tắt khi tầng tương ứng Dimmed/Hidden — cầu thang phải luôn bắt được player từ cả hai phía)
-Component (StaircaseZone) tính tiến độ = InverseLerp(bottomY, topY, vị trí Y player) mỗi
-  OnTriggerStay2D, publish qua PlayerFloorState.SetClimbProgress — không đổi tầng thật (không
-  đổi Collider2D) cho tới khi tiến độ chạm 1; rời vùng giữa chừng (OnTriggerExit2D trước khi
-  chạm đỉnh) phải huỷ, giữ nguyên tầng cũ
+1 vùng hình chữ nhật duy nhất (world position, KHÔNG cần Collider2D) trải dài từ bottomY (tầng
+  dưới) tới topY (tầng trên) — KHÔNG đặt trong GameObject root của Ground/Upper Floor (nếu có
+  Collider2D thì sẽ bị tắt khi tầng tương ứng Dimmed/Hidden — cầu thang phải luôn phát hiện
+  được player từ cả hai phía, không phụ thuộc tầng nào)
+Component (StaircaseZone) mỗi Update() so sánh vị trí X/Y player với vùng — tính tiến độ =
+  InverseLerp(bottomY, topY, vị trí Y player), publish qua PlayerFloorState.SetClimbProgress —
+  không đổi tầng thật cho tới khi tiến độ chạm 1; rời vùng giữa chừng phải huỷ, giữ nguyên tầng cũ
 ```
 
 Cầu thang chỉ hợp lệ khi:
 
-- Vùng trigger nằm trong vùng Ground của cả hai tầng liên quan (bottomY/topY hợp lý).
+- Vùng nằm trong vùng Ground của cả hai tầng liên quan (bottomY/topY hợp lý).
 - Không dẫn ra ngoài level bounds.
 - Đi ngược giữa chừng (chưa chạm đỉnh) phải huỷ leo, không kẹt nửa vời.
-- Có visual rõ ràng đây là khu vực cầu thang, phủ đúng kích thước cả vùng trigger (không phải
-  icon nhỏ như prop thường) — không cần prompt tương tác vì không bấm phím.
+- Có visual rõ ràng đây là khu vực cầu thang, phủ đúng kích thước cả vùng (không phải icon
+  nhỏ như prop thường) — không cần prompt tương tác vì không bấm phím.
 
 ---
 
