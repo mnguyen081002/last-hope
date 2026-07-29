@@ -148,16 +148,21 @@ Cầu thang **MUST** có:
   dưới) tới topY (tầng trên) — KHÔNG đặt trong GameObject root của Ground/Upper Floor (nếu có
   Collider2D thì sẽ bị tắt khi tầng tương ứng Dimmed/Hidden — cầu thang phải luôn phát hiện
   được player từ cả hai phía, không phụ thuộc tầng nào)
-Component (StaircaseZone) mỗi Update() so sánh vị trí X/Y player với vùng — tính tiến độ =
-  InverseLerp(bottomY, topY, vị trí Y player), publish qua PlayerFloorState.SetClimbProgress —
-  không đổi tầng thật cho tới khi tiến độ chạm 1; rời vùng giữa chừng phải huỷ, giữ nguyên tầng cũ
+Component (StaircaseZone) mỗi Update() so sánh vị trí X/Y player với vùng — tính tiến độ
+  THUẦN THEO VỊ TRÍ mỗi frame (InverseLerp(bottomY, topY, vị trí Y player)), publish qua
+  PlayerFloorState.UpdateBlend(lowerFloor, upperFloor, t). **Không** suy hoặc cache "hướng
+  đang leo" từ trạng thái cũ (CurrentFloor lúc bắt đầu) — làm vậy từng gây lệch khi đứng nán ở
+  biên vùng hoặc vào từ hai đầu khác nhau (không đối xứng, xem
+  docs/plans/2026-07-29-staircase-blend-fix.md). Rời vùng: PlayerFloorState.EndBlend() chốt
+  CurrentFloor theo t lúc rời (>= 0.5 thì chốt tầng trên, ngược lại tầng dưới)
 ```
 
 Cầu thang chỉ hợp lệ khi:
 
 - Vùng nằm trong vùng Ground của cả hai tầng liên quan (bottomY/topY hợp lý).
 - Không dẫn ra ngoài level bounds.
-- Đi ngược giữa chừng (chưa chạm đỉnh) phải huỷ leo, không kẹt nửa vời.
+- Tiến độ tính thuần theo vị trí mỗi frame — không lưu/suy "hướng" từ lịch sử, để vào từ hai
+  đầu vùng luôn cho kết quả đối xứng, đúng theo vị trí hình học thật.
 - Có visual rõ ràng đây là khu vực cầu thang, phủ đúng kích thước cả vùng (không phải icon
   nhỏ như prop thường) — không cần prompt tương tác vì không bấm phím.
 
@@ -192,11 +197,12 @@ diff > 0 hoặc diff < -1    : Hidden   — SetActive(false) hoàn toàn (không
                                         không thấy tầng xa hơn 1 tầng dưới)
 ```
 
-**Trong lúc đang leo cầu thang** (`PlayerFloorState.TransitioningToFloor` khác null): hai tầng
-liên quan (tầng đang rời và tầng đang tới) KHÔNG áp công thức nhị phân trên — alpha nội suy
-liên tục theo `ClimbProgress` (0→1): tầng đang rời mờ dần từ 1 xuống Dimmed, tầng đang tới rõ
-dần từ Dimmed lên 1. Va chạm (Collider2D) đổi tại đúng mốc `ClimbProgress == 0.5`. Đây là cách
-tạo cảm giác "đang leo dần" thay vì đổi tầng tức thời ở một điểm.
+**Trong lúc đang đứng trong vùng cầu thang** (`PlayerFloorState.IsBlending` true): hai tầng
+liên quan (`BlendLowerFloor`/`BlendUpperFloor`) KHÔNG áp công thức nhị phân trên — alpha nội
+suy liên tục theo `BlendT` (0→1, tính lại mỗi frame thuần theo vị trí, không phải giá trị suy
+một lần rồi cache): tầng dưới mờ dần từ 1 xuống Dimmed khi `BlendT` tăng, tầng trên rõ dần từ
+Dimmed lên 1. Va chạm (Collider2D) đổi tại đúng mốc `BlendT == 0.5`. Đây là cách tạo cảm giác
+"đang leo dần" thay vì đổi tầng tức thời ở một điểm.
 
 Đây **là** dạng "wall fade" có chủ đích (khác quy tắc "KHÔNG dùng wall fade" ở các mục khác
 — ngoại lệ riêng cho floor-below, vì đây chính là cách Project Zomboid tạo cảm giác đứng trên

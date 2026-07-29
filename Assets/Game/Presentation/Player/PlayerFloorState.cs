@@ -4,60 +4,51 @@ using UnityEngine;
 namespace LastHope.Presentation.Player
 {
     /// <summary>
-    /// Tầng hiện tại của player + tiến độ leo cầu thang (kiểu Project Zomboid — leo dần, không
-    /// đổi tầng tức thời). Thuần Presentation — không lưu vào <c>WorldState</c>/save, giống
-    /// quy ước "Save/Load không đổi scene" đã chấp nhận ở P1. Sống trên GameObject Player
-    /// (DontDestroyOnLoad) nên giá trị tồn tại xuyên suốt phiên chơi — <see cref="ResetFloor"/>
-    /// phải được gọi mỗi khi vào scene mới (xem <c>SceneFlowController.RepositionPlayer</c>).
+    /// Tầng hiện tại của player + trạng thái blend khi đứng trong vùng cầu thang (kiểu Project
+    /// Zomboid — leo dần, không đổi tầng tức thời). Thuần Presentation — không lưu vào
+    /// <c>WorldState</c>/save, giống quy ước "Save/Load không đổi scene" đã chấp nhận ở P1.
+    /// Sống trên GameObject Player (DontDestroyOnLoad) nên giá trị tồn tại xuyên suốt phiên
+    /// chơi — <see cref="ResetFloor"/> phải được gọi mỗi khi vào scene mới (xem
+    /// <c>SceneFlowController.RepositionPlayer</c>).
+    ///
+    /// Cố ý KHÔNG lưu "hướng đang leo" — <see cref="BlendT"/> luôn được tính lại thuần theo vị
+    /// trí hình học mỗi frame bởi <see cref="StaircaseZone"/>, không suy ra một lần rồi cache.
+    /// Bản trước cache hướng lúc bắt đầu leo (dựa theo CurrentFloor cũ) gây lệch khi đứng nán ở
+    /// biên vùng hoặc vào từ hai đầu khác nhau — xem docs/plans/2026-07-29-staircase-blend-fix.md.
     /// </summary>
     public class PlayerFloorState : MonoBehaviour
     {
         public int CurrentFloor { get; private set; }
 
-        /// <summary>Tầng đang leo tới — null khi không đứng trong vùng cầu thang nào.</summary>
-        public int? TransitioningToFloor { get; private set; }
+        public int? BlendLowerFloor { get; private set; }
+        public int? BlendUpperFloor { get; private set; }
 
-        /// <summary>0 = còn ở hẳn <see cref="CurrentFloor"/>, 1 = đã leo hết tới <see cref="TransitioningToFloor"/>.</summary>
-        public float ClimbProgress { get; private set; }
+        /// <summary>0 = hoàn toàn BlendLowerFloor, 1 = hoàn toàn BlendUpperFloor.</summary>
+        public float BlendT { get; private set; }
 
-        /// <summary>Bắn mỗi khi có thay đổi cần vẽ lại (đổi tầng hẳn hoặc tiến độ leo nhích).</summary>
+        public bool IsBlending => BlendLowerFloor.HasValue;
+
+        /// <summary>Bắn mỗi khi có thay đổi cần vẽ lại.</summary>
         public event Action Changed;
 
-        /// <summary>Vào vùng cầu thang — chỉ nhận nếu đang đứng đúng <paramref name="fromFloor"/>.</summary>
-        public void BeginClimb(int fromFloor, int toFloor)
+        /// <summary>Gọi mỗi frame còn trong vùng cầu thang — <paramref name="t"/> tính thuần từ vị trí, không phụ thuộc lịch sử.</summary>
+        public void UpdateBlend(int lowerFloor, int upperFloor, float t)
         {
-            if (CurrentFloor != fromFloor || TransitioningToFloor == toFloor) return;
-
-            TransitioningToFloor = toFloor;
-            ClimbProgress = 0f;
+            BlendLowerFloor = lowerFloor;
+            BlendUpperFloor = upperFloor;
+            BlendT = Mathf.Clamp01(t);
             Changed?.Invoke();
         }
 
-        /// <summary>Gọi liên tục khi còn trong vùng cầu thang — tiến độ nhích theo vị trí thật, có thể lùi lại.</summary>
-        public void SetClimbProgress(float progress)
+        /// <summary>Rời vùng cầu thang — chốt CurrentFloor theo BlendT lúc rời (gần tầng nào hơn).</summary>
+        public void EndBlend()
         {
-            if (TransitioningToFloor == null) return;
+            if (!BlendLowerFloor.HasValue) return;
 
-            ClimbProgress = Mathf.Clamp01(progress);
-            if (ClimbProgress >= 1f) CompleteClimb();
-            else Changed?.Invoke();
-        }
-
-        /// <summary>Rời vùng cầu thang giữa chừng (chưa leo hết) — huỷ, giữ nguyên tầng cũ.</summary>
-        public void CancelClimb()
-        {
-            if (TransitioningToFloor == null) return;
-
-            TransitioningToFloor = null;
-            ClimbProgress = 0f;
-            Changed?.Invoke();
-        }
-
-        void CompleteClimb()
-        {
-            CurrentFloor = TransitioningToFloor.Value;
-            TransitioningToFloor = null;
-            ClimbProgress = 0f;
+            CurrentFloor = BlendT >= 0.5f ? BlendUpperFloor.Value : BlendLowerFloor.Value;
+            BlendLowerFloor = null;
+            BlendUpperFloor = null;
+            BlendT = 0f;
             Changed?.Invoke();
         }
 
@@ -66,8 +57,9 @@ namespace LastHope.Presentation.Player
         public void TeleportToFloor(int floor)
         {
             CurrentFloor = floor;
-            TransitioningToFloor = null;
-            ClimbProgress = 0f;
+            BlendLowerFloor = null;
+            BlendUpperFloor = null;
+            BlendT = 0f;
             Changed?.Invoke();
         }
 

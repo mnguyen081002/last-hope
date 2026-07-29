@@ -7,11 +7,11 @@ namespace LastHope.Presentation.World
     /// <summary>
     /// Hiện/ẩn từng tầng theo vị trí player, kiểu Project Zomboid: tầng hiện tại vẽ đầy đủ,
     /// tầng ngay dưới vẽ mờ (thấy bố cục nhưng không va chạm được), tầng khác ẩn hẳn. Trong
-    /// lúc leo cầu thang (<see cref="PlayerFloorState.TransitioningToFloor"/> khác null), hai
-    /// tầng liên quan mờ/rõ dần theo <see cref="PlayerFloorState.ClimbProgress"/> thay vì đổi
-    /// nhị phân — đúng cảm giác đang leo, không phải dịch chuyển tức thời. Không dùng raycast
-    /// occlusion — chỉ đổi alpha + sortingOrder + bật/tắt Collider2D (xem
-    /// isometric-game-placement-rules.md mục 6).
+    /// lúc đứng trong vùng cầu thang (<see cref="PlayerFloorState.IsBlending"/>), hai tầng
+    /// liên quan mờ/rõ dần theo <see cref="PlayerFloorState.BlendT"/> thay vì đổi nhị phân —
+    /// đúng cảm giác đang leo, không phải dịch chuyển tức thời. Không dùng raycast occlusion —
+    /// chỉ đổi alpha + sortingOrder + bật/tắt Collider2D (xem isometric-game-placement-rules.md
+    /// mục 6).
     /// </summary>
     public class FloorRenderController : MonoBehaviour
     {
@@ -42,9 +42,11 @@ namespace LastHope.Presentation.World
 
         void Refresh()
         {
-            int fromFloor = playerFloorState != null ? playerFloorState.CurrentFloor : 0;
-            int? toFloor = playerFloorState?.TransitioningToFloor;
-            float progress = playerFloorState?.ClimbProgress ?? 0f;
+            int settledFloor = playerFloorState != null ? playerFloorState.CurrentFloor : 0;
+            bool blending = playerFloorState != null && playerFloorState.IsBlending;
+            int blendLower = blending ? playerFloorState.BlendLowerFloor.Value : 0;
+            int blendUpper = blending ? playerFloorState.BlendUpperFloor.Value : 0;
+            float t = blending ? playerFloorState.BlendT : 0f;
 
             // FindObjectsByType(sortMode) — overload 1 tham số — mặc định LOẠI TRỪ GameObject
             // inactive. Tầng chưa từng active (vd Upper lúc mới vào scene) sẽ không bao giờ
@@ -52,19 +54,19 @@ namespace LastHope.Presentation.World
             // active — tầng kia không bao giờ được bật lên được. Phải truyền rõ Include.
             foreach (var level in FindObjectsByType<FloorLevel>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (toFloor.HasValue && level.Floor == toFloor.Value)
+                if (blending && level.Floor == blendUpper)
                 {
-                    SetFloorVisual(level.gameObject, Mathf.Lerp(dimmedAlpha, 1f, progress), collidable: progress >= 0.5f);
+                    SetFloorVisual(level.gameObject, Mathf.Lerp(dimmedAlpha, 1f, t), collidable: t >= 0.5f);
                     continue;
                 }
 
-                if (toFloor.HasValue && level.Floor == fromFloor)
+                if (blending && level.Floor == blendLower)
                 {
-                    SetFloorVisual(level.gameObject, Mathf.Lerp(1f, dimmedAlpha, progress), collidable: progress < 0.5f);
+                    SetFloorVisual(level.gameObject, Mathf.Lerp(1f, dimmedAlpha, t), collidable: t < 0.5f);
                     continue;
                 }
 
-                int diff = level.Floor - fromFloor;
+                int diff = level.Floor - settledFloor;
                 if (diff > 0 || diff < -1)
                 {
                     level.gameObject.SetActive(false);
