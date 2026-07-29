@@ -55,6 +55,9 @@ namespace LastHope.Systems.Commands
             BuildSystem.StartConstruction(context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId);
             context.Events?.Publish(
                 new InventoryChanged(InventoryOwner.ShelterStorage(ShelterModuleIds.LocationId).ToString()));
+
+            int minutes = context.Definitions.GetModule(ModuleId).BuildMinutes;
+            context.Events?.Publish(new ConstructionStarted(ZoneId, ModuleId, minutes));
         }
     }
 }

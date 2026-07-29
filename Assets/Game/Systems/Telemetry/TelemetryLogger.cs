@@ -39,6 +39,10 @@ namespace LastHope.Systems.Telemetry
             services.Events.Subscribe<TravelStarted>(OnTravelStarted);
             services.Events.Subscribe<LocationChanged>(OnLocationChanged);
             services.Events.Subscribe<SearchPointOpened>(OnSearchPointOpened);
+            services.Events.Subscribe<ConstructionStarted>(OnConstructionStarted);
+            services.Events.Subscribe<ConstructionCompleted>(OnConstructionCompleted);
+            services.Events.Subscribe<PowerPriorityChanged>(OnPowerPriorityChanged);
+            services.Events.Subscribe<ShelterEventTriggered>(OnShelterEventTriggered);
         }
 
         void OnTravelStarted(TravelStarted e) =>
@@ -54,6 +58,31 @@ namespace LastHope.Systems.Telemetry
 
         void OnSearchPointOpened(SearchPointOpened e) =>
             Write("search_opened", new { search_point_id = e.SearchPointId });
+
+        /// <summary>Build Choice (BL-P3-18) — <see cref="ConstructionCompleted"/> ở cùng session
+        /// cho biết thời gian chờ Task (chênh world_time_minutes giữa hai dòng log).</summary>
+        void OnConstructionStarted(ConstructionStarted e) =>
+            Write("construction_started", new
+            {
+                zone_id = e.ZoneId,
+                module_id = e.ModuleId,
+                minutes_required = e.MinutesRequired,
+            });
+
+        void OnConstructionCompleted(ConstructionCompleted e) =>
+            Write("construction_completed", new { placement_id = e.PlacementId, module_id = e.ModuleId });
+
+        /// <summary>Power Allocation choice (BL-P3-18).</summary>
+        void OnPowerPriorityChanged(PowerPriorityChanged e) =>
+            Write("power_priority_changed", new
+            {
+                placement_id = e.PlacementId,
+                module_id = e.ModuleId,
+                priority = e.Priority,
+            });
+
+        void OnShelterEventTriggered(ShelterEventTriggered e) =>
+            Write("shelter_event_triggered", new { event_id = e.EventId });
 
         /// <summary>UI gọi khi đóng SearchPanel — chỉ UI biết số lượng lúc mở để so sánh.</summary>
         public void LogSearchClosed(string searchPointId, int itemsTaken, int itemsLeftBehind) =>

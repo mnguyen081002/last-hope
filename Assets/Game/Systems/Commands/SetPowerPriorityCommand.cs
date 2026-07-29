@@ -1,4 +1,5 @@
 using LastHope.Core.Commands;
+using LastHope.Core.Events;
 using LastHope.Core.State;
 
 namespace LastHope.Systems.Commands
@@ -24,7 +25,11 @@ namespace LastHope.Systems.Commands
             return CommandResult.Ok();
         }
 
-        public void Execute(GameContext context) =>
-            context.World.Shelter.PlacedModules[PlacementId].Priority = Priority;
+        public void Execute(GameContext context)
+        {
+            var module = context.World.Shelter.PlacedModules[PlacementId];
+            module.Priority = Priority;
+            context.Events?.Publish(new PowerPriorityChanged(PlacementId, module.ModuleId, Priority.ToString()));
+        }
     }
 }

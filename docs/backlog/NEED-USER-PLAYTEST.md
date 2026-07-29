@@ -27,7 +27,8 @@ Script chi tiết, từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` 
 | BL-P3-15 | Event: Storage Flood Risk | Cảnh báo + mất đồ nếu không có Elevated Storage | D |
 | BL-P3-16 | Event: Pump Jam | Kích hoạt khi Pump có điện, giải quyết qua nút "Sửa" | E |
 | BL-P3-17 | Kịch bản 2-trong-3 | Khan hiếm vật liệu tự nhiên chỉ cho xây 2/3 Module chính | A |
+| BL-P3-18 | Telemetry P3 | Sau khi chơi xong, mở file JSONL mới nhất trong `%userprofile%\AppData\LocalLow\<company>\Last Hope\Telemetry` (Windows) — phải thấy dòng `construction_started`/`construction_completed`/`power_priority_changed`/`shelter_event_triggered` khớp với những gì vừa làm | A, B, E |
 
-Sau khi playtest xong toàn bộ bảng trên, quay lại `BACKLOG.md` để chạy Gate P3 — vẫn còn
-BL-P3-18 (Telemetry, chưa quyết định phạm vi) và Outdoor placement (phần chưa làm của BL-P3-03,
-chờ nội dung Module Outdoor) cần xử lý trước khi đóng Gate hẳn.
+Sau khi playtest xong toàn bộ bảng trên, quay lại `BACKLOG.md` để chạy Gate P3 — chỉ còn
+Outdoor placement (phần chưa làm của BL-P3-03, chờ nội dung Module Outdoor, không chặn Gate)
+cần lưu ý.

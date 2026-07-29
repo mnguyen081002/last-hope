@@ -225,11 +225,11 @@ Storage không phải kho riêng, và mọi tương tác đi qua 1 prop "Shelter
 | BL-P3-15 | Event: Storage Flood Risk | Verify | Kích hoạt khi Water Intrusion ≥ Critical + kho có đồ + chưa có Elevated Storage. Mỗi Long Tick có tỉ lệ mất 1 stack ngẫu nhiên |
 | BL-P3-16 | Event: Pump Jam | Verify | Chỉ roll khi Pump đã xây + có điện + chưa kẹt. Giải quyết qua `RepairPumpJamCommand` (tốn `pump_jam_resolve_minutes`) |
 | BL-P3-17 | Kịch bản 2-trong-3 | Verify | **Không cần content mới** — khan hiếm `item_wood`/`item_purifier_unit`/`item_filter` trong loot table sẵn có (P1/P2-C) đã tự nhiên tạo giới hạn "chỉ 2/3 Module chính", xác nhận lại khi user playtest |
-| BL-P3-18 | Telemetry + Playtest P3 | Backlog | **Chưa nối Telemetry** cho Build/Power/Event (TelemetryLogger P1 chưa mở rộng) — cần quyết định có làm trong P3 hay để P4 trước khi Gate |
+| BL-P3-18 | Telemetry + Playtest P3 | Verify | Quyết định làm trong P3 (2026-07-29), không để P4. `TelemetryLogger` nối thêm 4 event: `ConstructionStarted`/`ConstructionCompleted` (Build Choice + thời gian chờ Task = chênh `world_time_minutes` giữa 2 dòng log), `PowerPriorityChanged` (Power Allocation choice), `ShelterEventTriggered` (3 Shelter Event). Playtest 6h+6h vẫn cần user tự chạy, JSONL ghi vào `persistentDataPath/Telemetry` như P1 |
 
-**Gate P3:** chưa chạy — toàn bộ BL-P3-01..17 đã có code (220 EditMode test), chờ user
-playtest. BL-P3-18 (Telemetry riêng cho P3) **chưa làm** — cần quyết định phạm vi trước khi
-đóng Gate. Outdoor placement (một phần BL-P3-03) chưa làm — chờ nội dung Module Outdoor.
+**Gate P3:** chưa chạy — toàn bộ BL-P3-01..18 đã có code (220 EditMode test), chờ user
+playtest. Outdoor placement (một phần BL-P3-03) chưa làm — chờ nội dung Module Outdoor, không
+chặn Gate (đã ghi rõ phạm vi rút gọn từ đầu).
 
 ## Cần user playtest Shelter Loop (P3)
 
@@ -252,6 +252,6 @@ chi tiết từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` (Scenari
 
 ---
 
-Milestone tiếp theo: **chạy Gate P3** — toàn bộ P3 đã có code (BL-P3-01..17), chờ user
-playtest theo `docs/plans/2026-07-28-p3-test-scenarios.md` rồi quyết định BL-P3-18
-(Telemetry P3, còn Backlog). Sau đó mới sang **P4 — Vertical Slice**.
+Milestone tiếp theo: **chạy Gate P3** — toàn bộ P3 đã có code (BL-P3-01..18), chờ user
+playtest theo `docs/plans/2026-07-28-p3-test-scenarios.md` (Scenario A–H) +
+`docs/backlog/NEED-USER-PLAYTEST.md`. Sau đó mới sang **P4 — Vertical Slice**.

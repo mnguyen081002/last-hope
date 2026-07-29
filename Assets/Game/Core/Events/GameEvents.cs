@@ -95,6 +95,37 @@ namespace LastHope.Core.Events
         }
     }
 
+    /// <summary>Bắn lúc bắt đầu xây (StartConstructionCommand); <see cref="ConstructionCompleted"/>
+    /// bắn khi xong — chênh world_time_minutes giữa hai sự kiện = thời gian chờ Task (BL-P3-18).</summary>
+    public readonly struct ConstructionStarted
+    {
+        public readonly string ZoneId;
+        public readonly string ModuleId;
+        public readonly int MinutesRequired;
+
+        public ConstructionStarted(string zoneId, string moduleId, int minutesRequired)
+        {
+            ZoneId = zoneId;
+            ModuleId = moduleId;
+            MinutesRequired = minutesRequired;
+        }
+    }
+
+    /// <summary>Bắn khi đổi Power Priority của Module đã xây (SetPowerPriorityCommand) — đo Power Allocation choice (BL-P3-18).</summary>
+    public readonly struct PowerPriorityChanged
+    {
+        public readonly string PlacementId;
+        public readonly string ModuleId;
+        public readonly string Priority;
+
+        public PowerPriorityChanged(string placementId, string moduleId, string priority)
+        {
+            PlacementId = placementId;
+            ModuleId = moduleId;
+            Priority = priority;
+        }
+    }
+
     /// <summary>Publish trực tiếp từ Presentation (ShelterConsoleView) — chỉ một Shelter trong MVP, không cần payload.</summary>
     public readonly struct ShelterConsoleOpened
     {
