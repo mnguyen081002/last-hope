@@ -40,6 +40,8 @@ namespace LastHope.Presentation.World
 
         GameObject ghost;
         SpriteRenderer ghostRenderer;
+        GameObject footprintOutline;
+        SpriteRenderer footprintRenderer;
         GameObject zoneBoundsBox;
         string boundsZoneId;
         BuildRejectReason lastReason;
@@ -113,6 +115,10 @@ namespace LastHope.Presentation.World
             Vector3 world = worldCamera.ScreenToWorldPoint(screenPos);
             ghost.transform.position = new Vector3(world.x, world.y, 0f);
 
+            BuildSystem.GetFootprint(module, rotationQuarterTurns, out float footprintWidth, out float footprintHeight);
+            footprintOutline.transform.position = new Vector3(world.x, world.y, 0f);
+            footprintRenderer.size = new Vector2(footprintWidth, footprintHeight);
+
             var services = GameBootstrapper.Services;
             var definitions = services.Definitions;
             int currentFloor = playerFloorState != null ? playerFloorState.CurrentFloor : 0;
@@ -125,9 +131,11 @@ namespace LastHope.Presentation.World
                     services.World, definitions, resolvedZoneId, world.x, world.y, moduleId,
                     rotationQuarterTurns);
             lastReason = reason;
-            ghostRenderer.color = reason == BuildRejectReason.None
+            var tint = reason == BuildRejectReason.None
                 ? new Color(0.3f, 0.9f, 0.3f, 0.6f)
                 : new Color(0.9f, 0.3f, 0.3f, 0.6f);
+            ghostRenderer.color = tint;
+            footprintRenderer.color = new Color(tint.r, tint.g, tint.b, 0.35f);
 
             if (reason == BuildRejectReason.None && mouse.leftButton.wasPressedThisFrame)
             {
@@ -156,6 +164,7 @@ namespace LastHope.Presentation.World
         {
             active = false;
             if (ghost != null) Destroy(ghost);
+            if (footprintOutline != null) Destroy(footprintOutline);
             if (zoneBoundsBox != null) Destroy(zoneBoundsBox);
             zoneBoundsBox = null;
             boundsZoneId = null;
@@ -204,6 +213,15 @@ namespace LastHope.Presentation.World
             ghostRenderer = ghost.AddComponent<SpriteRenderer>();
             ghostRenderer.sortingOrder = 100;
             UpdateGhostSprite();
+
+            // Khung diện tích chiếm — tách khỏi sprite Module (art không phải lúc nào cũng phủ
+            // đúng hết footprint hình chữ nhật dùng để validate overlap), đổi kích thước theo
+            // đúng BuildSystem.GetFootprint mỗi khi rotate.
+            footprintOutline = new GameObject("PlacementFootprint");
+            footprintRenderer = footprintOutline.AddComponent<SpriteRenderer>();
+            footprintRenderer.drawMode = SpriteDrawMode.Sliced;
+            footprintRenderer.sprite = WhiteSquareSprite();
+            footprintRenderer.sortingOrder = 90;
         }
 
         void UpdateGhostSprite()

@@ -11,7 +11,6 @@ Script chi tiết, từng bước: `docs/plans/2026-07-28-p3-test-scenarios.md` 
 | BL-ID | Hạng mục | Xác nhận gì | Scenario |
 | --- | --- | --- | --- |
 | BL-P3-01 | Main Shelter blockout / Z-level tầng | Leo cầu thang leo dần (không bấm phím) — mờ/rõ mượt theo tiến độ, đi lùi giữa chừng thì tụt tiến độ, chỉ đổi tầng thật ở đỉnh; không kẹt nửa vời/nhấp nháy | G |
-| BL-P3-03 | Build và Placement (Free Placement) | Chọn Module+Zone trong `ShelterPanel` → ghost theo chuột (xanh/đỏ), click đặt trong biên Zone; đặt ngoài biên/chồng Module khác bị từ chối; ESC huỷ không mất vật liệu | H |
 | BL-P3-02 | Shelter State | Overview đúng trong `ShelterPanel` (Structural/Water/Clean-Untreated Water/Battery) | A–F |
 | BL-P3-04 | Task System (Construction) | Xây dở rồi rời Shelter/Sleep — tiến độ vẫn chạy khi quay lại | B |
 | BL-P3-05 | Water Intrusion | Ground Floor khoá chức năng khi Water Intrusion ≥ Deep, không kết thúc game | C |
