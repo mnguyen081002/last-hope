@@ -5,8 +5,10 @@ using LastHope.Systems.Shelter;
 
 namespace LastHope.Systems.Commands
 {
-    /// <summary>Đặt lại Module đã Tháo (đã gói, xem <see cref="DismantleModuleCommand"/>) —
-    /// tức thì, không qua Construction/BuildMinutes như <see cref="StartConstructionCommand"/>.</summary>
+    /// <summary>Đặt Module đã gói — từ Claim (<see cref="ClaimProductionCommand"/>) hoặc Tháo
+    /// (<see cref="DismantleModuleCommand"/>), packed item đều nằm trong túi Player (đổi
+    /// 2026-07-30) — tức thì, không qua Construction/BuildMinutes như
+    /// <see cref="StartConstructionCommand"/>.</summary>
     public class RedeployModuleCommand : IGameCommand
     {
         public long WorldTime { get; set; }
@@ -15,13 +17,16 @@ namespace LastHope.Systems.Commands
         public float PositionX;
         public float PositionY;
         public string ModuleId;
+        public int RotationQuarterTurns;
 
-        public RedeployModuleCommand(string zoneId, float positionX, float positionY, string moduleId)
+        public RedeployModuleCommand(
+            string zoneId, float positionX, float positionY, string moduleId, int rotationQuarterTurns = 0)
         {
             ZoneId = zoneId;
             PositionX = positionX;
             PositionY = positionY;
             ModuleId = moduleId;
+            RotationQuarterTurns = rotationQuarterTurns;
         }
 
         public CommandResult Validate(GameContext context)
@@ -31,7 +36,8 @@ namespace LastHope.Systems.Commands
                 return CommandResult.Fail(CommandErrorCode.WrongLocation, "Chỉ đặt lại được khi đang ở Shelter.");
 
             var reason = BuildSystem.CanRedeployAt(
-                context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId);
+                context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId,
+                RotationQuarterTurns);
             return reason switch
             {
                 BuildRejectReason.None => CommandResult.Ok(),
@@ -44,7 +50,9 @@ namespace LastHope.Systems.Commands
                 BuildRejectReason.Overlapping => CommandResult.Fail(
                     CommandErrorCode.NotAllowedNow, "Vị trí chồng lấn Module khác."),
                 BuildRejectReason.NotEnoughPackedModules => CommandResult.Fail(
-                    CommandErrorCode.ItemNotFound, "Không có Module đã gói sẵn trong kho Shelter."),
+                    CommandErrorCode.ItemNotFound, "Không có Module đã gói sẵn trong túi."),
+                BuildRejectReason.RotationNotAllowed => CommandResult.Fail(
+                    CommandErrorCode.InvalidTarget, $"'{ModuleId}' không hỗ trợ xoay."),
                 _ => CommandResult.Fail(CommandErrorCode.NotAllowedNow),
             };
         }
@@ -52,9 +60,9 @@ namespace LastHope.Systems.Commands
         public void Execute(GameContext context)
         {
             string placementId = BuildSystem.RedeployModule(
-                context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId);
-            context.Events?.Publish(
-                new InventoryChanged(InventoryOwner.ShelterStorage(ShelterModuleIds.LocationId).ToString()));
+                context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId,
+                RotationQuarterTurns);
+            context.Events?.Publish(new InventoryChanged(InventoryOwner.Player.ToString()));
             context.Events?.Publish(new ModuleRedeployed(placementId, ModuleId));
         }
     }

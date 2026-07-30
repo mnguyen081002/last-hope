@@ -1,4 +1,5 @@
 using LastHope.Core.Events;
+using LastHope.Data;
 using LastHope.Data.Definitions;
 using LastHope.Presentation.Player;
 using LastHope.Systems.Boot;
@@ -11,11 +12,16 @@ namespace LastHope.Presentation.World
 {
     /// <summary>
     /// Free Placement (BL-P3-03) — tương tác chuột đầu tiên trong game (mọi thứ khác dùng
-    /// phím + OnGUI). Bật khi nghe <see cref="BeginPlacementMode"/> từ ShelterPanel: ghost
-    /// theo con trỏ (xanh/đỏ theo <see cref="BuildSystem.CanPlaceAt"/>/<see cref="BuildSystem.CanRedeployAt"/>
-    /// tuỳ <see cref="BeginPlacementMode.Redeploy"/>), khung mờ biên Zone, click trái xác nhận
-    /// (<c>StartConstructionCommand</c> xây mới hoặc <c>RedeployModuleCommand</c> đặt lại Module
-    /// đã gói — tức thì, không chờ), ESC (action <c>Close</c>) huỷ.
+    /// phím + OnGUI). Bật khi nghe <see cref="BeginPlacementMode"/> từ InventoryPanel (bấm "Đặt"
+    /// cạnh 1 packed item): ghost theo con trỏ (xanh/đỏ theo <see cref="BuildSystem.CanRedeployAt"/>),
+    /// khung mờ biên Zone, click trái xác nhận (<c>RedeployModuleCommand</c> — tức thì, không
+    /// chờ), ESC (action <c>Close</c>) huỷ. Đổi 2026-07-30: không còn nhận ZoneId cố định —
+    /// Zone tự resolve mỗi frame từ <see cref="ModuleDefinition.AllowedZoneIds"/> lọc theo tầng
+    /// đang đứng (<see cref="PlayerFloorState.CurrentFloor"/>) + vị trí chuột, vì Production
+    /// không còn chọn Zone trước nữa (xem docs/plans/2026-07-30-module-production-placement-loop.md).
+    /// Không còn auto-teleport tầng lúc mở — Module có nhiều Zone khả dĩ ở nhiều tầng
+    /// (vd module_elevated_storage) thì người chơi tự đi cầu thang để đổi tầng trong lúc ghost
+    /// đang mở.
     /// </summary>
     public class PlacementModeController : MonoBehaviour
     {
@@ -24,26 +30,33 @@ namespace LastHope.Presentation.World
         [SerializeField] Camera worldCamera;
 
         InputAction closeAction;
+        InputAction rotateAction;
         bool active;
         public bool Active => active;
-        string zoneId;
         string moduleId;
-        bool redeploy;
+        ModuleDefinition module;
+        bool canRotate;
+        int rotationQuarterTurns;
 
         GameObject ghost;
         SpriteRenderer ghostRenderer;
         GameObject zoneBoundsBox;
+        string boundsZoneId;
         BuildRejectReason lastReason;
         GUIStyle hintStyle;
 
         void Awake()
         {
-            if (controls != null) closeAction = controls.FindActionMap("Gameplay", true).FindAction("Close", true);
+            if (controls == null) return;
+            var gameplay = controls.FindActionMap("Gameplay", true);
+            closeAction = gameplay.FindAction("Close", true);
+            rotateAction = gameplay.FindAction("RotateModule", false);
         }
 
         void OnEnable()
         {
             closeAction?.Enable();
+            rotateAction?.Enable();
             if (GameBootstrapper.IsReady) Subscribe();
             else GameBootstrapper.Ready += Subscribe;
         }
@@ -51,6 +64,7 @@ namespace LastHope.Presentation.World
         void OnDisable()
         {
             closeAction?.Disable();
+            rotateAction?.Disable();
             GameBootstrapper.Ready -= Subscribe;
             if (GameBootstrapper.IsReady)
                 GameBootstrapper.Services.Events.Unsubscribe<BeginPlacementMode>(OnBeginPlacement);
@@ -64,19 +78,13 @@ namespace LastHope.Presentation.World
 
         void OnBeginPlacement(BeginPlacementMode e)
         {
-            zoneId = e.ZoneId;
             moduleId = e.ModuleId;
-            redeploy = e.Redeploy;
+            rotationQuarterTurns = 0;
             active = true;
 
             var definitions = GameBootstrapper.Services.Definitions;
-            if (definitions.TryGetShelterZone(zoneId, out var zone))
-            {
-                // Đứng đúng tầng của Zone đang đặt — Placement Mode coi như bước "lên kế hoạch",
-                // không bắt phải tự đi bộ lên trước.
-                playerFloorState?.TeleportToFloor(zone.Floor == ShelterFloor.Upper ? 1 : 0);
-                CreateZoneBoundsBox(zone);
-            }
+            definitions.TryGetModule(moduleId, out module);
+            canRotate = module != null && module.IsRotatable && ModuleSpriteCatalog.HasAllDirections(moduleId);
 
             CreateGhost();
         }
@@ -91,8 +99,14 @@ namespace LastHope.Presentation.World
                 return;
             }
 
+            if (canRotate && rotateAction != null && rotateAction.WasPressedThisFrame())
+            {
+                rotationQuarterTurns = (rotationQuarterTurns + 1) % 4;
+                UpdateGhostSprite();
+            }
+
             var mouse = Mouse.current;
-            if (worldCamera == null || mouse == null) return;
+            if (worldCamera == null || mouse == null || module == null) return;
 
             Vector3 screenPos = mouse.position.ReadValue();
             screenPos.z = -worldCamera.transform.position.z;
@@ -100,9 +114,16 @@ namespace LastHope.Presentation.World
             ghost.transform.position = new Vector3(world.x, world.y, 0f);
 
             var services = GameBootstrapper.Services;
-            var reason = redeploy
-                ? BuildSystem.CanRedeployAt(services.World, services.Definitions, zoneId, world.x, world.y, moduleId)
-                : BuildSystem.CanPlaceAt(services.World, services.Definitions, zoneId, world.x, world.y, moduleId);
+            var definitions = services.Definitions;
+            int currentFloor = playerFloorState != null ? playerFloorState.CurrentFloor : 0;
+            string resolvedZoneId = ResolveZoneId(definitions, module, currentFloor, world.x, world.y);
+            UpdateZoneBoundsBox(definitions, resolvedZoneId);
+
+            var reason = resolvedZoneId == null
+                ? BuildRejectReason.OutOfBounds
+                : BuildSystem.CanRedeployAt(
+                    services.World, definitions, resolvedZoneId, world.x, world.y, moduleId,
+                    rotationQuarterTurns);
             lastReason = reason;
             ghostRenderer.color = reason == BuildRejectReason.None
                 ? new Color(0.3f, 0.9f, 0.3f, 0.6f)
@@ -110,12 +131,25 @@ namespace LastHope.Presentation.World
 
             if (reason == BuildRejectReason.None && mouse.leftButton.wasPressedThisFrame)
             {
-                if (redeploy)
-                    services.Commands.Submit(new RedeployModuleCommand(zoneId, world.x, world.y, moduleId));
-                else
-                    services.Commands.Submit(new StartConstructionCommand(zoneId, world.x, world.y, moduleId));
+                services.Commands.Submit(new RedeployModuleCommand(
+                    resolvedZoneId, world.x, world.y, moduleId, rotationQuarterTurns));
                 EndPlacement();
             }
+        }
+
+        /// <summary>Zone không còn chọn trước — lọc <see cref="ModuleDefinition.AllowedZoneIds"/>
+        /// theo tầng đang đứng rồi theo vị trí chuột. Đa số Module chỉ có 1 Zone khả dĩ (transparent);
+        /// module_elevated_storage có 2 (Ground/Upper) — người chơi tự đi đúng tầng để resolve.</summary>
+        static string ResolveZoneId(
+            DefinitionRegistry definitions, ModuleDefinition module, int currentFloor, float x, float y)
+        {
+            foreach (var zoneId in module.AllowedZoneIds)
+            {
+                if (definitions.TryGetShelterZone(zoneId, out var zone)
+                    && (int)zone.Floor == currentFloor && zone.Contains(x, y))
+                    return zoneId;
+            }
+            return null;
         }
 
         void EndPlacement()
@@ -123,6 +157,8 @@ namespace LastHope.Presentation.World
             active = false;
             if (ghost != null) Destroy(ghost);
             if (zoneBoundsBox != null) Destroy(zoneBoundsBox);
+            zoneBoundsBox = null;
+            boundsZoneId = null;
         }
 
         void OnGUI()
@@ -140,20 +176,19 @@ namespace LastHope.Presentation.World
             float x = (Screen.width - width) / 2f;
             float y = Screen.height - 90f;
 
-            string title = redeploy ? $"Đặt lại {moduleId}" : $"Đặt {moduleId}";
             GUI.Box(new Rect(x, y, width, height), GUIContent.none);
-            GUI.Label(new Rect(x, y + 4f, width, 20f), title, hintStyle);
-            GUI.Label(new Rect(x, y + 24f, width, 20f), $"{status} · ESC: Huỷ", hintStyle);
+            GUI.Label(new Rect(x, y + 4f, width, 20f), $"Đặt {moduleId}", hintStyle);
+            string rotateHint = canRotate ? $" · R: Xoay ({rotationQuarterTurns * 90}°)" : "";
+            GUI.Label(new Rect(x, y + 24f, width, 20f), $"{status}{rotateHint} · ESC: Huỷ", hintStyle);
         }
 
         static string RejectReasonText(BuildRejectReason reason) => reason switch
         {
             BuildRejectReason.OutOfBounds => "Ngoài vùng Zone cho phép",
             BuildRejectReason.Overlapping => "Chồng lên Module khác",
-            BuildRejectReason.NotEnoughMaterials => "Không đủ vật liệu",
-            BuildRejectReason.NotEnoughPackedModules => "Không có Module đã gói sẵn trong kho",
-            BuildRejectReason.ConstructionInProgress => "Đang có công trình khác thi công",
+            BuildRejectReason.NotEnoughPackedModules => "Không có Module đã gói sẵn trong túi",
             BuildRejectReason.WrongZone => "Module không đặt được ở Zone này",
+            BuildRejectReason.RotationNotAllowed => "Module này không hỗ trợ xoay",
             _ => "Không thể đặt ở đây",
         };
 
@@ -167,9 +202,33 @@ namespace LastHope.Presentation.World
         {
             ghost = new GameObject("PlacementGhost");
             ghostRenderer = ghost.AddComponent<SpriteRenderer>();
-            ghostRenderer.sprite = WhiteSquareSprite();
-            ghost.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
             ghostRenderer.sortingOrder = 100;
+            UpdateGhostSprite();
+        }
+
+        void UpdateGhostSprite()
+        {
+            var sprite = ModuleSpriteCatalog.Load(moduleId, rotationQuarterTurns);
+            bool hasProductionArt = sprite != null;
+            ghostRenderer.sprite = hasProductionArt ? sprite : WhiteSquareSprite();
+            ghost.transform.localScale = hasProductionArt
+                ? Vector3.one
+                : new Vector3(0.6f, 0.6f, 1f);
+        }
+
+        void UpdateZoneBoundsBox(DefinitionRegistry definitions, string resolvedZoneId)
+        {
+            if (resolvedZoneId == boundsZoneId) return;
+
+            if (zoneBoundsBox != null)
+            {
+                Destroy(zoneBoundsBox);
+                zoneBoundsBox = null;
+            }
+            boundsZoneId = resolvedZoneId;
+
+            if (resolvedZoneId != null && definitions.TryGetShelterZone(resolvedZoneId, out var zone))
+                CreateZoneBoundsBox(zone);
         }
 
         void CreateZoneBoundsBox(ShelterZoneDefinition zone)

@@ -15,6 +15,7 @@ namespace LastHope.Core.State
         public string ZoneId;
         public float PositionX;
         public float PositionY;
+        public int RotationQuarterTurns;
         public float Durability = 100f;
         public PowerPriority Priority = PowerPriority.Normal;
         public bool IsJammed;
@@ -55,6 +56,10 @@ namespace LastHope.Core.State
 
         public Dictionary<string, BuiltModuleState> PlacedModules = new();
         public ConstructionState Construction;
+
+        /// <summary>Production đã xong nhưng chưa Claim — ModuleId → số lượng chờ nhận, sống độc
+        /// lập khỏi <see cref="Construction"/> (không tự mất nếu không Nhận ngay).</summary>
+        public Dictionary<string, int> ReadyToClaim = new();
 
         /// <summary>Bộ đếm sinh placementId ổn định qua save/load — không dùng Guid (không tái lập được từ seed).</summary>
         public int NextPlacementId;

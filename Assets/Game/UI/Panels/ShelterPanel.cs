@@ -16,9 +16,12 @@ namespace LastHope.UI.Panels
     /// <summary>
     /// Toàn bộ giao diện quản lý Shelter (BL-P3-02/03/04/11) — mọi Zone trong một panel
     /// (không đi bộ tới từng Zone vật lý, xem docs/plans/2026-07-28-p3-shelter-loop.md).
-    /// Free Placement (BL-P3-03): chọn Module + Zone ở đây rồi đóng panel, đặt vị trí thật
-    /// trong thế giới qua <see cref="PlacementModeController"/> (Presentation) — xem
-    /// docs/plans/2026-07-28-free-placement.md. Tự mở khi nghe <see cref="ShelterConsoleOpened"/>.
+    /// Production tách khỏi Placement (đổi 2026-07-30,
+    /// docs/plans/2026-07-30-module-production-placement-loop.md): chọn Module ở đây để sản
+    /// xuất (không chọn Zone/vị trí), xong hiện "Ready to Claim" — Nhận cộng packed item vào túi
+    /// Player. Đặt vị trí thật diễn ra sau, từ <c>InventoryPanel</c> (nút "Đặt" cạnh packed item)
+    /// qua <see cref="PlacementModeController"/> (Presentation). Tự mở khi nghe
+    /// <see cref="ShelterConsoleOpened"/>.
     /// </summary>
     public class ShelterPanel : MonoBehaviour
     {
@@ -80,7 +83,9 @@ namespace LastHope.UI.Panels
 
             DrawOverview(shelter, definitions, balance);
             DrawEvents(services, shelter);
+            DrawProduction(services, shelter, definitions);
             DrawConstruction(services, shelter);
+            DrawReadyToClaim(services, shelter);
 
             scroll = GUILayout.BeginScrollView(scroll, GUILayout.Height(height - 260f));
             foreach (var zone in definitions.ShelterZones.Values)
@@ -137,13 +142,38 @@ namespace LastHope.UI.Panels
             }
         }
 
+        /// <summary>Sản xuất Module — không gắn Zone/vị trí (đổi 2026-07-30, xem
+        /// docs/plans/2026-07-30-module-production-placement-loop.md). Chọn vị trí thật diễn ra
+        /// sau, lúc "Đặt" packed item từ InventoryPanel.</summary>
+        void DrawProduction(GameServices services, ShelterState shelter, Data.DefinitionRegistry definitions)
+        {
+            bool constructionBusy = shelter.Construction != null;
+            foreach (var module in definitions.Modules.Values)
+            {
+                string cost = string.Join(", ", ListMaterials(module));
+                bool hasMaterials = BuildSystem.HasEnoughMaterials(services.World, module);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"{module.Id} ({cost}, {module.BuildMinutes} phút)"
+                    + (hasMaterials ? "" : " — thiếu vật liệu"), GUILayout.Width(360f));
+                GUI.enabled = !constructionBusy && hasMaterials;
+                if (GUILayout.Button("Sản xuất", GUILayout.Width(100f)))
+                {
+                    var result = services.Commands.Submit(new StartConstructionCommand(module.Id));
+                    statusMessage = result.Success ? "" : $"Không sản xuất được ({result.Error}).";
+                }
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+            }
+        }
+
         void DrawConstruction(GameServices services, ShelterState shelter)
         {
             var c = shelter.Construction;
             if (c == null) return;
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Đang xây {c.ModuleId} tại {c.ZoneId} — còn {c.MinutesRemaining:F0} phút"
+            GUILayout.Label($"Đang sản xuất {c.ModuleId} — còn {c.MinutesRemaining:F0} phút"
                 + (c.Paused ? " (tạm dừng)" : ""), GUILayout.Width(340f));
             if (GUILayout.Button(c.Paused ? "Tiếp tục" : "Tạm dừng", GUILayout.Width(90f)))
             {
@@ -154,6 +184,26 @@ namespace LastHope.UI.Panels
                 services.Commands.Submit(new CancelConstructionCommand());
             }
             GUILayout.EndHorizontal();
+        }
+
+        /// <summary>Sản phẩm Production đã xong, chưa Nhận — độc lập khỏi Construction (đổi
+        /// 2026-07-30). Nhận cộng packed item vào túi Player qua ClaimProductionCommand.</summary>
+        void DrawReadyToClaim(GameServices services, ShelterState shelter)
+        {
+            if (shelter.ReadyToClaim.Count == 0) return;
+
+            GUILayout.Label("— Ready to Claim —");
+            foreach (var pair in new List<KeyValuePair<string, int>>(shelter.ReadyToClaim))
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"{pair.Key} ×{pair.Value}", GUILayout.Width(340f));
+                if (GUILayout.Button("Nhận", GUILayout.Width(90f)))
+                {
+                    var result = services.Commands.Submit(new ClaimProductionCommand(pair.Key));
+                    statusMessage = result.Success ? "" : $"Không nhận được ({result.Error}).";
+                }
+                GUILayout.EndHorizontal();
+            }
         }
 
         void DrawZone(GameServices services, ShelterZoneDefinition zone)
@@ -170,38 +220,6 @@ namespace LastHope.UI.Panels
             foreach (var pair in placed)
             {
                 DrawPlacedModule(services, pair.Key, pair.Value);
-            }
-
-            var storage = services.World.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
-            bool constructionBusy = shelter.Construction != null;
-            foreach (var module in buildable)
-            {
-                string cost = string.Join(", ", ListMaterials(module));
-                bool hasMaterials = BuildSystem.HasEnoughMaterials(services.World, module);
-                int packedCount = string.IsNullOrEmpty(module.PackedItemId)
-                    ? 0
-                    : InventoryOps.CountOf(storage, module.PackedItemId);
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"  {module.Id} ({cost}, {module.BuildMinutes} phút)"
-                    + (hasMaterials ? "" : " — thiếu vật liệu"), GUILayout.Width(360f));
-                GUI.enabled = !constructionBusy && hasMaterials;
-                if (GUILayout.Button("Chọn vị trí", GUILayout.Width(100f)))
-                {
-                    services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id, redeploy: false));
-                    visible = false;
-                }
-                GUI.enabled = true;
-
-                // Không gate theo constructionBusy — Redeploy không đụng ConstructionState
-                // (CanRedeployAt không check ConstructionInProgress), khác "Chọn vị trí" ở trên.
-                if (packedCount > 0 && GUILayout.Button($"Đặt lại (×{packedCount})", GUILayout.Width(110f)))
-                {
-                    services.Events.Publish(new BeginPlacementMode(zone.Id, module.Id, redeploy: true));
-                    visible = false;
-                }
-
-                GUILayout.EndHorizontal();
             }
         }
 

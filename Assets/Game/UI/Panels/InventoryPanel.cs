@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LastHope.Core.Events;
 using LastHope.Core.State;
 using LastHope.Core.UI;
 using LastHope.Data.Definitions;
@@ -6,6 +7,7 @@ using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
 using LastHope.Systems.Inventory;
 using LastHope.Systems.Registry;
+using LastHope.Systems.Shelter;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -179,19 +181,28 @@ namespace LastHope.UI.Panels
             }
         }
 
-        static void DrawRow(
+        void DrawRow(
             GameServices services, string label, string itemId,
             InventoryOwner from, InventoryOwner to, string buttonLabel = "Bỏ")
         {
             bool isEquippable = from.Kind == InventoryOwnerKind.Player
                 && services.Definitions.TryGetItem(itemId, out var item) && item.IsEquipment;
+            ModuleDefinition module = null;
+            bool isPlacable = from.Kind == InventoryOwnerKind.Player
+                && BuildSystem.TryFindModuleByPackedItem(services.Definitions, itemId, out module);
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(label, GUILayout.Width(isEquippable ? 140f : 200f));
+            GUILayout.Label(label, GUILayout.Width(isEquippable || isPlacable ? 140f : 200f));
 
             if (isEquippable && GUILayout.Button("Mặc", GUILayout.Width(50f)))
             {
                 services.Commands.Submit(new EquipItemCommand(itemId));
+            }
+
+            if (isPlacable && GUILayout.Button("Đặt", GUILayout.Width(50f)))
+            {
+                services.Events.Publish(new BeginPlacementMode(module.Id));
+                SetVisible(false);
             }
 
             if (GUILayout.Button(buttonLabel, GUILayout.Width(60f)))

@@ -6,6 +6,9 @@
     "build_minutes": 60,
     "power_demand": 0,
     "max_durability": 100,
+    "footprint_width": 2,
+    "footprint_height": 1,
+    "is_rotatable": true,
     "packed_item_id": "item_packed_barrier",
     "tags": ["barrier"]
   },
@@ -16,6 +19,9 @@
     "build_minutes": 45,
     "power_demand": 2,
     "max_durability": 100,
+    "footprint_width": 2,
+    "footprint_height": 1,
+    "is_rotatable": true,
     "packed_item_id": "item_packed_pump",
     "tags": ["pump"]
   },
@@ -26,6 +32,9 @@
     "build_minutes": 40,
     "power_demand": 0,
     "max_durability": 100,
+    "footprint_width": 2,
+    "footprint_height": 1,
+    "is_rotatable": true,
     "packed_item_id": "item_packed_elevated_storage",
     "tags": ["elevated_storage"]
   },
@@ -36,6 +45,9 @@
     "build_minutes": 50,
     "power_demand": 2,
     "max_durability": 100,
+    "footprint_width": 2,
+    "footprint_height": 1,
+    "is_rotatable": true,
     "packed_item_id": "item_packed_purifier",
     "tags": ["purifier"]
   },
@@ -46,6 +58,9 @@
     "build_minutes": 30,
     "power_demand": 0,
     "max_durability": 100,
+    "footprint_width": 1,
+    "footprint_height": 1,
+    "is_rotatable": false,
     "packed_item_id": "item_packed_battery_bank",
     "tags": ["battery_bank"]
   }

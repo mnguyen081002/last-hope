@@ -78,6 +78,16 @@ namespace LastHope.Tests.EditMode
             var shelter = registry.GetLocation("location_shelter");
             Assert.IsTrue(shelter.IsShelter);
             Assert.AreEqual("20_MainShelter", shelter.SceneName);
+
+            var pump = registry.GetModule("module_pump");
+            Assert.IsTrue(pump.IsRotatable);
+            Assert.AreEqual(2f, pump.FootprintWidth, 0.0001f);
+            Assert.AreEqual(1f, pump.FootprintHeight, 0.0001f);
+
+            var battery = registry.GetModule("module_battery_bank");
+            Assert.IsFalse(battery.IsRotatable);
+            Assert.AreEqual(1f, battery.FootprintWidth, 0.0001f);
+            Assert.AreEqual(1f, battery.FootprintHeight, 0.0001f);
         }
 
         // ---------- Validate gom lỗi ----------

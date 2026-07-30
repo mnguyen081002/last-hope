@@ -41,6 +41,7 @@ namespace LastHope.Systems.Telemetry
             services.Events.Subscribe<SearchPointOpened>(OnSearchPointOpened);
             services.Events.Subscribe<ConstructionStarted>(OnConstructionStarted);
             services.Events.Subscribe<ConstructionCompleted>(OnConstructionCompleted);
+            services.Events.Subscribe<ProductionClaimed>(OnProductionClaimed);
             services.Events.Subscribe<ModuleRedeployed>(OnModuleRedeployed);
             services.Events.Subscribe<PowerPriorityChanged>(OnPowerPriorityChanged);
             services.Events.Subscribe<ShelterEventTriggered>(OnShelterEventTriggered);
@@ -65,13 +66,16 @@ namespace LastHope.Systems.Telemetry
         void OnConstructionStarted(ConstructionStarted e) =>
             Write("construction_started", new
             {
-                zone_id = e.ZoneId,
                 module_id = e.ModuleId,
                 minutes_required = e.MinutesRequired,
             });
 
         void OnConstructionCompleted(ConstructionCompleted e) =>
-            Write("construction_completed", new { placement_id = e.PlacementId, module_id = e.ModuleId });
+            Write("construction_completed", new { module_id = e.ModuleId });
+
+        /// <summary>Nhận sản phẩm Ready to Claim (BL-P3-03, 2026-07-30).</summary>
+        void OnProductionClaimed(ProductionClaimed e) =>
+            Write("production_claimed", new { module_id = e.ModuleId });
 
         /// <summary>Đặt lại Module đã gói — Build Choice khác (tức thì, không qua Task chờ).</summary>
         void OnModuleRedeployed(ModuleRedeployed e) =>

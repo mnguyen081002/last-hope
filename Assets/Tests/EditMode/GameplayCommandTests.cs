@@ -323,8 +323,7 @@ namespace LastHope.Tests.EditMode
             world.Player.CurrentLocationId = "location_convenience_store";
             GiveShelterMaterials(ShelterModuleIds.Pump);
 
-            var result = processor.Submit(
-                new StartConstructionCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
+            var result = processor.Submit(new StartConstructionCommand(ShelterModuleIds.Pump));
 
             Assert.AreEqual(CommandErrorCode.WrongLocation, result.Error);
         }
@@ -334,11 +333,10 @@ namespace LastHope.Tests.EditMode
         {
             GiveShelterMaterials(ShelterModuleIds.Pump);
 
-            var result = processor.Submit(
-                new StartConstructionCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
+            var result = processor.Submit(new StartConstructionCommand(ShelterModuleIds.Pump));
 
             Assert.IsTrue(result.Success);
-            Assert.AreEqual(UtilityZone, world.Shelter.Construction.ZoneId);
+            Assert.AreEqual(ShelterModuleIds.Pump, world.Shelter.Construction.ModuleId);
             var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
             Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_pump_part"));
         }
@@ -347,7 +345,7 @@ namespace LastHope.Tests.EditMode
         public void CancelConstruction_Valid_ClearsConstruction()
         {
             GiveShelterMaterials(ShelterModuleIds.Pump);
-            processor.Submit(new StartConstructionCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
+            processor.Submit(new StartConstructionCommand(ShelterModuleIds.Pump));
 
             var result = processor.Submit(new CancelConstructionCommand());
 
@@ -356,7 +354,7 @@ namespace LastHope.Tests.EditMode
         }
 
         [Test]
-        public void DismantleModule_Valid_RemovesModule_AddsPackedItemToStorage()
+        public void DismantleModule_Valid_RemovesModule_AddsPackedItemToPlayer()
         {
             world.Shelter.PlacedModules["placed_1"] =
                 new BuiltModuleState { ModuleId = ShelterModuleIds.Pump, ZoneId = UtilityZone };
@@ -365,8 +363,30 @@ namespace LastHope.Tests.EditMode
 
             Assert.IsTrue(result.Success);
             Assert.IsFalse(world.Shelter.PlacedModules.ContainsKey("placed_1"));
-            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
-            Assert.AreEqual(1, InventoryOps.CountOf(storage, "item_packed_pump"));
+            Assert.AreEqual("item_packed_pump", world.Player.Inventory.CarriedObjectItemId);
+        }
+
+        // ---------- ClaimProductionCommand ----------
+
+        [Test]
+        public void ClaimProduction_NothingReady_IsRejected()
+        {
+            var result = processor.Submit(new ClaimProductionCommand(ShelterModuleIds.Pump));
+
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(CommandErrorCode.InvalidTarget, result.Error);
+        }
+
+        [Test]
+        public void ClaimProduction_Valid_AddsPackedItemToPlayer_DecrementsReadyToClaim()
+        {
+            world.Shelter.ReadyToClaim[ShelterModuleIds.Pump] = 1;
+
+            var result = processor.Submit(new ClaimProductionCommand(ShelterModuleIds.Pump));
+
+            Assert.IsTrue(result.Success);
+            Assert.IsFalse(world.Shelter.ReadyToClaim.ContainsKey(ShelterModuleIds.Pump));
+            Assert.AreEqual("item_packed_pump", world.Player.Inventory.CarriedObjectItemId);
         }
 
         // ---------- RedeployModuleCommand ----------
@@ -384,15 +404,16 @@ namespace LastHope.Tests.EditMode
         [Test]
         public void RedeployModule_Valid_CreatesModuleInstantly_NoConstruction()
         {
-            var storage = world.GetOrCreateLocation(ShelterModuleIds.LocationId).StorageContainer;
-            InventoryOps.AddItem(storage, definitions, "item_packed_pump", 1);
+            // item_packed_pump là TwoHandCarry — phải qua InventorySystem.Add (CarriedObjectItemId),
+            // không phải InventoryOps.AddItem (chỉ biết Slots).
+            InventorySystem.Add(world.Player.Inventory, definitions, "item_packed_pump", 1);
 
             var result = processor.Submit(
                 new RedeployModuleCommand(UtilityZone, ZoneX, ZoneY, ShelterModuleIds.Pump));
 
             Assert.IsTrue(result.Success);
             Assert.IsNull(world.Shelter.Construction);
-            Assert.AreEqual(0, InventoryOps.CountOf(storage, "item_packed_pump"));
+            Assert.IsNull(world.Player.Inventory.CarriedObjectItemId);
             Assert.IsTrue(world.Shelter.PlacedModules.Values.Any(m => m.ModuleId == ShelterModuleIds.Pump));
         }
 

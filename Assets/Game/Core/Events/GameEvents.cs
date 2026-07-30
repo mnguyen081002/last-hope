@@ -82,33 +82,36 @@ namespace LastHope.Core.Events
         public ShelterEventTriggered(string eventId) => EventId = eventId;
     }
 
-    /// <summary>Bắn khi Construction hoàn thành (BuildSystem.ApplyShortTick).</summary>
+    /// <summary>Bắn khi Production hoàn thành (BuildSystem.ApplyShortTick) — chuyển "Ready to
+    /// Claim", không tạo Module trong thế giới (khác hành vi cũ trước 2026-07-30).</summary>
     public readonly struct ConstructionCompleted
     {
-        public readonly string PlacementId;
         public readonly string ModuleId;
 
-        public ConstructionCompleted(string placementId, string moduleId)
-        {
-            PlacementId = placementId;
-            ModuleId = moduleId;
-        }
+        public ConstructionCompleted(string moduleId) => ModuleId = moduleId;
     }
 
-    /// <summary>Bắn lúc bắt đầu xây (StartConstructionCommand); <see cref="ConstructionCompleted"/>
+    /// <summary>Bắn lúc bắt đầu sản xuất (StartConstructionCommand); <see cref="ConstructionCompleted"/>
     /// bắn khi xong — chênh world_time_minutes giữa hai sự kiện = thời gian chờ Task (BL-P3-18).</summary>
     public readonly struct ConstructionStarted
     {
-        public readonly string ZoneId;
         public readonly string ModuleId;
         public readonly int MinutesRequired;
 
-        public ConstructionStarted(string zoneId, string moduleId, int minutesRequired)
+        public ConstructionStarted(string moduleId, int minutesRequired)
         {
-            ZoneId = zoneId;
             ModuleId = moduleId;
             MinutesRequired = minutesRequired;
         }
+    }
+
+    /// <summary>Bắn khi Nhận sản phẩm Ready to Claim (ClaimProductionCommand) — cộng packed item
+    /// vào túi Player.</summary>
+    public readonly struct ProductionClaimed
+    {
+        public readonly string ModuleId;
+
+        public ProductionClaimed(string moduleId) => ModuleId = moduleId;
     }
 
     /// <summary>Bắn khi đổi Power Priority của Module đã xây (SetPowerPriorityCommand) — đo Power Allocation choice (BL-P3-18).</summary>
@@ -160,24 +163,17 @@ namespace LastHope.Core.Events
     }
 
     /// <summary>
-    /// Publish từ UI (ShelterPanel) khi chọn xong Module + Zone — Presentation
-    /// (PlacementModeController) nghe để bật chế độ đặt tự do trong thế giới (Free Placement,
-    /// BL-P3-03).
+    /// Publish từ UI (InventoryPanel) khi bấm "Đặt" cạnh 1 packed item trong túi Player —
+    /// Presentation (PlacementModeController) nghe để bật chế độ đặt tự do trong thế giới (Free
+    /// Placement, BL-P3-03). Không mang ZoneId — Placement tự resolve Zone theo tầng đang đứng +
+    /// vị trí chuột (đổi 2026-07-30, xem docs/plans/2026-07-30-module-production-placement-loop.md).
+    /// Luôn là đặt Module đã gói (<see cref="RedeployModuleCommand"/>) — Production không còn đi
+    /// qua Placement Mode nữa.
     /// </summary>
     public readonly struct BeginPlacementMode
     {
-        public readonly string ZoneId;
         public readonly string ModuleId;
 
-        /// <summary>True = đặt lại Module đã gói (tức thì, <see cref="RedeployModuleCommand"/>);
-        /// false = xây mới bằng Materials (<see cref="StartConstructionCommand"/>).</summary>
-        public readonly bool Redeploy;
-
-        public BeginPlacementMode(string zoneId, string moduleId, bool redeploy)
-        {
-            ZoneId = zoneId;
-            ModuleId = moduleId;
-            Redeploy = redeploy;
-        }
+        public BeginPlacementMode(string moduleId) => ModuleId = moduleId;
     }
 }

@@ -5,45 +5,30 @@ using LastHope.Systems.Shelter;
 
 namespace LastHope.Systems.Commands
 {
-    /// <summary>Free Placement (BL-P3-03) — đặt Module tự do bằng world position trong Zone hợp lệ.</summary>
+    /// <summary>Production (BL-P3-03, đổi 2026-07-30) — sản xuất Module tại Shelter Console,
+    /// không gắn Zone/vị trí. Xong chuyển "Ready to Claim", đặt vào world qua
+    /// <see cref="RedeployModuleCommand"/> sau khi Nhận.</summary>
     public class StartConstructionCommand : IGameCommand
     {
         public long WorldTime { get; set; }
 
-        public string ZoneId;
-        public float PositionX;
-        public float PositionY;
         public string ModuleId;
 
-        public StartConstructionCommand(string zoneId, float positionX, float positionY, string moduleId)
-        {
-            ZoneId = zoneId;
-            PositionX = positionX;
-            PositionY = positionY;
-            ModuleId = moduleId;
-        }
+        public StartConstructionCommand(string moduleId) => ModuleId = moduleId;
 
         public CommandResult Validate(GameContext context)
         {
             if (!context.Definitions.TryGetLocation(context.World.Player.CurrentLocationId, out var location)
                 || !location.IsShelter)
-                return CommandResult.Fail(CommandErrorCode.WrongLocation, "Chỉ xây được khi đang ở Shelter.");
+                return CommandResult.Fail(CommandErrorCode.WrongLocation, "Chỉ sản xuất được khi đang ở Shelter.");
 
-            var reason = BuildSystem.CanPlaceAt(
-                context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId);
+            var reason = BuildSystem.CanStartProduction(context.World, context.Definitions, ModuleId, out _);
             return reason switch
             {
                 BuildRejectReason.None => CommandResult.Ok(),
-                BuildRejectReason.UnknownZone => CommandResult.Fail(CommandErrorCode.UnknownDefinition, ZoneId),
                 BuildRejectReason.UnknownModule => CommandResult.Fail(CommandErrorCode.UnknownDefinition, ModuleId),
-                BuildRejectReason.WrongZone => CommandResult.Fail(
-                    CommandErrorCode.InvalidTarget, $"'{ModuleId}' không xây được ở zone này."),
-                BuildRejectReason.OutOfBounds => CommandResult.Fail(
-                    CommandErrorCode.InvalidTarget, "Vị trí nằm ngoài biên Zone."),
-                BuildRejectReason.Overlapping => CommandResult.Fail(
-                    CommandErrorCode.NotAllowedNow, "Vị trí chồng lấn Module khác."),
                 BuildRejectReason.ConstructionInProgress => CommandResult.Fail(
-                    CommandErrorCode.NotAllowedNow, "Đang xây công trình khác — chỉ một construction cùng lúc."),
+                    CommandErrorCode.NotAllowedNow, "Đang sản xuất Module khác — chỉ một cái cùng lúc."),
                 BuildRejectReason.NotEnoughMaterials => CommandResult.Fail(
                     CommandErrorCode.ItemNotFound, "Không đủ vật liệu trong kho Shelter."),
                 _ => CommandResult.Fail(CommandErrorCode.NotAllowedNow),
@@ -52,12 +37,12 @@ namespace LastHope.Systems.Commands
 
         public void Execute(GameContext context)
         {
-            BuildSystem.StartConstruction(context.World, context.Definitions, ZoneId, PositionX, PositionY, ModuleId);
+            BuildSystem.StartConstruction(context.World, context.Definitions, ModuleId);
             context.Events?.Publish(
                 new InventoryChanged(InventoryOwner.ShelterStorage(ShelterModuleIds.LocationId).ToString()));
 
             int minutes = context.Definitions.GetModule(ModuleId).BuildMinutes;
-            context.Events?.Publish(new ConstructionStarted(ZoneId, ModuleId, minutes));
+            context.Events?.Publish(new ConstructionStarted(ModuleId, minutes));
         }
     }
 }

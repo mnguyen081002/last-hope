@@ -5,6 +5,7 @@ using LastHope.Presentation.CameraControl;
 using LastHope.Presentation.Player;
 using LastHope.Systems.Boot;
 using LastHope.Systems.Commands;
+using LastHope.Systems.Shelter;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -78,7 +79,9 @@ namespace LastHope.Presentation.World
                 if (!definitions.TryGetModule(built.ModuleId, out var module)) continue;
 
                 float dx = built.PositionX - world.x, dy = built.PositionY - world.y;
-                if (dx * dx + dy * dy > module.FootprintRadius * module.FootprintRadius) continue;
+                BuildSystem.GetFootprint(module, built.RotationQuarterTurns, out float width, out float height);
+                float hoverRadius = Mathf.Max(width, height) / 2f;
+                if (dx * dx + dy * dy > hoverRadius * hoverRadius) continue;
 
                 float pdx = built.PositionX - playerPos.x, pdy = built.PositionY - playerPos.y;
                 if (pdx * pdx + pdy * pdy > ProximityRadius * ProximityRadius) continue;
@@ -122,7 +125,7 @@ namespace LastHope.Presentation.World
             const float width = 140f, height = 54f;
             var rect = new Rect(anchor.x + 12f, anchor.y - height - 12f, width, height);
             menuScreenRect = rect;
-            PointerOverUI.MarkHover(true);
+            PointerOverUI.MarkHover(rect.Contains(Event.current.mousePosition));
 
             GUILayout.BeginArea(rect, GUI.skin.box);
             GUILayout.Label(hoveredModuleId);

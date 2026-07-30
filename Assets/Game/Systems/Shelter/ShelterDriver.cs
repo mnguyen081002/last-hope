@@ -31,10 +31,10 @@ namespace LastHope.Systems.Shelter
 
         void OnShortTick(long worldTimeMinutes)
         {
-            var completed = BuildSystem.ApplyShortTick(world);
-            if (completed.HasValue)
+            string completedModuleId = BuildSystem.ApplyShortTick(world);
+            if (completedModuleId != null)
             {
-                events?.Publish(new ConstructionCompleted(completed.Value.PlacementId, completed.Value.ModuleId));
+                events?.Publish(new ConstructionCompleted(completedModuleId));
             }
         }
 

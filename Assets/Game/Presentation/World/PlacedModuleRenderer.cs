@@ -31,7 +31,6 @@ namespace LastHope.Presentation.World
             GameBootstrapper.Ready -= Subscribe;
             if (GameBootstrapper.IsReady)
             {
-                GameBootstrapper.Services.Events.Unsubscribe<ConstructionCompleted>(OnChanged);
                 GameBootstrapper.Services.Events.Unsubscribe<ModuleDismantled>(OnChanged);
                 GameBootstrapper.Services.Events.Unsubscribe<ModuleRedeployed>(OnChanged);
             }
@@ -40,13 +39,10 @@ namespace LastHope.Presentation.World
         void Subscribe()
         {
             GameBootstrapper.Ready -= Subscribe;
-            GameBootstrapper.Services.Events.Subscribe<ConstructionCompleted>(OnChanged);
             GameBootstrapper.Services.Events.Subscribe<ModuleDismantled>(OnChanged);
             GameBootstrapper.Services.Events.Subscribe<ModuleRedeployed>(OnChanged);
             SyncAll();
         }
-
-        void OnChanged(ConstructionCompleted e) => SyncAll();
 
         void OnChanged(ModuleDismantled e) => SyncAll();
 
@@ -87,10 +83,12 @@ namespace LastHope.Presentation.World
             var spriteGo = new GameObject("Sprite");
             spriteGo.transform.SetParent(go.transform, false);
             var renderer = spriteGo.AddComponent<SpriteRenderer>();
-            renderer.sprite = propSprite;
-            renderer.color = new Color(0.5f, 0.55f, 0.6f);
-            if (renderer.sprite != null)
+            var moduleSprite = ModuleSpriteCatalog.Load(built.ModuleId, built.RotationQuarterTurns);
+            renderer.sprite = moduleSprite != null ? moduleSprite : propSprite;
+            renderer.color = moduleSprite != null ? Color.white : new Color(0.5f, 0.55f, 0.6f);
+            if (moduleSprite == null && renderer.sprite != null)
             {
+                // Placeholder legacy có pivot ở tâm; production art đã import pivot đáy giữa.
                 spriteGo.transform.localPosition = new Vector3(0f, renderer.sprite.bounds.extents.y, 0f);
             }
 

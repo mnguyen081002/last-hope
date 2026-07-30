@@ -12,7 +12,7 @@ namespace LastHope.Core.Save
     /// </summary>
     public class SaveFile
     {
-        public const int CurrentSaveVersion = 1;
+        public const int CurrentSaveVersion = 3;
 
         [JsonProperty("save_version")] public int SaveVersion = CurrentSaveVersion;
         [JsonProperty("definition_version")] public string DefinitionVersion;
