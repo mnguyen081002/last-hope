@@ -23,13 +23,11 @@ namespace LastHope.Core.State
         public bool Powered;
     }
 
-    /// <summary>Công trình đang xây dở tại một vị trí world cụ thể — chỉ một cái chạy cùng lúc (MVP).</summary>
+    /// <summary>Đang chế tạo 1 Module (không gắn vị trí — vị trí chỉ chọn lúc Đặt từ Inventory
+    /// sau khi Nhận, xem BuildSystem.RedeployModule) — chỉ một cái chạy cùng lúc (MVP).</summary>
     public class ConstructionState
     {
-        public string ZoneId;
         public string ModuleId;
-        public float PositionX;
-        public float PositionY;
         public float MinutesRemaining;
         public bool Paused;
     }
